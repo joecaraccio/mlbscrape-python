@@ -4,6 +4,7 @@
 from bs4 import BeautifulSoup
 import urllib
 from Hitter import Hitter
+from HitterGameEntry import HitterGameEntry
 from HitterEntry import HitterEntry
 import sqlalchemy
 
@@ -49,7 +50,7 @@ class StatMiner(object):
                     self.mine_day(month_url + dayNode.get("href"))    
                 
     # Mine a single day
-    # @param    day_url: 
+    # @param    day_url: an absolute URL for the day of interest
     def mine_day(self,day_url):
         daySoup = url_to_soup(day_url)
         if daySoup is not None:
@@ -67,38 +68,54 @@ class StatMiner(object):
             # Check if the game is a regular season game
             # TODO: add postseason games?
             if gameNode.get("type") == "R":
+                playersSoup = url_to_soup(game_url + "players.xml")
                 battersSoup = url_to_soup(game_url + "boxscore.xml")
-                if battersSoup is not None:
-                    gameId = battersSoup.find("boxscore").get("game_id")
-                    print "Mining " + str(gameId)
-                    batterNodes = battersSoup.find_all("batter")
-                    for batterNode in batterNodes:
-                        playerName = batterNode.get("name_display_first_last").split()
-                        hitter = Hitter(playerName[0],playerName[1],batterNode.get("id"))
-                        hitter.set_game_results(gameId,batterNode)
+                gameId = battersSoup.find("boxscore").get("game_id")
+                if playersSoup is not None and battersSoup is not None:
+                    print "Mining: " + str(gameId)
+                    players = playersSoup.find_all("player")
+                    for player in players:
+                        if player.has_attr("bat_order"):
+                            hitter = Hitter(player.get("first"),player.get("last"),player.get("id"),
+                                            player.get("team_abbrev"),player.get("bat_order"))
+                            hitter.set_game_results(gameId,battersSoup.find("batter", {"id" : player.get("id")}))
         
-                        # Mine the pregame stats
-                        #TODO use players.xml to add the batting order attributes, which means we need to get rid of pinch hitters
-                        pregameStatsSoup = url_to_soup(game_url + "batters/" + batterNode.get("id") + ".xml")
-                        hitter.set_season_stats(pregameStatsSoup)
-                        hitter.set_career_stats(pregameStatsSoup)
-                        hitter.set_vs_stats(pregameStatsSoup) 
+                            # Mine the pregame stats
+                            pregameStatsSoup = url_to_soup(game_url + "batters/" + player.get("id") + ".xml")
+                            hitter.set_season_stats(pregameStatsSoup)
+                            hitter.set_career_stats(pregameStatsSoup)
+                            hitter.set_vs_stats(pregameStatsSoup)
+                            # TODO: explore some ways of mining different data for month stats
+                            hitter.set_month_stats(pregameStatsSoup) 
                 
-                        # Commit the results to the database
-                        self._commit_hitter(hitter)
+                            # Commit the results to the database
+                            self._commit_hitter(hitter)
             else:
                 print "Game is not a regular season game."
-                    
-            #for instance in session.query(HitterEntry).order_by(HitterEntry.mPitchFxId):
-            #    print instance.mFirstName, instance.mLastName
         
     def _commit_hitter(self,hitter):
+        hitterGameEntry = HitterGameEntry(hitter)
         hitterEntry = HitterEntry(hitter)
         try:
-            self._mSession.add(hitterEntry)
+            # Query the database for the HitterEntry object
+            dbQuery = self._mSession.query(HitterEntry).filter(HitterEntry.PitchFxId == hitter.mPitchFxId)
+            hitterEntryObject = dbQuery.first()
+            # Hitter object already exists in database
+            if hitterEntryObject is not None:
+                hitterEntryObject = hitterEntry
+            # Hitter object doesn't exist yet in database
+            else:
+                self._mSession.add(hitterEntry)
+                
+            self._mSession.commit()
+        except:
+            return
+        
+        try:
+            self._mSession.add(hitterGameEntry)
             self._mSession.commit()
         except sqlalchemy.exc.IntegrityError:
-            print "Attempt to duplicate hitter entry: " + hitterEntry.mLastName + ", " + hitterEntry.mFirstName + " " + hitterEntry.mGameId
+            print "Attempt to duplicate hitter entry: " + hitterGameEntry.mLastName + ", " + hitterGameEntry.mFirstName + " " + hitterGameEntry.mGameId
             self._mSession.rollback()
                  
             

@@ -6,13 +6,14 @@ def game_id_to_date(game_id):
 
 # A class housing stats for hitters
 class Hitter(object):
-    def __init__(self,first_name,last_name,id,team,batting_order):
+    def __init__(self,first_name,last_name,id,team,batting_order,batting_hand):
         self.mFirstName = first_name
         self.mLastName = last_name
         self.mPitchFxId = int(id)
         self.mTeamAbbrev = str(team)
         self.mBattingOrder = int(batting_order)
         self.mTotalPoints = 0
+        self.mBattingHand = batting_hand
         
     # Mine the mlb.com boxscore XML file for the actual results of the game
     # @param    game_id: The unique ID for the MLB game
@@ -68,6 +69,7 @@ class Hitter(object):
     # @param    soup: The BeautifulSoup XML object for the batter XML file
     # Note: For some reason, these stats don't follow the convention of including the results from the game.  
     def set_vs_stats(self,soup):
+        # Versus this pitcher
         vsStatNode = soup.find("vs_p")
         if vsStatNode is not None:
             self.mVsAb = float(vsStatNode.get("ab"))
@@ -79,6 +81,32 @@ class Hitter(object):
             self.mVsCs = float(vsStatNode.get("cs"))
             self.mVsHr = float(vsStatNode.get("hr"))
             self.mVsRbi = float(vsStatNode.get("rbi"))
+            
+        # Versus left handed pitching
+        vsStatNode = soup.find("vs_lhp")
+        if vsStatNode is not None:
+            self.mVsLhpAb = float(vsStatNode.get("ab"))
+            self.mVsLhpH = float(vsStatNode.get("h"))
+            self.mVsLhpBb = float(vsStatNode.get("bb"))
+            self.mVsLhpSo = float(vsStatNode.get("so"))
+            self.mVsLhpR = float(vsStatNode.get("r"))
+            self.mVsLhpSb = float(vsStatNode.get("sb"))
+            self.mVsLhpCs = float(vsStatNode.get("cs"))
+            self.mVsLhpHr = float(vsStatNode.get("hr"))
+            self.mVsLhpRbi = float(vsStatNode.get("rbi"))
+            
+        # Versus right handed pitching
+        vsStatNode = soup.find("vs_rhp")
+        if vsStatNode is not None:
+            self.mVsRhpAb = float(vsStatNode.get("ab"))
+            self.mVsRhpH = float(vsStatNode.get("h"))
+            self.mVsRhpBb = float(vsStatNode.get("bb"))
+            self.mVsRhpSo = float(vsStatNode.get("so"))
+            self.mVsRhpR = float(vsStatNode.get("r"))
+            self.mVsRhpSb = float(vsStatNode.get("sb"))
+            self.mVsRhpCs = float(vsStatNode.get("cs"))
+            self.mVsRhpHr = float(vsStatNode.get("hr"))
+            self.mVsRhpRbi = float(vsStatNode.get("rbi"))
             
     # Mine the mlb.com batter XML file and set the month members
     # @param    soup: The BeautifulSoup XML object for the batter XML file  

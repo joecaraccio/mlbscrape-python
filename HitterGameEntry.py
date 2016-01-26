@@ -58,6 +58,24 @@ class HitterGameEntry(Base):
     VsCs = Column(Integer)
     VsHr = Column(Integer)
     VsRbi = Column(Integer)
+    VsLhpAb = Column(Integer)
+    VsLhpH = Column(Integer)
+    VsLhpBb = Column(Integer)
+    VsLhpSo = Column(Integer)
+    VsLhpR = Column(Integer)
+    VsLhpSb = Column(Integer)
+    VsLhpCs = Column(Integer)
+    VsLhpHr = Column(Integer)
+    VsLhpRbi = Column(Integer)
+    VsRhpAb = Column(Integer)
+    VsRhpH = Column(Integer)
+    VsRhpBb = Column(Integer)
+    VsRhpSo = Column(Integer)
+    VsRhpR = Column(Integer)
+    VsRhpSb = Column(Integer)
+    VsRhpCs = Column(Integer)
+    VsRhpHr = Column(Integer)
+    VsRhpRbi = Column(Integer)
     
     # Month stats
     MonthAb = Column(Integer)
@@ -123,6 +141,24 @@ class HitterGameEntry(Base):
         self.VsCs = hitter.mVsCs
         self.VsHr = hitter.mVsHr
         self.VsRbi = hitter.mVsRbi
+        self.VsLhpAb = hitter.mVsLhpAb
+        self.VsLhpH = hitter.mVsLhpH
+        self.VsLhpBb = hitter.mVsLhpBb
+        self.VsLhpSo = hitter.mVsLhpSo
+        self.VsLhpR = hitter.mVsLhpR
+        self.VsLhpSb = hitter.mVsLhpSb
+        self.VsLhpCs = hitter.mVsLhpCs
+        self.VsLhpHr = hitter.mVsLhpHr
+        self.VsLhpRbi = hitter.mVsLhpRbi
+        self.VsRhpAb = hitter.mVsRhpAb
+        self.VsRhpH = hitter.mVsRhpH
+        self.VsRhpBb = hitter.mVsRhpBb
+        self.VsRhpSo = hitter.mVsRhpSo
+        self.VsRhpR = hitter.mVsRhpR
+        self.VsRhpSb = hitter.mVsRhpSb
+        self.VsRhpCs = hitter.mVsRhpCs
+        self.VsRhpHr = hitter.mVsRhpHr
+        self.VsRhpRbi = hitter.mVsRhpRbi
         
         # Month stats
         self.MonthAb = hitter.mMonthAb

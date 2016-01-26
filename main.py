@@ -4,7 +4,7 @@ from mlb_database import MlbDatabase
 
 #TODO: introduce the Player base class
 #TODO: add some data for the starting pitcher and catcher giving up stolen bases
-#TODO: add hand players pitch/hit with and some data to predict based on this
+#TODO: add hand players pitch with and some data to predict based on this
 mlbDatabase = MlbDatabase()
 databaseSession = mlbDatabase.open_session()
 #TODO: add some neural networks

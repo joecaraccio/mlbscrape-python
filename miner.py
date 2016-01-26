@@ -92,7 +92,7 @@ class StatMiner(object):
                     for player in players:
                         if player.has_attr("bat_order"):
                             hitter = Hitter(player.get("first"),player.get("last"),player.get("id"),
-                                            player.get("team_abbrev"),player.get("bat_order"))
+                                            player.get("team_abbrev"),player.get("bat_order"),player.get("bats"))
                             hitter.set_game_results(gameId,boxscoreSoup.find("batter", {"id" : player.get("id")}))
         
                             # Mine the pregame stats

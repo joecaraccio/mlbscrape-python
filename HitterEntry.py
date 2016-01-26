@@ -10,6 +10,7 @@ class HitterEntry(Base):
     FirstName = Column(String)
     LastName = Column(String)
     Team = Column(String)
+    BattingHand = Column(String)
     
     def __init__(self,hitter):
         self.FirstName = hitter.mFirstName
@@ -17,6 +18,7 @@ class HitterEntry(Base):
         self.PitchFxId = hitter.mPitchFxId
         self.LastGameDate = hitter.mGameDate
         self.Team = hitter.mTeamAbbrev
+        self.BattingHand = hitter.mBattingHand
         
     def __repr__(self):
         return "<User(name='%s %s')>" % (

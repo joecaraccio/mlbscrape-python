@@ -2,8 +2,8 @@ from mlb_database import Base
 from sqlalchemy import Column, Integer, String, Float
 
 # Entry for the Hitter database which has a link to the last game mined
-class HitterEntry(Base):
-    __tablename__ = 'hitter_entries'
+class PitcherEntry(Base):
+    __tablename__ = 'pitcher_entries'
     
     PitchFxId = Column(Integer, primary_key=True)
     LastGameDate = Column(String)
@@ -11,12 +11,12 @@ class HitterEntry(Base):
     LastName = Column(String)
     Team = Column(String)
     
-    def __init__(self,hitter):
-        self.FirstName = hitter.mFirstName
-        self.LastName = hitter.mLastName
-        self.PitchFxId = hitter.mPitchFxId
-        self.LastGameDate = hitter.mGameDate
-        self.Team = hitter.mTeamAbbrev
+    def __init__(self,pitcher):
+        self.FirstName = pitcher.mFirstName
+        self.LastName = pitcher.mLastName
+        self.PitchFxId = pitcher.mPitchFxId
+        self.LastGameDate = pitcher.mGameDate
+        self.Team = pitcher.mTeamAbbrev
         
     def __repr__(self):
         return "<User(name='%s %s')>" % (

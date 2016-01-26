@@ -6,14 +6,29 @@ import urllib
 from Hitter import Hitter
 from HitterGameEntry import HitterGameEntry
 from HitterEntry import HitterEntry
+from Pitcher import Pitcher
+from PitcherGameEntry import PitcherGameEntry
+from PitcherEntry import PitcherEntry
 import sqlalchemy
+from datetime import date
 
+# Convert a PitchFx date string to a date object
+# @param       date_string: a PitchFx date string
+# @return      date: the date object representing the string
+def str_to_date(date_string):
+    dateMembers = date_string.split("/")
+    dateObject = date(int(dateMembers[0]),int(dateMembers[1]),int(dateMembers[2]))
+    return dateObject
+
+# Take a URL and get the BeautifulSoup object
+# @param    url: the absolute URL string
+# @return    the BeautifulSoup object returned, return None if the object was not successfully created
 def url_to_soup(url):
     try:
         xml = urllib.urlopen(url)
         if xml.code == 404:
             print "Attempt to access invalid URL: " + xml.url
-            return
+            return None
         return BeautifulSoup(xml)
     except:
         print "Unable to obtain season soup " + str(url)
@@ -23,7 +38,6 @@ def url_to_soup(url):
 class StatMiner(object):
     mPitchFxBaseUrl = "http://mlb.mlb.com/gdcross/components/game/mlb/"
     
-    #TODO: implement this
     def __init__(self,database_session):
         self._mSession = database_session
     
@@ -69,16 +83,17 @@ class StatMiner(object):
             # TODO: add postseason games?
             if gameNode.get("type") == "R":
                 playersSoup = url_to_soup(game_url + "players.xml")
-                battersSoup = url_to_soup(game_url + "boxscore.xml")
-                gameId = battersSoup.find("boxscore").get("game_id")
-                if playersSoup is not None and battersSoup is not None:
+                boxscoreSoup = url_to_soup(game_url + "boxscore.xml")
+                gameId = boxscoreSoup.find("boxscore").get("game_id")
+                if playersSoup is not None and boxscoreSoup is not None:
                     print "Mining: " + str(gameId)
                     players = playersSoup.find_all("player")
+                    # Hitters
                     for player in players:
                         if player.has_attr("bat_order"):
                             hitter = Hitter(player.get("first"),player.get("last"),player.get("id"),
                                             player.get("team_abbrev"),player.get("bat_order"))
-                            hitter.set_game_results(gameId,battersSoup.find("batter", {"id" : player.get("id")}))
+                            hitter.set_game_results(gameId,boxscoreSoup.find("batter", {"id" : player.get("id")}))
         
                             # Mine the pregame stats
                             pregameStatsSoup = url_to_soup(game_url + "batters/" + player.get("id") + ".xml")
@@ -90,9 +105,30 @@ class StatMiner(object):
                 
                             # Commit the results to the database
                             self._commit_hitter(hitter)
+                            
+                    # Starting pitchers
+                    pitchersSoup = boxscoreSoup.findAll("pitching")
+                    for pitcherNode in pitchersSoup:
+                        # The starting pitcher will always just be the first entry
+                        startingPitcherNode = pitcherNode.find("pitcher")
+                        startingPitcherSoup = url_to_soup(game_url + "pitchers/" + startingPitcherNode.get("id") + ".xml")
+                        player = startingPitcherSoup.find("player")
+                        
+                        startingPitcher = Pitcher(player.get("first_name"),player.get("last_name"),player.get("id"),
+                                            player.get("team"))
+                        startingPitcher.set_game_results(gameId,startingPitcherNode)
+                        startingPitcher.set_season_stats(startingPitcherSoup)
+                        startingPitcher.set_career_stats(startingPitcherSoup)
+                        startingPitcher.set_vs_stats(startingPitcherSoup)
+                        startingPitcher.set_month_stats(startingPitcherSoup)
+                        
+                        self._commit_pitcher(startingPitcher)
+                        
             else:
                 print "Game is not a regular season game."
         
+    # Copy a Hitter object to a HitterGameEntry and HitterEntry object and commit to the database
+    # @param    hitter: Hitter object to copy
     def _commit_hitter(self,hitter):
         hitterGameEntry = HitterGameEntry(hitter)
         hitterEntry = HitterEntry(hitter)
@@ -100,22 +136,67 @@ class StatMiner(object):
             # Query the database for the HitterEntry object
             dbQuery = self._mSession.query(HitterEntry).filter(HitterEntry.PitchFxId == hitter.mPitchFxId)
             hitterEntryObject = dbQuery.first()
-            # Hitter object already exists in database
-            if hitterEntryObject is not None:
-                hitterEntryObject = hitterEntry
-            # Hitter object doesn't exist yet in database
-            else:
-                self._mSession.add(hitterEntry)
-                
-            self._mSession.commit()
         except:
+            print "Query for previous hitter entry failed."
             return
+        
+        # Hitter object already exists in database
+        if hitterEntryObject is not None:
+            storedDate = str_to_date(hitterEntryObject.LastGameDate)
+            newDate = str_to_date(hitterEntry.LastGameDate)
+            if newDate > storedDate:
+                hitterEntryObject = hitterEntry
+                self._mSession.commit()
+        # Hitter object doesn't exist yet in database
+        else:
+            try:
+                self._mSession.add(hitterEntry)
+                self._mSession.commit()
+            except sqlalchemy.exc.IntegrityError:
+                print "Attempt to duplicate hitter entry: " + hitterGameEntry.LastName + ", " + hitterGameEntry.FirstName + " " + hitterGameEntry.GameId
+                self._mSession.rollback()
         
         try:
             self._mSession.add(hitterGameEntry)
             self._mSession.commit()
         except sqlalchemy.exc.IntegrityError:
-            print "Attempt to duplicate hitter entry: " + hitterGameEntry.mLastName + ", " + hitterGameEntry.mFirstName + " " + hitterGameEntry.mGameId
+            print "Attempt to duplicate hitter game entry: " + hitterGameEntry.LastName + ", " + hitterGameEntry.FirstName + " " + hitterGameEntry.GameId
+            self._mSession.rollback()
+    
+    # Copy a Pitcher object to a PitcherGameEntry and PitcherEntry object and commit to the database
+    # @param    pitcher: Pitcher object to copy        
+    def _commit_pitcher(self,pitcher):
+        pitcherGameEntry = PitcherGameEntry(pitcher)
+        pitcherEntry = PitcherEntry(pitcher)
+        try:
+            # Query the database for the HitterEntry object
+            dbQuery = self._mSession.query(PitcherEntry).filter(PitcherEntry.PitchFxId == pitcher.mPitchFxId)
+            pitcherEntryObject = dbQuery.first()
+        except:
+            print "Query for previous pitcher entry failed."
+            return
+        
+        # Hitter object already exists in database
+        if pitcherEntryObject is not None:
+            storedDate = str_to_date(pitcherEntryObject.LastGameDate)
+            newDate = str_to_date(pitcherEntry.LastGameDate)
+            if newDate > storedDate:
+                pitcherEntryObject = pitcherEntry
+                self._mSession.commit()
+        # Hitter object doesn't exist yet in database
+        else:
+            try:
+                self._mSession.add(pitcherEntry)
+                self._mSession.commit()
+            except sqlalchemy.exc.IntegrityError:
+                print "Attempt to duplicate pitcher entry: " + pitcherGameEntry.LastName + ", " + pitcherGameEntry.FirstName + " " + pitcherGameEntry.GameId
+                self._mSession.rollback()
+        
+        try:
+            self._mSession.add(pitcherGameEntry)
+            self._mSession.commit()
+        except sqlalchemy.exc.IntegrityError:
+            print "Attempt to duplicate pitcher game entry: " + pitcherGameEntry.LastName + ", " + pitcherGameEntry.FirstName + " " + pitcherGameEntry.GameId
             self._mSession.rollback()
                  
             

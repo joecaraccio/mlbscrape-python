@@ -15,53 +15,60 @@ class HitterGameEntry(Base):
     BattingOrder = Column(Integer)
     GameDate = Column(String)
     
+    # Game stats
+    SeasonAb = Column(Integer)
+    GameH = Column(Integer)
+    GameBb = Column(Integer)
+    GameSo = Column(Integer)
+    GameR = Column(Integer)
+    GameSb = Column(Integer)
+    GameCs = Column(Integer)
+    GameHr = Column(Integer)
+    GameRbi = Column(Integer)
+    
     # Season stats
-    SeasonAb = Column(Float)
-    SeasonH = Column(Float)
-    SeasonBb = Column(Float)
-    SeasonSo = Column(Float)
-    SeasonR = Column(Float)
-    SeasonSb = Column(Float)
-    SeasonCs = Column(Float)
-    SeasonHr = Column(Float)
-    SeasonRbi = Column(Float)
-    SeasonOps = Column(Float)
+    SeasonAb = Column(Integer)
+    SeasonH = Column(Integer)
+    SeasonBb = Column(Integer)
+    SeasonSo = Column(Integer)
+    SeasonR = Column(Integer)
+    SeasonSb = Column(Integer)
+    SeasonCs = Column(Integer)
+    SeasonHr = Column(Integer)
+    SeasonRbi = Column(Integer)
     
     # Career stats
-    CareerAb = Column(Float)
-    CareerH = Column(Float)
-    CareerBb = Column(Float)
-    CareerSo = Column(Float)
-    CareerR = Column(Float)
-    CareerSb = Column(Float)
-    CareerCs = Column(Float)
-    CareerHr = Column(Float)
-    CareerRbi = Column(Float)
-    CareerOps = Column(Float)
+    CareerAb = Column(Integer)
+    CareerH = Column(Integer)
+    CareerBb = Column(Integer)
+    CareerSo = Column(Integer)
+    CareerR = Column(Integer)
+    CareerSb = Column(Integer)
+    CareerCs = Column(Integer)
+    CareerHr = Column(Integer)
+    CareerRbi = Column(Integer)
     
     # Versus stats
-    VsAb = Column(Float)
-    VsH = Column(Float)
-    VsBb = Column(Float)
-    VsSo = Column(Float)
-    VsR = Column(Float)
-    VsSb = Column(Float)
-    VsCs = Column(Float)
-    VsHr = Column(Float)
-    VsRbi = Column(Float)
-    VsOps = Column(Float)
+    VsAb = Column(Integer)
+    VsH = Column(Integer)
+    VsBb = Column(Integer)
+    VsSo = Column(Integer)
+    VsR = Column(Integer)
+    VsSb = Column(Integer)
+    VsCs = Column(Integer)
+    VsHr = Column(Integer)
+    VsRbi = Column(Integer)
     
     # Month stats
-    MonthAb = Column(Float)
-    MonthH = Column(Float)
-    MonthBb = Column(Float)
-    MonthSo = Column(Float)
-    MonthR = Column(Float)
-    MonthSb = Column(Float)
-    MonthCs = Column(Float)
-    MonthHr = Column(Float)
-    MonthRbi = Column(Float)
-    MonthOps = Column(Float)
+    MonthAb = Column(Integer)
+    MonthH = Column(Integer)
+    MonthBb = Column(Integer)
+    MonthSo = Column(Integer)
+    MonthR = Column(Integer)
+    MonthSb = Column(Integer)
+    MonthCs = Column(Integer)
+    MonthHr = Column(Integer)
+    MonthRbi = Column(Integer)
     
     def __init__(self,hitter):
         self.FirstName = hitter.mFirstName
@@ -73,6 +80,17 @@ class HitterGameEntry(Base):
         self.BattingOrder = hitter.mBattingOrder
         self.GameDate = hitter.mGameDate
         
+        # Game stats
+        self.GameAb = hitter.mGameAb
+        self.GameH = hitter.mGameH
+        self.GameBb = hitter.mGameBb
+        self.GameSo = hitter.mGameSo
+        self.GameR = hitter.mGameR
+        self.GameSb = hitter.mGameSb
+        self.GameCs = hitter.mGameCs
+        self.GameHr = hitter.mGameHr
+        self.GameRbi = hitter.mGameRbi
+        
         # Season stats
         self.SeasonAb = hitter.mSeasonAb
         self.SeasonH = hitter.mSeasonH
@@ -83,7 +101,6 @@ class HitterGameEntry(Base):
         self.SeasonCs = hitter.mSeasonCs
         self.SeasonHr = hitter.mSeasonHr
         self.SeasonRbi = hitter.mSeasonRbi
-        self.SeasonOps = hitter.mSeasonOps
         
         # Career stats
         self.CareerAb = hitter.mCareerAb
@@ -95,7 +112,6 @@ class HitterGameEntry(Base):
         self.CareerCs = hitter.mCareerCs
         self.CareerHr = hitter.mCareerHr
         self.CareerRbi = hitter.mCareerRbi
-        self.CareerOps = hitter.mCareerOps
         
         # Versus stats
         self.VsAb = hitter.mVsAb
@@ -107,7 +123,6 @@ class HitterGameEntry(Base):
         self.VsCs = hitter.mVsCs
         self.VsHr = hitter.mVsHr
         self.VsRbi = hitter.mVsRbi
-        self.VsOps = hitter.mVsOps
         
         # Month stats
         self.MonthAb = hitter.mMonthAb
@@ -119,7 +134,6 @@ class HitterGameEntry(Base):
         self.MonthCs = hitter.mMonthCs
         self.MonthHr = hitter.mMonthHr
         self.MonthRbi = hitter.mMonthRbi
-        self.MonthOps = hitter.mMonthOps
         
     def __repr__(self):
         return "<User(name='%s %s')>" % (

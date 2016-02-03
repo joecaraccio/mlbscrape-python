@@ -51,6 +51,18 @@ class PitcherGameEntry(Base):
     VsH = Column(Integer)
     VsBb = Column(Integer)
     VsHr = Column(Integer)
+    VsLhbOuts = Column(Float)
+    VsLhbSo = Column(Integer)
+    VsLhbEr = Column(Integer)
+    VsLhbH = Column(Integer)
+    VsLhbBb = Column(Integer)
+    VsLhbHr = Column(Integer)
+    VsRhbOuts = Column(Float)
+    VsRhbSo = Column(Integer)
+    VsRhbEr = Column(Integer)
+    VsRhbH = Column(Integer)
+    VsRhbBb = Column(Integer)
+    VsRhbHr = Column(Integer)
     
     # Month stats
     MonthOuts = Column(Integer)
@@ -106,6 +118,18 @@ class PitcherGameEntry(Base):
         self.VsH = pitcher.mVsH
         self.VsBb = pitcher.mVsBb
         self.VsHr = pitcher.mVsHr
+        self.VsLhbOuts = pitcher.mVsLhbOuts
+        self.VsLhbSo = pitcher.mVsLhbSo
+        self.VsLhbEr = pitcher.mVsLhbEr
+        self.VsLhbH = pitcher.mVsLhbH
+        self.VsLhbBb = pitcher.mVsLhbBb
+        self.VsLhbHr = pitcher.mVsLhbHr
+        self.VsRhbOuts = pitcher.mVsRhbOuts
+        self.VsRhbSo = pitcher.mVsRhbSo
+        self.VsRhbEr = pitcher.mVsRhbEr
+        self.VsRhbH = pitcher.mVsRhbH
+        self.VsRhbBb = pitcher.mVsRhbBb
+        self.VsRhbHr = pitcher.mVsRhbHr
         
         # Month stats
         self.MonthOuts = pitcher.mMonthOuts

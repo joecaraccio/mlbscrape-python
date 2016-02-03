@@ -1,18 +1,11 @@
-
-
-def game_id_to_date(game_id):
-    gameId = str(game_id)
-    date_fields = gameId.split("/")
-    return str(date_fields[0] + "/" + date_fields[1] + "/" + date_fields[2])
+from player import Player
+import player
+from player import game_id_to_date, inning_str_to_outs, inning_str_to_float, era_to_er
 
 # A class housing stats for hitters
-class Pitcher(object):
-    def __init__(self,first_name,last_name,id,team):
-        self.mFirstName = first_name
-        self.mLastName = last_name
-        self.mPitchFxId = int(id)
-        self.mTeamAbbrev = str(team)
-        self.mTotalPoints = 0
+class Pitcher(Player):
+    def __init__(self,first_name,last_name,id,team,pitching_hand):
+        super(Pitcher,self).__init__(first_name,last_name,id,team,pitching_hand)
         
     # Mine the mlb.com boxscore XML file for the actual results of the game
     # @param    game_id: The unique ID for the MLB game
@@ -59,14 +52,12 @@ class Pitcher(object):
         seasonStatNode = soup.find("season")
         if seasonStatNode is not None:
             InningsString = seasonStatNode.get("ip")
-            partialOuts = int(str(InningsString).split(".")[1])
-            assert partialOuts >= 0 and partialOuts < 3
-            seasonAndGameInnings = int(str(InningsString).split(".")[0]) + float(partialOuts)/3
-            self.mSeasonOuts = 3*int(str(InningsString).split(".")[0]) + partialOuts - self.mGameOuts
+            self.mSeasonOuts = inning_str_to_outs(InningsString) - self.mGameOuts
             self.mSeasonSo = int(seasonStatNode.get("so")) - self.mGameSo
             self.mSeasonW = int(seasonStatNode.get("w"))
             self.mSeasonL = int(seasonStatNode.get("l"))
-            self.mSeasonEr = round(float(seasonStatNode.get("era"))*seasonAndGameInnings/9) - self.mGameEr
+            seasonAndGameInnings = inning_str_to_float(InningsString)
+            self.mSeasonEr = era_to_er(seasonStatNode.get("era"), seasonAndGameInnings) - self.mGameEr
             self.mSeasonH = int(seasonStatNode.get("h")) - self.mGameH
             self.mSeasonBb = int(seasonStatNode.get("bb")) - self.mGameBb
             self.mSeasonHr = int(seasonStatNode.get("hr")) - self.mGameHr
@@ -77,14 +68,12 @@ class Pitcher(object):
         careerStatNode = soup.find("career")
         if careerStatNode is not None:
             InningsString = careerStatNode.get("ip")
-            partialOuts = int(str(InningsString).split(".")[1])
-            assert partialOuts >= 0 and partialOuts < 3
-            careerAndGameInnings = int(str(InningsString).split(".")[0]) + float(partialOuts)/3
-            self.mCareerOuts = 3*int(str(InningsString).split(".")[0]) + partialOuts - self.mGameOuts
+            self.mCareerOuts = inning_str_to_outs(InningsString) - self.mGameOuts
             self.mCareerSo = int(careerStatNode.get("so")) - self.mGameSo
             self.mCareerW = int(careerStatNode.get("w"))
             self.mCareerL = int(careerStatNode.get("l"))
-            self.mCareerEr = round(float(careerStatNode.get("era"))*careerAndGameInnings/9) - self.mGameEr
+            careerAndGameInnings = inning_str_to_float(InningsString)
+            self.mCareerEr = era_to_er(careerStatNode.get("era"), careerAndGameInnings) - self.mGameEr
             self.mCareerH = int(careerStatNode.get("h")) - self.mGameH
             self.mCareerBb = int(careerStatNode.get("bb")) - self.mGameBb
             self.mCareerHr = int(careerStatNode.get("hr")) - self.mGameHr
@@ -92,31 +81,54 @@ class Pitcher(object):
     # Mine the mlb.com batter XML file and set the vs members
     # @param    soup: The BeautifulSoup XML object for the batter XML file
     def set_vs_stats(self,soup):
+        # Versus this team
         vsStatNode = soup.find("team")
         if vsStatNode is not None:
             InningsString = vsStatNode.get("ip")
-            partialOuts = int(str(InningsString).split(".")[1])
-            assert partialOuts >= 0 and partialOuts < 3
-            vsAndGameInnings = int(str(InningsString).split(".")[0]) + float(partialOuts)/3
-            self.mVsOuts = 3*int(str(InningsString).split(".")[0]) + partialOuts - self.mGameOuts
+            self.mVsOuts = inning_str_to_outs(InningsString) - self.mGameOuts
             self.mVsSo = int(vsStatNode.get("so")) - self.mGameSo
-            self.mVsEr = round(float(vsStatNode.get("era"))*vsAndGameInnings)/9 - self.mGameEr
+            vsAndGameInnings = inning_str_to_float(InningsString)
+            self.mVsEr = era_to_er(vsStatNode.get("era"), vsAndGameInnings) - self.mGameEr
             self.mVsH = int(vsStatNode.get("h")) - self.mGameH
             self.mVsBb = int(vsStatNode.get("bb")) - self.mGameBb
             self.mVsHr = int(vsStatNode.get("hr")) - self.mGameHr
             
+        # Versus left handed hitters
+        vsStatNode = soup.find("vs_lhb")
+        if vsStatNode is not None:
+            InningsString = vsStatNode.get("ip")
+            self.mVsLhbOuts = inning_str_to_outs(InningsString) - self.mGameOuts
+            self.mVsLhbSo = float(vsStatNode.get("so"))
+            vsAndGameInnings = inning_str_to_float(InningsString)
+            self.mVsLhbEr = era_to_er(vsStatNode.get("era"), vsAndGameInnings) - self.mGameEr
+            self.mVsLhbAb = float(vsStatNode.get("ab"))
+            self.mVsLhbH = float(vsStatNode.get("h"))
+            self.mVsLhbBb = float(vsStatNode.get("bb"))
+            self.mVsLhbHr = float(vsStatNode.get("hr"))
+            
+        # Versus right handed hitters
+        vsStatNode = soup.find("vs_rhb")
+        if vsStatNode is not None:
+            InningsString = vsStatNode.get("ip")
+            self.mVsRhbOuts = inning_str_to_outs(InningsString) - self.mGameOuts
+            self.mVsRhbSo = float(vsStatNode.get("so"))
+            vsAndGameInnings = inning_str_to_float(InningsString)
+            self.mVsRhbEr = era_to_er(vsStatNode.get("era"), vsAndGameInnings) - self.mGameEr
+            self.mVsRhbAb = float(vsStatNode.get("ab"))
+            self.mVsRhbH = float(vsStatNode.get("h"))
+            self.mVsRhbBb = float(vsStatNode.get("bb"))
+            self.mVsRhbHr = float(vsStatNode.get("hr"))
+        
     # Mine the mlb.com batter XML file and set the month members
     # @param    soup: The BeautifulSoup XML object for the batter XML file  
     def set_month_stats(self,soup):
         vsStatNode = soup.find("month")
         if vsStatNode is not None:
             InningsString = vsStatNode.get("ip")
-            partialOuts = int(str(InningsString).split(".")[1])
-            assert partialOuts >= 0 and partialOuts < 3
-            vsAndGameInnings = int(str(InningsString).split(".")[0]) + float(partialOuts)/3
-            self.mMonthOuts = 3*int(str(InningsString).split(".")[0]) + partialOuts - self.mGameOuts
+            self.mMonthOuts = inning_str_to_outs(InningsString) - self.mGameOuts
             self.mMonthSo = int(vsStatNode.get("so")) - self.mGameSo
-            self.mMonthEr = round(float(vsStatNode.get("era"))*vsAndGameInnings/9) - self.mGameEr
+            vsAndMonthInnings = inning_str_to_float(InningsString)
+            self.mMonthEr = era_to_er(vsStatNode.get("era"), vsAndMonthInnings) - self.mGameEr
             self.mMonthH = int(vsStatNode.get("h")) - self.mGameH
             self.mMonthBb = int(vsStatNode.get("bb")) - self.mGameBb
             self.mMonthHr = int(vsStatNode.get("hr")) - self.mGameHr

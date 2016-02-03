@@ -18,7 +18,7 @@ class HitterEntry(Base):
         self.PitchFxId = hitter.mPitchFxId
         self.LastGameDate = hitter.mGameDate
         self.Team = hitter.mTeamAbbrev
-        self.BattingHand = hitter.mBattingHand
+        self.BattingHand = hitter.mPlayingHand
         
     def __repr__(self):
         return "<User(name='%s %s')>" % (

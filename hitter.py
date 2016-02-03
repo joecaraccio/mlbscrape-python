@@ -1,19 +1,12 @@
-
-def game_id_to_date(game_id):
-    gameId = str(game_id)
-    date_fields = gameId.split("/")
-    return str(date_fields[0] + "/" + date_fields[1] + "/" + date_fields[2])
+from player import Player
+from player import game_id_to_date
+import player
 
 # A class housing stats for hitters
-class Hitter(object):
+class Hitter(Player):
     def __init__(self,first_name,last_name,id,team,batting_order,batting_hand):
-        self.mFirstName = first_name
-        self.mLastName = last_name
-        self.mPitchFxId = int(id)
-        self.mTeamAbbrev = str(team)
+        super(Hitter,self).__init__(first_name,last_name,id,team,batting_hand)
         self.mBattingOrder = int(batting_order)
-        self.mTotalPoints = 0
-        self.mBattingHand = batting_hand
         
     # Mine the mlb.com boxscore XML file for the actual results of the game
     # @param    game_id: The unique ID for the MLB game

@@ -3,12 +3,12 @@
 
 from bs4 import BeautifulSoup
 import urllib
-from Hitter import Hitter
-from HitterGameEntry import HitterGameEntry
-from HitterEntry import HitterEntry
-from Pitcher import Pitcher
-from PitcherGameEntry import PitcherGameEntry
-from PitcherEntry import PitcherEntry
+from hitter import Hitter
+from hitter_game_entry import HitterGameEntry
+from hitter_entry import HitterEntry
+from pitcher import Pitcher
+from pitcher_game_entry import PitcherGameEntry
+from pitcher_entry import PitcherEntry
 import sqlalchemy
 from datetime import date
 
@@ -115,7 +115,7 @@ class StatMiner(object):
                         player = startingPitcherSoup.find("player")
                         
                         startingPitcher = Pitcher(player.get("first_name"),player.get("last_name"),player.get("id"),
-                                            player.get("team"))
+                                            player.get("team"),player.get("throws"))
                         startingPitcher.set_game_results(gameId,startingPitcherNode)
                         startingPitcher.set_season_stats(startingPitcherSoup)
                         startingPitcher.set_career_stats(startingPitcherSoup)

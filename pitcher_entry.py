@@ -1,24 +1,29 @@
 from mlb_database import Base
 from sqlalchemy import Column, Integer, String, Float
 
-# Entry for the Hitter database which has a link to the last game mined
+
 class PitcherEntry(Base):
+    """ Class for Pitcher entries into an SQL database
+    """
     __tablename__ = 'pitcher_entries'
     
-    PitchFxId = Column(Integer, primary_key=True)
-    LastGameDate = Column(String)
-    FirstName = Column(String)
-    LastName = Column(String)
-    Team = Column(String)
-    PitchingHand = Column(String)
+    pitch_fx_id = Column(Integer, primary_key=True)
+    last_game_date = Column(String)
+    first_name = Column(String)
+    last_name = Column(String)
+    team = Column(String)
+    pitching_hand = Column(String)
     
-    def __init__(self,pitcher):
-        self.FirstName = pitcher.mFirstName
-        self.LastName = pitcher.mLastName
-        self.PitchFxId = pitcher.mPitchFxId
-        self.LastGameDate = pitcher.mGameDate
-        self.Team = pitcher.mTeamAbbrev
-        self.PitchingHand = pitcher.mPlayingHand
+    def __init__(self, pitcher):
+        """ Constructor
+        :param pitcher: Pitcher object
+        """
+        self.first_name = pitcher.first_name
+        self.last_name = pitcher.last_name
+        self.pitch_fx_id = pitcher.pitch_fx_id
+        self.last_game_date = pitcher.game_date
+        self.team = pitcher.team
+        self.pitching_hand = pitcher.playing_hand
         
     def __repr__(self):
         return "<User(name='%s %s')>" % (

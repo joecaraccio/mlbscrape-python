@@ -2,178 +2,205 @@
 from mlb_database import Base
 from sqlalchemy import Column, Integer, String, Float
 
-# Baseball player class
 class HitterGameEntry(Base):
+    """ Class for SQL entry for a single game played by a hitter
+    """
     __tablename__ = 'hitter_game_entries'
     
-    PitchFxId = Column(Integer, primary_key=True)
-    GameId = Column(String,primary_key=True)
-    DraftKingsPoints = Column(Float)
-    FirstName = Column(String)
-    LastName = Column(String)
-    Team = Column(String)
-    BattingOrder = Column(Integer)
-    GameDate = Column(String)
+    pitch_fx_id = Column(String, primary_key=True)
+    game_id = Column(String, primary_key=True)
+    draft_kings_points = Column(Float)
+    first_name = Column(String)
+    last_name = Column(String)
+    team = Column(String)
+    batting_order = Column(Integer)
+    game_date = Column(String)
     
     # Game stats
-    SeasonAb = Column(Integer)
-    GameH = Column(Integer)
-    GameBb = Column(Integer)
-    GameSo = Column(Integer)
-    GameR = Column(Integer)
-    GameSb = Column(Integer)
-    GameCs = Column(Integer)
-    GameHr = Column(Integer)
-    GameRbi = Column(Integer)
+    game_ab = Column(Integer)
+    game_h = Column(Integer)
+    game_bb = Column(Integer)
+    game_so = Column(Integer)
+    game_r = Column(Integer)
+    game_sb = Column(Integer)
+    game_cs = Column(Integer)
+    game_hr = Column(Integer)
+    game_rbi = Column(Integer)
     
     # Season stats
-    SeasonAb = Column(Integer)
-    SeasonH = Column(Integer)
-    SeasonBb = Column(Integer)
-    SeasonSo = Column(Integer)
-    SeasonR = Column(Integer)
-    SeasonSb = Column(Integer)
-    SeasonCs = Column(Integer)
-    SeasonHr = Column(Integer)
-    SeasonRbi = Column(Integer)
+    season_ab = Column(Integer)
+    season_h = Column(Integer)
+    season_bb = Column(Integer)
+    season_so = Column(Integer)
+    season_r = Column(Integer)
+    season_sb = Column(Integer)
+    season_cs = Column(Integer)
+    season_hr = Column(Integer)
+    season_rbi = Column(Integer)
     
     # Career stats
-    CareerAb = Column(Integer)
-    CareerH = Column(Integer)
-    CareerBb = Column(Integer)
-    CareerSo = Column(Integer)
-    CareerR = Column(Integer)
-    CareerSb = Column(Integer)
-    CareerCs = Column(Integer)
-    CareerHr = Column(Integer)
-    CareerRbi = Column(Integer)
+    career_ab = Column(Integer)
+    career_h = Column(Integer)
+    career_bb = Column(Integer)
+    career_so = Column(Integer)
+    career_r = Column(Integer)
+    career_sb = Column(Integer)
+    career_cs = Column(Integer)
+    career_hr = Column(Integer)
+    career_rbi = Column(Integer)
     
     # Versus stats
-    VsAb = Column(Integer)
-    VsH = Column(Integer)
-    VsBb = Column(Integer)
-    VsSo = Column(Integer)
-    VsR = Column(Integer)
-    VsSb = Column(Integer)
-    VsCs = Column(Integer)
-    VsHr = Column(Integer)
-    VsRbi = Column(Integer)
-    VsLhpAb = Column(Integer)
-    VsLhpH = Column(Integer)
-    VsLhpBb = Column(Integer)
-    VsLhpSo = Column(Integer)
-    VsLhpR = Column(Integer)
-    VsLhpSb = Column(Integer)
-    VsLhpCs = Column(Integer)
-    VsLhpHr = Column(Integer)
-    VsLhpRbi = Column(Integer)
-    VsRhpAb = Column(Integer)
-    VsRhpH = Column(Integer)
-    VsRhpBb = Column(Integer)
-    VsRhpSo = Column(Integer)
-    VsRhpR = Column(Integer)
-    VsRhpSb = Column(Integer)
-    VsRhpCs = Column(Integer)
-    VsRhpHr = Column(Integer)
-    VsRhpRbi = Column(Integer)
+    vs_ab = Column(Integer)
+    vs_h = Column(Integer)
+    vs_bb = Column(Integer)
+    vs_so = Column(Integer)
+    vs_r = Column(Integer)
+    vs_sb = Column(Integer)
+    vs_cs = Column(Integer)
+    vs_hr = Column(Integer)
+    vs_rbi = Column(Integer)
+    vs_lhp_ab = Column(Integer)
+    vs_lhp_h = Column(Integer)
+    vs_lhp_bb = Column(Integer)
+    vs_lhp_so = Column(Integer)
+    vs_lhp_r = Column(Integer)
+    vs_lhp_sb = Column(Integer)
+    vs_lhp_cs = Column(Integer)
+    vs_lhp_hr = Column(Integer)
+    vs_lhp_rbi = Column(Integer)
+    vs_rhp_ab = Column(Integer)
+    vs_rhp_h = Column(Integer)
+    vs_rhp_bb = Column(Integer)
+    vs_rhp_so = Column(Integer)
+    vs_rhp_r = Column(Integer)
+    vs_rhp_sb = Column(Integer)
+    vs_rhp_cs = Column(Integer)
+    vs_rhp_hr = Column(Integer)
+    vs_rhp_rbi = Column(Integer)
     
     # Month stats
-    MonthAb = Column(Integer)
-    MonthH = Column(Integer)
-    MonthBb = Column(Integer)
-    MonthSo = Column(Integer)
-    MonthR = Column(Integer)
-    MonthSb = Column(Integer)
-    MonthCs = Column(Integer)
-    MonthHr = Column(Integer)
-    MonthRbi = Column(Integer)
+    month_ab = Column(Integer)
+    month_h = Column(Integer)
+    month_bb = Column(Integer)
+    month_so = Column(Integer)
+    month_r = Column(Integer)
+    month_sb = Column(Integer)
+    month_cs = Column(Integer)
+    month_hr = Column(Integer)
+    month_rbi = Column(Integer)
     
-    def __init__(self,hitter):
-        self.FirstName = hitter.mFirstName
-        self.LastName = hitter.mLastName
-        self.PitchFxId = hitter.mPitchFxId
-        self.GameId = hitter.mGameId
-        self.Team = hitter.mTeamAbbrev
-        self.DraftKingsPoints = hitter.mTotalPoints
-        self.BattingOrder = hitter.mBattingOrder
-        self.GameDate = hitter.mGameDate
+    def __init__(self, hitter):
+        """ Constructor
+        :param hitter: Hitter object to copy the fields from
+        """
+        self.first_name = hitter.first_name
+        self.last_name = hitter.last_name
+        self.pitch_fx_id = hitter.pitch_fx_id
+        self.game_id = hitter.game_id
+        self.team = hitter.team
+        self.draft_kings_points = hitter.draftkings_points
+        self.batting_order = hitter.batting_order
+        self.game_date = hitter.game_date
         
         # Game stats
-        self.GameAb = hitter.mGameAb
-        self.GameH = hitter.mGameH
-        self.GameBb = hitter.mGameBb
-        self.GameSo = hitter.mGameSo
-        self.GameR = hitter.mGameR
-        self.GameSb = hitter.mGameSb
-        self.GameCs = hitter.mGameCs
-        self.GameHr = hitter.mGameHr
-        self.GameRbi = hitter.mGameRbi
+        self.game_ab = hitter.game_ab
+        self.game_h = hitter.game_h
+        self.game_bb = hitter.game_bb
+        self.game_so = hitter.game_so
+        self.game_r = hitter.game_r
+        self.game_sb = hitter.game_sb
+        self.game_cs = hitter.game_cs
+        self.game_hr = hitter.game_hr
+        self.game_rbi = hitter.game_rbi
         
         # Season stats
-        self.SeasonAb = hitter.mSeasonAb
-        self.SeasonH = hitter.mSeasonH
-        self.SeasonBb = hitter.mSeasonBb
-        self.SeasonSo = hitter.mSeasonSo
-        self.SeasonR = hitter.mSeasonR
-        self.SeasonSb = hitter.mSeasonSb
-        self.SeasonCs = hitter.mSeasonCs
-        self.SeasonHr = hitter.mSeasonHr
-        self.SeasonRbi = hitter.mSeasonRbi
+        self.season_ab = hitter.season_ab
+        self.season_h = hitter.season_h
+        self.season_bb = hitter.season_bb
+        self.season_so = hitter.season_so
+        self.season_r = hitter.season_r
+        self.season_sb = hitter.season_sb
+        self.season_cs = hitter.season_cs
+        self.season_hr = hitter.season_hr
+        self.season_rbi = hitter.season_rbi
         
         # Career stats
-        self.CareerAb = hitter.mCareerAb
-        self.CareerH = hitter.mCareerH
-        self.CareerBb = hitter.mCareerBb
-        self.CareerSo = hitter.mCareerSo
-        self.CareerR = hitter.mCareerR
-        self.CareerSb = hitter.mCareerSb
-        self.CareerCs = hitter.mCareerCs
-        self.CareerHr = hitter.mCareerHr
-        self.CareerRbi = hitter.mCareerRbi
+        self.career_ab = hitter.career_ab
+        self.career_h = hitter.career_h
+        self.career_bb = hitter.career_bb
+        self.career_so = hitter.career_so
+        self.career_r = hitter.career_r
+        self.career_sb = hitter.career_sb
+        self.career_cs = hitter.career_cs
+        self.career_hr = hitter.career_hr
+        self.career_rbi = hitter.career_rbi
         
         # Versus stats
-        self.VsAb = hitter.mVsAb
-        self.VsH = hitter.mVsH
-        self.VsBb = hitter.mVsBb
-        self.VsSo = hitter.mVsSo
-        self.VsR = hitter.mVsR
-        self.VsSb = hitter.mVsSb
-        self.VsCs = hitter.mVsCs
-        self.VsHr = hitter.mVsHr
-        self.VsRbi = hitter.mVsRbi
-        self.VsLhpAb = hitter.mVsLhpAb
-        self.VsLhpH = hitter.mVsLhpH
-        self.VsLhpBb = hitter.mVsLhpBb
-        self.VsLhpSo = hitter.mVsLhpSo
-        self.VsLhpR = hitter.mVsLhpR
-        self.VsLhpSb = hitter.mVsLhpSb
-        self.VsLhpCs = hitter.mVsLhpCs
-        self.VsLhpHr = hitter.mVsLhpHr
-        self.VsLhpRbi = hitter.mVsLhpRbi
-        self.VsRhpAb = hitter.mVsRhpAb
-        self.VsRhpH = hitter.mVsRhpH
-        self.VsRhpBb = hitter.mVsRhpBb
-        self.VsRhpSo = hitter.mVsRhpSo
-        self.VsRhpR = hitter.mVsRhpR
-        self.VsRhpSb = hitter.mVsRhpSb
-        self.VsRhpCs = hitter.mVsRhpCs
-        self.VsRhpHr = hitter.mVsRhpHr
-        self.VsRhpRbi = hitter.mVsRhpRbi
+        self.vs_ab = hitter.vs_ab
+        self.vs_h = hitter.vs_h
+        self.vs_bb = hitter.vs_bb
+        self.vs_so = hitter.vs_so
+        self.vs_r = hitter.vs_r
+        self.vs_sb = hitter.vs_sb
+        self.vs_cs = hitter.vs_cs
+        self.vs_hr = hitter.vs_hr
+        self.vs_rbi = hitter.vs_rbi
+        self.vs_lhp_ab = hitter.vs_lhp_ab
+        self.vs_lhp_h = hitter.vs_lhp_h
+        self.vs_lhp_bb = hitter.vs_lhp_bb
+        self.vs_lhp_so = hitter.vs_lhp_so
+        self.vs_lhp_r = hitter.vs_lhp_r
+        self.vs_lhp_sb = hitter.vs_lhp_sb
+        self.vs_lhp_cs = hitter.vs_lhp_cs
+        self.vs_lhp_hr = hitter.vs_lhp_hr
+        self.vs_lhp_rbi = hitter.vs_lhp_rbi
+        self.vs_rhp_ab = hitter.vs_rhp_ab
+        self.vs_rhp_h = hitter.vs_rhp_h
+        self.vs_rhp_bb = hitter.vs_rhp_bb
+        self.vs_rhp_so = hitter.vs_rhp_so
+        self.vs_rhp_r = hitter.vs_rhp_r
+        self.vs_rhp_sb = hitter.vs_rhp_sb
+        self.vs_rhp_cs = hitter.vs_rhp_cs
+        self.vs_rhp_hr = hitter.vs_rhp_hr
+        self.vs_rhp_rbi = hitter.vs_rhp_rbi
         
         # Month stats
-        self.MonthAb = hitter.mMonthAb
-        self.MonthH = hitter.mMonthH
-        self.MonthBb = hitter.mMonthBb
-        self.MonthSo = hitter.mMonthSo
-        self.MonthR = hitter.mMonthR
-        self.MonthSb = hitter.mMonthSb
-        self.MonthCs = hitter.mMonthCs
-        self.MonthHr = hitter.mMonthHr
-        self.MonthRbi = hitter.mMonthRbi
+        self.month_ab = hitter.month_ab
+        self.month_h = hitter.month_h
+        self.month_bb = hitter.month_bb
+        self.month_so = hitter.month_so
+        self.month_r = hitter.month_r
+        self.month_sb = hitter.month_sb
+        self.month_cs = hitter.month_cs
+        self.month_hr = hitter.month_hr
+        self.month_rbi = hitter.month_rbi
         
     def __repr__(self):
-        return "<User(name='%s %s')>" % (
-                                self.FirstName, self.LastName)
+        """
+        :return: string representation identifying the Hitter entry
+        """
+        return "<Hitter Game Entry(name='%s %s')>" % (
+                                self.first_name, self.last_name)
+
+    def to_input_vector(self):
+        """ Transfer the object into a vector of its numerical variables
+        :return: a list representation of the members of this class except the output
+         DraftKings points
+        """
+        # Get the attributes of this class
+        class_attributes = vars(self).items()
+        input_vector = list()
+        for attr in class_attributes:
+            try:
+                if type(attr[1]) == int or type(attr[1]) == float:
+                    if attr[0] != "draft_kings_points":
+                        input_vector.append(attr[1])
+            except IndexError:
+                print "Input tuple not correctly formatted."
+                return None
+            
+        return input_vector
+        
 
 
 

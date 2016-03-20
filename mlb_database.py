@@ -7,18 +7,22 @@ from sqlalchemy.orm import sessionmaker
 # Base instance for managing all the objects
 Base = declarative_base()
 
+
 class MlbDatabase(object):
-    
+    """ Class for managing SQL databases
+    """
+
     def __init__(self):
+        """ Constructor
+        Create/open a local database.
+        """
         # Create/open a local database
         engine = create_engine('sqlite:///mlb.db', echo=False)
-        
         Base.metadata.create_all(engine)
-
-        # Factory for new sessions
         self.sessionMaker = sessionmaker(bind=engine)
-        
-    
+
     def open_session(self):
-        # New session with the database
+        """ Open a session of the database
+        :return: a Session instance
+        """
         return self.sessionMaker()

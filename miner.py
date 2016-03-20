@@ -1,5 +1,4 @@
 
-# Class for mining past regular season data
 
 from bs4 import BeautifulSoup
 import urllib
@@ -12,192 +11,227 @@ from pitcher_entry import PitcherEntry
 import sqlalchemy
 from datetime import date
 
-# Convert a PitchFx date string to a date object
-# @param       date_string: a PitchFx date string
-# @return      date: the date object representing the string
-def str_to_date(date_string):
-    dateMembers = date_string.split("/")
-    dateObject = date(int(dateMembers[0]),int(dateMembers[1]),int(dateMembers[2]))
-    return dateObject
 
-# Take a URL and get the BeautifulSoup object
-# @param    url: the absolute URL string
-# @return    the BeautifulSoup object returned, return None if the object was not successfully created
-def url_to_soup(url):
-    try:
-        xml = urllib.urlopen(url)
-        if xml.code == 404:
-            print "Attempt to access invalid URL: " + xml.url
-            return None
-        return BeautifulSoup(xml)
-    except:
-        print "Unable to obtain season soup " + str(url)
-        return None
-    
-# Methods for obtaining static data for insertion into the Database
 class StatMiner(object):
-    mPitchFxBaseUrl = "http://mlb.mlb.com/gdcross/components/game/mlb/"
+    """ Class for mining PitchFX data and committing it to a database
+    """
+    PITCH_FX_BASE_URL = "http://mlb.mlb.com/gdcross/components/game/mlb/"
     
-    def __init__(self,database_session):
-        self._mSession = database_session
-    
-    # Mine an entire season
-    # @param    season: 4-digit season year
-    def mine_season(self,season):
-        yearUrl = self.mPitchFxBaseUrl + "year_" + season + "/"
-        yearSoup = url_to_soup(yearUrl)
-        if yearSoup is not None:
-            monthNodes = yearSoup.find_all("a")
+    def __init__(self, database_session):
+        """ Constructor
+        :param database_session: an SQLAlchemy database session
+        """
+        self._session = database_session
+
+    @staticmethod
+    def str_to_date(date_string):
+        """ Convert a PitchFx date string to a Date object
+        :param date_string: a PitchFx date string
+        :return the Date object representing the string
+        """
+        date_members = date_string.split("/")
+        date_object = date(int(date_members[0]), int(date_members[1]), int(date_members[2]))
+        return date_object
+
+    @staticmethod
+    def get_soup_from_url(url):
+        for i in range(3):
+            soup = StatMiner.url_to_soup(url)
+            if soup is not None:
+                return soup
+            else:
+                print "Trying to obtain soup again..."
+
+        print "Exhausted all attempts to get the soup. Check your internet connection."
+        return None
+
+    @staticmethod
+    def url_to_soup(url):
+        """ Take a URL and get the BeautifulSoup object
+        :param url: the absolute URL string
+        :return the BeautifulSoup object returned, return None if the object was not successfully created
+        """
+        try:
+            xml = urllib.urlopen(url)
+            if xml.code == 404:
+                print "Attempt to access invalid URL: " + xml.url
+                return None
+            return BeautifulSoup(xml)
+        except:
+            print "Unable to obtain season soup " + str(url)
+            return None
+
+    def mine_season(self, season):
+        """ Mine an entire MLB season
+        :param season: 4-digit season year
+        """
+        year_url = self.PITCH_FX_BASE_URL + "year_" + season + "/"
+        year_soup = StatMiner.get_soup_from_url(year_url)
+        if year_soup is not None:
+            month_nodes = year_soup.find_all("a")
             # Keep only URLs with 
-            for monthNode in monthNodes:
-                if "month" in monthNode.get("href"):
-                    self.mine_month(yearUrl + monthNode.get("href"))
-                
-    # Mine a single month
-    # @param    month_url: an absolute URL for the month of interest
-    def mine_month(self,month_url):
-        monthSoup = url_to_soup(month_url)
-        if monthSoup is not None:
-            dayNodes = monthSoup.find_all("a")
-            for dayNode in dayNodes:
-                if "day" in dayNode.get("href"):
-                    self.mine_day(month_url + dayNode.get("href"))    
-                
-    # Mine a single day
-    # @param    day_url: an absolute URL for the day of interest
-    def mine_day(self,day_url):
-        daySoup = url_to_soup(day_url)
-        if daySoup is not None:
-            gameNodes = daySoup.find_all("a")     
-            for gameNode in gameNodes:
-                if "gid" in gameNode.get("href"):
-                    self.mine_game(day_url + gameNode.get("href"))
-                
-    # Mine a single game and commit it to the database
-    # @param    game_url: an absolute URL for the game of interest
-    def mine_game(self,game_url):
-        gameTypeTestSoup = url_to_soup(game_url + "game.xml")
-        if gameTypeTestSoup is not None:
-            gameNode = gameTypeTestSoup.find("game")
+            for month_node in month_nodes:
+                if "month" in month_node.get("href"):
+                    if 4 <= int(month_node.get("href").replace("/", "").split("_")[1]) <= 10:
+                        self.mine_month(year_url + month_node.get("href"))
+
+    def mine_month(self, month_url):
+        """ Mine a single month
+        :param month_url: an absolute URL for the month of interest
+        """
+        month_soup = StatMiner.get_soup_from_url(month_url)
+        if month_soup is not None:
+            day_nodes = month_soup.find_all("a")
+            for day_node in day_nodes:
+                if "day" in day_node.get("href"):
+                    self.mine_day(month_url + day_node.get("href"))
+
+    def mine_day(self, day_url):
+        """ Mine a single day
+        :param day_url: an absolute URL for the day of interest
+        """
+        day_soup = StatMiner.get_soup_from_url(day_url)
+        if day_soup is not None:
+            game_nodes = day_soup.find_all("a")
+            for game_node in game_nodes:
+                if "gid" in game_node.get("href"):
+                    self.mine_game(day_url + game_node.get("href"))
+
+    def mine_game(self, game_url):
+        """ Mine a single game and commit it to the database
+        :param game_url: an absolute URL for the game of interest
+        """
+        game_type_test_soup = StatMiner.get_soup_from_url(game_url + "game.xml")
+        if game_type_test_soup is not None:
+            game_node = game_type_test_soup.find("game")
             # Check if the game is a regular season game
             # TODO: add postseason games?
-            if gameNode.get("type") == "R":
-                playersSoup = url_to_soup(game_url + "players.xml")
-                boxscoreSoup = url_to_soup(game_url + "boxscore.xml")
-                gameId = boxscoreSoup.find("boxscore").get("game_id")
-                if playersSoup is not None and boxscoreSoup is not None:
-                    print "Mining: " + str(gameId)
-                    players = playersSoup.find_all("player")
+            if game_node.get("type") == "R":
+                players_soup = StatMiner.get_soup_from_url(game_url + "players.xml")
+                boxscore_soup = StatMiner.get_soup_from_url(game_url + "boxscore.xml")
+                game_id = boxscore_soup.find("boxscore").get("game_id")
+                if players_soup is not None and boxscore_soup is not None:
+                    print "Mining: " + str(game_id)
+                    players = players_soup.find_all("player")
                     # Hitters
                     for player in players:
                         if player.has_attr("bat_order"):
-                            hitter = Hitter(player.get("first"),player.get("last"),player.get("id"),
-                                            player.get("team_abbrev"),player.get("bat_order"),player.get("bats"))
-                            hitter.set_game_results(gameId,boxscoreSoup.find("batter", {"id" : player.get("id")}))
+                            hitter = Hitter(player.get("first"), player.get("last"), player.get("id"),
+                                            player.get("team_abbrev"), player.get("bat_order"), player.get("bats"))
+                            hitter.set_game_results(game_id, boxscore_soup.find("batter", {"id": player.get("id")}))
         
                             # Mine the pregame stats
-                            pregameStatsSoup = url_to_soup(game_url + "batters/" + player.get("id") + ".xml")
-                            hitter.set_season_stats(pregameStatsSoup)
-                            hitter.set_career_stats(pregameStatsSoup)
-                            hitter.set_vs_stats(pregameStatsSoup)
-                            # TODO: explore some ways of mining different data for month stats
-                            hitter.set_month_stats(pregameStatsSoup) 
-                
-                            # Commit the results to the database
-                            self._commit_hitter(hitter)
+                            pregame_stats_soup = StatMiner.get_soup_from_url(game_url + "batters/" + player.get("id") + ".xml")
+                            try:
+                                hitter.set_season_stats(pregame_stats_soup)
+                                hitter.set_career_stats(pregame_stats_soup)
+                                hitter.set_vs_stats(pregame_stats_soup)
+                                # TODO: explore some ways of mining different data for month stats
+                                hitter.set_month_stats(pregame_stats_soup)
+                                # Commit the results to the database
+                                self._commit_hitter(hitter)
+                            except ValueError:
+                                print "The hitter's stats are not formatted correctly. Skipping " \
+                                  "hitter: " + hitter.first_name + " " + hitter.last_name
                             
                     # Starting pitchers
-                    pitchersSoup = boxscoreSoup.findAll("pitching")
-                    for pitcherNode in pitchersSoup:
+                    pitchers_soup = boxscore_soup.findAll("pitching")
+                    for pitcherNode in pitchers_soup:
                         # The starting pitcher will always just be the first entry
-                        startingPitcherNode = pitcherNode.find("pitcher")
-                        startingPitcherSoup = url_to_soup(game_url + "pitchers/" + startingPitcherNode.get("id") + ".xml")
-                        player = startingPitcherSoup.find("player")
+                        starting_pitcher_node = pitcherNode.find("pitcher")
+                        starting_pitcher_soup = StatMiner.get_soup_from_url(game_url + "pitchers/" + starting_pitcher_node.get("id") + ".xml")
+                        player = starting_pitcher_soup.find("player")
                         
-                        startingPitcher = Pitcher(player.get("first_name"),player.get("last_name"),player.get("id"),
-                                            player.get("team"),player.get("throws"))
-                        startingPitcher.set_game_results(gameId,startingPitcherNode)
-                        startingPitcher.set_season_stats(startingPitcherSoup)
-                        startingPitcher.set_career_stats(startingPitcherSoup)
-                        startingPitcher.set_vs_stats(startingPitcherSoup)
-                        startingPitcher.set_month_stats(startingPitcherSoup)
-                        
-                        self._commit_pitcher(startingPitcher)
+                        starting_pitcher = Pitcher(player.get("first_name"), player.get("last_name"), player.get("id"),
+                                                   player.get("team"), player.get("throws"))
+                        try:
+                            starting_pitcher.set_game_results(game_id, starting_pitcher_node)
+                            starting_pitcher.set_season_stats(starting_pitcher_soup)
+                            starting_pitcher.set_career_stats(starting_pitcher_soup)
+                            starting_pitcher.set_vs_stats(starting_pitcher_soup)
+                            starting_pitcher.set_month_stats(starting_pitcher_soup)
+                            self._commit_pitcher(starting_pitcher)
+                        except ValueError:
+                            print "The pitcher's stats are not formatted correctly. Skipping " \
+                                  "pitcher: " + starting_pitcher.first_name + " " + starting_pitcher.last_name
+                            return
                         
             else:
                 print "Game is not a regular season game."
-        
-    # Copy a Hitter object to a HitterGameEntry and HitterEntry object and commit to the database
-    # @param    hitter: Hitter object to copy
-    def _commit_hitter(self,hitter):
-        hitterGameEntry = HitterGameEntry(hitter)
-        hitterEntry = HitterEntry(hitter)
+
+    def _commit_hitter(self, hitter):
+        """ Copy a Hitter object to a HitterGameEntry and HitterEntry object and commit to the database
+        :param hitter: Hitter object to copy
+        """
+        hitter_game_entry = HitterGameEntry(hitter)
+        hitter_entry = HitterEntry(hitter)
         try:
             # Query the database for the HitterEntry object
-            dbQuery = self._mSession.query(HitterEntry).filter(HitterEntry.PitchFxId == hitter.mPitchFxId)
-            hitterEntryObject = dbQuery.first()
+            db_query = self._session.query(HitterEntry).filter(HitterEntry.pitch_fx_id == hitter.pitch_fx_id)
+            hitter_entry_object = db_query.first()
         except:
             print "Query for previous hitter entry failed."
             return
-        
+
         # Hitter object already exists in database
-        if hitterEntryObject is not None:
-            storedDate = str_to_date(hitterEntryObject.LastGameDate)
-            newDate = str_to_date(hitterEntry.LastGameDate)
-            if newDate > storedDate:
-                hitterEntryObject = hitterEntry
-                self._mSession.commit()
+        if hitter_entry_object is not None:
+            stored_date = StatMiner.str_to_date(hitter_entry_object.last_game_date)
+            new_date = StatMiner.str_to_date(hitter_entry.last_game_date)
+            if new_date > stored_date:
+                hitter_entry_object = hitter_entry
+                self._session.commit()
         # Hitter object doesn't exist yet in database
         else:
             try:
-                self._mSession.add(hitterEntry)
-                self._mSession.commit()
+                self._session.add(hitter_entry)
+                self._session.commit()
             except sqlalchemy.exc.IntegrityError:
-                print "Attempt to duplicate hitter entry: " + hitterGameEntry.LastName + ", " + hitterGameEntry.FirstName + " " + hitterGameEntry.GameId
-                self._mSession.rollback()
+                print "Attempt to duplicate hitter entry: " + hitter_game_entry.last_name + ", " + \
+                      hitter_game_entry.first_name + " " + hitter_game_entry.game_id
+                self._session.rollback()
         
         try:
-            self._mSession.add(hitterGameEntry)
-            self._mSession.commit()
+            self._session.add(hitter_game_entry)
+            self._session.commit()
         except sqlalchemy.exc.IntegrityError:
-            print "Attempt to duplicate hitter game entry: " + hitterGameEntry.LastName + ", " + hitterGameEntry.FirstName + " " + hitterGameEntry.GameId
-            self._mSession.rollback()
+            print "Attempt to duplicate hitter game entry: " + hitter_game_entry.last_name + ", " + \
+                  hitter_game_entry.first_name + " " + hitter_game_entry.game_id
+            self._session.rollback()
     
     # Copy a Pitcher object to a PitcherGameEntry and PitcherEntry object and commit to the database
     # @param    pitcher: Pitcher object to copy        
-    def _commit_pitcher(self,pitcher):
-        pitcherGameEntry = PitcherGameEntry(pitcher)
-        pitcherEntry = PitcherEntry(pitcher)
+    def _commit_pitcher(self, pitcher):
+        pitcher_game_entry = PitcherGameEntry(pitcher)
+        pitcher_entry = PitcherEntry(pitcher)
         try:
             # Query the database for the HitterEntry object
-            dbQuery = self._mSession.query(PitcherEntry).filter(PitcherEntry.PitchFxId == pitcher.mPitchFxId)
-            pitcherEntryObject = dbQuery.first()
+            db_query = self._session.query(PitcherEntry).filter(PitcherEntry.pitch_fx_id == pitcher.pitch_fx_id)
+            pitcher_entry_object = db_query.first()
         except:
             print "Query for previous pitcher entry failed."
             return
         
         # Hitter object already exists in database
-        if pitcherEntryObject is not None:
-            storedDate = str_to_date(pitcherEntryObject.LastGameDate)
-            newDate = str_to_date(pitcherEntry.LastGameDate)
-            if newDate > storedDate:
-                pitcherEntryObject = pitcherEntry
-                self._mSession.commit()
+        if pitcher_entry_object is not None:
+            stored_date = StatMiner.str_to_date(pitcher_entry_object.last_game_date)
+            new_date = StatMiner.str_to_date(pitcher_entry.last_game_date)
+            if new_date > stored_date:
+                pitcher_entry_object = pitcher_entry
+                self._session.commit()
         # Hitter object doesn't exist yet in database
         else:
             try:
-                self._mSession.add(pitcherEntry)
-                self._mSession.commit()
+                self._session.add(pitcher_entry)
+                self._session.commit()
             except sqlalchemy.exc.IntegrityError:
-                print "Attempt to duplicate pitcher entry: " + pitcherGameEntry.LastName + ", " + pitcherGameEntry.FirstName + " " + pitcherGameEntry.GameId
-                self._mSession.rollback()
+                print "Attempt to duplicate pitcher entry: " + pitcher_game_entry.last_name + ", " + \
+                      pitcher_game_entry.first_name + " " + pitcher_game_entry.game_id
+                self._session.rollback()
         
         try:
-            self._mSession.add(pitcherGameEntry)
-            self._mSession.commit()
+            self._session.add(pitcher_game_entry)
+            self._session.commit()
         except sqlalchemy.exc.IntegrityError:
-            print "Attempt to duplicate pitcher game entry: " + pitcherGameEntry.LastName + ", " + pitcherGameEntry.FirstName + " " + pitcherGameEntry.GameId
-            self._mSession.rollback()
-                 
-            
-            
+            print "Attempt to duplicate pitcher game entry: " + pitcher_game_entry.last_name + ", " + \
+                  pitcher_game_entry.first_name + " " + pitcher_game_entry.game_id
+            self._session.rollback()

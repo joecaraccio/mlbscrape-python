@@ -1,131 +1,142 @@
 from player import Player
-from player import game_id_to_date
-import player
 
-# A class housing stats for hitters
+
 class Hitter(Player):
-    def __init__(self,first_name,last_name,id,team,batting_order,batting_hand):
-        super(Hitter,self).__init__(first_name,last_name,id,team,batting_hand)
-        self.mBattingOrder = int(batting_order)
-        
-    # Mine the mlb.com boxscore XML file for the actual results of the game
-    # @param    game_id: The unique ID for the MLB game
-    # @param    soup_node: The BeautifulSoup XML node for the game results
-    def set_game_results(self,game_id,soup_node):
-        self.mGameId = str(game_id)
-        self.mGameDate = game_id_to_date(game_id)
-        self.mGameAb = float(soup_node.get("ab"))
-        self.mGameH = float(soup_node.get("h"))
-        self.mGame2b = float(soup_node.get("d"))
-        self.mGame3b = float(soup_node.get("t"))
-        self.mGameHbp = float(soup_node.get("hbp"))
-        self.mGameBb = float(soup_node.get("bb"))
-        self.mGameSo = float(soup_node.get("so"))
-        self.mGameR = float(soup_node.get("r"))
-        self.mGameSb = float(soup_node.get("sb"))
-        self.mGameCs = float(soup_node.get("cs"))
-        self.mGameHr = float(soup_node.get("hr"))
-        self.mGameRbi = float(soup_node.get("rbi"))
+    """ A class housing stats for hitters
+    :param first_name: First name of the Hitter
+    :param last_name: Last name of the Hitter
+    :param id: unique MLB ID
+    :param team: abbreviation of the Hitter's team
+    :param batting_order: the integer place in the batting order for this Hitter
+    :param batting_hand: left, right, or switch
+    """
+    def __init__(self, first_name, last_name, id, team, batting_order, batting_hand):
+        super(Hitter, self).__init__(first_name, last_name, id, team, batting_hand)
+        self.batting_order = int(batting_order)
+
+    def set_game_results(self, game_id, soup_node):
+        """ Mine the mlb.com boxscore XML file for the actual results of the game
+        :param game_id: The unique ID for the MLB game
+        :param soup_node: The BeautifulSoup XML node for the game results
+        """
+        self.game_id = str(game_id)
+        self.game_date = Player.game_id_to_date(game_id)
+        self.game_ab = float(soup_node.get("ab"))
+        self.game_h = float(soup_node.get("h"))
+        self.game_2b = float(soup_node.get("d"))
+        self.game_3b = float(soup_node.get("t"))
+        self.game_hbp = float(soup_node.get("hbp"))
+        self.game_bb = float(soup_node.get("bb"))
+        self.game_so = float(soup_node.get("so"))
+        self.game_r = float(soup_node.get("r"))
+        self.game_sb = float(soup_node.get("sb"))
+        self.game_cs = float(soup_node.get("cs"))
+        self.game_hr = float(soup_node.get("hr"))
+        self.game_rbi = float(soup_node.get("rbi"))
         self.calculate_draftkings_points()
-    
-    # Mine the mlb.com batter XML file and set the season members
-    # @param    soup: The BeautifulSoup XML object for the batter XML file
-    def set_season_stats(self,soup):
-        seasonStatNode = soup.find("season")
-        if seasonStatNode is not None:
-            self.mSeasonAb = float(seasonStatNode.get("ab")) - self.mGameAb
-            self.mSeasonH = float(seasonStatNode.get("h")) - self.mGameH
-            self.mSeasonBb = float(seasonStatNode.get("bb"))  - self.mGameBb
-            self.mSeasonSo = float(seasonStatNode.get("so"))  - self.mGameSo
-            self.mSeasonR = float(seasonStatNode.get("r")) - self.mGameR
-            self.mSeasonSb = float(seasonStatNode.get("sb")) - self.mGameSb
-            self.mSeasonCs = float(seasonStatNode.get("cs")) - self.mGameCs
-            self.mSeasonHr = float(seasonStatNode.get("hr")) - self.mGameHr
-            self.mSeasonRbi = float(seasonStatNode.get("rbi")) - self.mGameRbi
-        
-    # Mine the mlb.com batter XML file and set the career members
-    # @param    soup: The BeautifulSoup XML object for the batter XML file
-    def set_career_stats(self,soup):
-        careerStatNode = soup.find("career")
-        if careerStatNode is not None:
-            self.mCareerAb = float(careerStatNode.get("ab")) - self.mGameAb
-            self.mCareerH = float(careerStatNode.get("h")) - self.mGameH
-            self.mCareerBb = float(careerStatNode.get("bb")) - self.mGameBb
-            self.mCareerSo = float(careerStatNode.get("so")) - self.mGameSo
-            self.mCareerR = float(careerStatNode.get("r"))  - self.mGameR
-            self.mCareerSb = float(careerStatNode.get("sb")) - self.mGameSb
-            self.mCareerCs = float(careerStatNode.get("cs")) - self.mGameCs
-            self.mCareerHr = float(careerStatNode.get("hr")) - self.mGameHr
-            self.mCareerRbi = float(careerStatNode.get("rbi")) - self.mGameRbi
-      
-    # Mine the mlb.com batter XML file and set the vs members
-    # @param    soup: The BeautifulSoup XML object for the batter XML file
-    # Note: For some reason, these stats don't follow the convention of including the results from the game.  
-    def set_vs_stats(self,soup):
+
+    def set_season_stats(self, soup):
+        """ Mine the mlb.com batter XML file and set the season members
+        :param soup: The BeautifulSoup XML object for the batter XML file
+        """
+        season_stat_node = soup.find("season")
+        if season_stat_node is not None:
+            self.season_ab = float(season_stat_node.get("ab")) - self.game_ab
+            self.season_h = float(season_stat_node.get("h")) - self.game_h
+            self.season_bb = float(season_stat_node.get("bb")) - self.game_bb
+            self.season_so = float(season_stat_node.get("so")) - self.game_so
+            self.season_r = float(season_stat_node.get("r")) - self.game_r
+            self.season_sb = float(season_stat_node.get("sb")) - self.game_sb
+            self.season_cs = float(season_stat_node.get("cs")) - self.game_cs
+            self.season_hr = float(season_stat_node.get("hr")) - self.game_hr
+            self.season_rbi = float(season_stat_node.get("rbi")) - self.game_rbi
+
+    def set_career_stats(self, soup):
+        """ Mine the mlb.com batter XML file and set the career members
+        :param soup: The BeautifulSoup XML object for the batter XML file
+        """
+        career_stat_node = soup.find("career")
+        if career_stat_node is not None:
+            self.career_ab = float(career_stat_node.get("ab")) - self.game_ab
+            self.career_h = float(career_stat_node.get("h")) - self.game_h
+            self.career_bb = float(career_stat_node.get("bb")) - self.game_bb
+            self.career_so = float(career_stat_node.get("so")) - self.game_so
+            self.career_r = float(career_stat_node.get("r"))  - self.game_r
+            self.career_sb = float(career_stat_node.get("sb")) - self.game_sb
+            self.career_cs = float(career_stat_node.get("cs")) - self.game_cs
+            self.career_hr = float(career_stat_node.get("hr")) - self.game_hr
+            self.career_rbi = float(career_stat_node.get("rbi")) - self.game_rbi
+
+    def set_vs_stats(self, soup):
+        """ Mine the mlb.com batter XML file and set the vs members
+        :param soup: The BeautifulSoup XML object for the batter XML file
+        Note: For some reason, these stats don't follow the convention of including the results from the game.
+        """
         # Versus this pitcher
-        vsStatNode = soup.find("vs_p")
-        if vsStatNode is not None:
-            self.mVsAb = float(vsStatNode.get("ab"))
-            self.mVsH = float(vsStatNode.get("h"))
-            self.mVsBb = float(vsStatNode.get("bb"))
-            self.mVsSo = float(vsStatNode.get("so"))
-            self.mVsR = float(vsStatNode.get("r"))
-            self.mVsSb = float(vsStatNode.get("sb"))
-            self.mVsCs = float(vsStatNode.get("cs"))
-            self.mVsHr = float(vsStatNode.get("hr"))
-            self.mVsRbi = float(vsStatNode.get("rbi"))
+        vs_stat_node = soup.find("vs_p")
+        if vs_stat_node is not None:
+            self.vs_ab = float(vs_stat_node.get("ab"))
+            self.vs_h = float(vs_stat_node.get("h"))
+            self.vs_bb = float(vs_stat_node.get("bb"))
+            self.vs_so = float(vs_stat_node.get("so"))
+            self.vs_r = float(vs_stat_node.get("r"))
+            self.vs_sb = float(vs_stat_node.get("sb"))
+            self.vs_cs = float(vs_stat_node.get("cs"))
+            self.vs_hr = float(vs_stat_node.get("hr"))
+            self.vs_rbi = float(vs_stat_node.get("rbi"))
             
         # Versus left handed pitching
-        vsStatNode = soup.find("vs_lhp")
-        if vsStatNode is not None:
-            self.mVsLhpAb = float(vsStatNode.get("ab"))
-            self.mVsLhpH = float(vsStatNode.get("h"))
-            self.mVsLhpBb = float(vsStatNode.get("bb"))
-            self.mVsLhpSo = float(vsStatNode.get("so"))
-            self.mVsLhpR = float(vsStatNode.get("r"))
-            self.mVsLhpSb = float(vsStatNode.get("sb"))
-            self.mVsLhpCs = float(vsStatNode.get("cs"))
-            self.mVsLhpHr = float(vsStatNode.get("hr"))
-            self.mVsLhpRbi = float(vsStatNode.get("rbi"))
+        vs_stat_node = soup.find("vs_lhp")
+        if vs_stat_node is not None:
+            self.vs_lhp_ab = float(vs_stat_node.get("ab"))
+            self.vs_lhp_h = float(vs_stat_node.get("h"))
+            self.vs_lhp_bb = float(vs_stat_node.get("bb"))
+            self.vs_lhp_so = float(vs_stat_node.get("so"))
+            self.vs_lhp_r = float(vs_stat_node.get("r"))
+            self.vs_lhp_sb = float(vs_stat_node.get("sb"))
+            self.vs_lhp_cs = float(vs_stat_node.get("cs"))
+            self.vs_lhp_hr = float(vs_stat_node.get("hr"))
+            self.vs_lhp_rbi = float(vs_stat_node.get("rbi"))
             
         # Versus right handed pitching
-        vsStatNode = soup.find("vs_rhp")
-        if vsStatNode is not None:
-            self.mVsRhpAb = float(vsStatNode.get("ab"))
-            self.mVsRhpH = float(vsStatNode.get("h"))
-            self.mVsRhpBb = float(vsStatNode.get("bb"))
-            self.mVsRhpSo = float(vsStatNode.get("so"))
-            self.mVsRhpR = float(vsStatNode.get("r"))
-            self.mVsRhpSb = float(vsStatNode.get("sb"))
-            self.mVsRhpCs = float(vsStatNode.get("cs"))
-            self.mVsRhpHr = float(vsStatNode.get("hr"))
-            self.mVsRhpRbi = float(vsStatNode.get("rbi"))
-            
-    # Mine the mlb.com batter XML file and set the month members
-    # @param    soup: The BeautifulSoup XML object for the batter XML file  
-    def set_month_stats(self,soup):
-        vsStatNode = soup.find("month")
-        if vsStatNode is not None:
-            self.mMonthAb = float(vsStatNode.get("ab")) - self.mGameAb
-            self.mMonthH = float(vsStatNode.get("h")) - self.mGameH
-            self.mMonthBb = float(vsStatNode.get("bb")) - self.mGameBb
-            self.mMonthSo = float(vsStatNode.get("so")) - self.mGameSo
-            self.mMonthR = float(vsStatNode.get("r")) - self.mGameR
-            self.mMonthSb = float(vsStatNode.get("sb")) - self.mGameSb
-            self.mMonthCs = float(vsStatNode.get("cs")) - self.mGameCs
-            self.mMonthHr = float(vsStatNode.get("hr")) - self.mGameHr
-            self.mMonthRbi = float(vsStatNode.get("rbi")) - self.mGameRbi
-    
-    # Calculate the DraftKings points from the game results    
+        vs_stat_node = soup.find("vs_rhp")
+        if vs_stat_node is not None:
+            self.vs_rhp_ab = float(vs_stat_node.get("ab"))
+            self.vs_rhp_h = float(vs_stat_node.get("h"))
+            self.vs_rhp_bb = float(vs_stat_node.get("bb"))
+            self.vs_rhp_so = float(vs_stat_node.get("so"))
+            self.vs_rhp_r = float(vs_stat_node.get("r"))
+            self.vs_rhp_sb = float(vs_stat_node.get("sb"))
+            self.vs_rhp_cs = float(vs_stat_node.get("cs"))
+            self.vs_rhp_hr = float(vs_stat_node.get("hr"))
+            self.vs_rhp_rbi = float(vs_stat_node.get("rbi"))
+
+    def set_month_stats(self, soup):
+        """ # Mine the mlb.com batter XML file and set the month members
+        :param soup: The BeautifulSoup XML object for the batter XML file
+        """
+        vs_stat_node = soup.find("month")
+        if vs_stat_node is not None:
+            self.month_ab = float(vs_stat_node.get("ab")) - self.game_ab
+            self.month_h = float(vs_stat_node.get("h")) - self.game_h
+            self.month_bb = float(vs_stat_node.get("bb")) - self.game_bb
+            self.month_so = float(vs_stat_node.get("so")) - self.game_so
+            self.month_r = float(vs_stat_node.get("r")) - self.game_r
+            self.month_sb = float(vs_stat_node.get("sb")) - self.game_sb
+            self.month_cs = float(vs_stat_node.get("cs")) - self.game_cs
+            self.month_hr = float(vs_stat_node.get("hr")) - self.game_hr
+            self.month_rbi = float(vs_stat_node.get("rbi")) - self.game_rbi
+
     def calculate_draftkings_points(self):
-        self.mTotalPoints = 3 * (self.mGameH - self.mGame2b - self.mGame3b - self.mGameHr)
-        self.mTotalPoints += 5*self.mGame2b
-        self.mTotalPoints += 8*self.mGame3b
-        self.mTotalPoints += 10*self.mGameHr
-        self.mTotalPoints += 2*self.mGameRbi
-        self.mTotalPoints += 2*self.mGameR
-        self.mTotalPoints += 2*self.mGameBb
-        self.mTotalPoints += 2*self.mGameHbp
-        self.mTotalPoints += 5*self.mGameSb
-        self.mTotalPoints -= 2*self.mGameCs
-        
+        """ Calculate the DraftKings points from the game results
+        """
+        self.draftkings_points = 3 * (self.game_h - self.game_2b - self.game_3b - self.game_hr)
+        self.draftkings_points += 5*self.game_2b
+        self.draftkings_points += 8*self.game_3b
+        self.draftkings_points += 10*self.game_hr
+        self.draftkings_points += 2*self.game_rbi
+        self.draftkings_points += 2*self.game_r
+        self.draftkings_points += 2*self.game_bb
+        self.draftkings_points += 2*self.game_hbp
+        self.draftkings_points += 5*self.game_sb
+        self.draftkings_points -= 2*self.game_cs

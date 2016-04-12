@@ -2,7 +2,7 @@ from player import Player
 
 
 class Pitcher(Player):
-    def __init__(self, first_name, last_name, id, team, pitching_hand):
+    def __init__(self, first_name, last_name, pitchfx_id, baseball_reference_id, team, pitching_hand):
         """ A class housing stats for pitchers
         :param first_name: first name of the pitcher
         :param last_name: last name of the pitcher
@@ -10,7 +10,7 @@ class Pitcher(Player):
         :param team: team abbrevation of the pitcher
         :param pitching_hand: right or left handed pitcher
         """
-        super(Pitcher, self).__init__(first_name, last_name, id, team, pitching_hand)
+        super(Pitcher, self).__init__(first_name, last_name, pitchfx_id, baseball_reference_id, team, pitching_hand)
 
     def set_game_results(self, game_id, soup_node):
         """ # Mine the mlb.com boxscore XML file for the actual results of the game

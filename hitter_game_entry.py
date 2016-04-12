@@ -2,12 +2,14 @@
 from mlb_database import Base
 from sqlalchemy import Column, Integer, String, Float
 
+
 class HitterGameEntry(Base):
     """ Class for SQL entry for a single game played by a hitter
     """
     __tablename__ = 'hitter_game_entries'
     
     pitch_fx_id = Column(String, primary_key=True)
+    baseball_reference_id = Column(String, primary_key=True)
     game_id = Column(String, primary_key=True)
     draft_kings_points = Column(Float)
     first_name = Column(String)
@@ -54,29 +56,17 @@ class HitterGameEntry(Base):
     vs_h = Column(Integer)
     vs_bb = Column(Integer)
     vs_so = Column(Integer)
-    vs_r = Column(Integer)
-    vs_sb = Column(Integer)
-    vs_cs = Column(Integer)
     vs_hr = Column(Integer)
     vs_rbi = Column(Integer)
-    vs_lhp_ab = Column(Integer)
-    vs_lhp_h = Column(Integer)
-    vs_lhp_bb = Column(Integer)
-    vs_lhp_so = Column(Integer)
-    vs_lhp_r = Column(Integer)
-    vs_lhp_sb = Column(Integer)
-    vs_lhp_cs = Column(Integer)
-    vs_lhp_hr = Column(Integer)
-    vs_lhp_rbi = Column(Integer)
-    vs_rhp_ab = Column(Integer)
-    vs_rhp_h = Column(Integer)
-    vs_rhp_bb = Column(Integer)
-    vs_rhp_so = Column(Integer)
-    vs_rhp_r = Column(Integer)
-    vs_rhp_sb = Column(Integer)
-    vs_rhp_cs = Column(Integer)
-    vs_rhp_hr = Column(Integer)
-    vs_rhp_rbi = Column(Integer)
+    vs_hand_ab = Column(Integer)
+    vs_hand_h = Column(Integer)
+    vs_hand_bb = Column(Integer)
+    vs_hand_so = Column(Integer)
+    vs_hand_r = Column(Integer)
+    vs_hand_sb = Column(Integer)
+    vs_hand_cs = Column(Integer)
+    vs_hand_hr = Column(Integer)
+    vs_hand_rbi = Column(Integer)
     
     # Month stats
     month_ab = Column(Integer)
@@ -96,6 +86,7 @@ class HitterGameEntry(Base):
         self.first_name = hitter.first_name
         self.last_name = hitter.last_name
         self.pitch_fx_id = hitter.pitch_fx_id
+        self.baseball_reference_id = hitter.baseball_reference_id
         self.game_id = hitter.game_id
         self.team = hitter.team
         self.draft_kings_points = hitter.draftkings_points
@@ -140,29 +131,17 @@ class HitterGameEntry(Base):
         self.vs_h = hitter.vs_h
         self.vs_bb = hitter.vs_bb
         self.vs_so = hitter.vs_so
-        self.vs_r = hitter.vs_r
-        self.vs_sb = hitter.vs_sb
-        self.vs_cs = hitter.vs_cs
         self.vs_hr = hitter.vs_hr
         self.vs_rbi = hitter.vs_rbi
-        self.vs_lhp_ab = hitter.vs_lhp_ab
-        self.vs_lhp_h = hitter.vs_lhp_h
-        self.vs_lhp_bb = hitter.vs_lhp_bb
-        self.vs_lhp_so = hitter.vs_lhp_so
-        self.vs_lhp_r = hitter.vs_lhp_r
-        self.vs_lhp_sb = hitter.vs_lhp_sb
-        self.vs_lhp_cs = hitter.vs_lhp_cs
-        self.vs_lhp_hr = hitter.vs_lhp_hr
-        self.vs_lhp_rbi = hitter.vs_lhp_rbi
-        self.vs_rhp_ab = hitter.vs_rhp_ab
-        self.vs_rhp_h = hitter.vs_rhp_h
-        self.vs_rhp_bb = hitter.vs_rhp_bb
-        self.vs_rhp_so = hitter.vs_rhp_so
-        self.vs_rhp_r = hitter.vs_rhp_r
-        self.vs_rhp_sb = hitter.vs_rhp_sb
-        self.vs_rhp_cs = hitter.vs_rhp_cs
-        self.vs_rhp_hr = hitter.vs_rhp_hr
-        self.vs_rhp_rbi = hitter.vs_rhp_rbi
+        self.vs_hand_ab = hitter.vs_hand_ab
+        self.vs_hand_h = hitter.vs_hand_h
+        self.vs_hand_bb = hitter.vs_hand_bb
+        self.vs_hand_so = hitter.vs_hand_so
+        self.vs_hand_r = hitter.vs_hand_r
+        self.vs_hand_sb = hitter.vs_hand_sb
+        self.vs_hand_cs = hitter.vs_hand_cs
+        self.vs_hand_hr = hitter.vs_hand_hr
+        self.vs_hand_rbi = hitter.vs_hand_rbi
         
         # Month stats
         self.month_ab = hitter.month_ab

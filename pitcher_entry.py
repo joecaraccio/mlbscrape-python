@@ -8,6 +8,7 @@ class PitcherEntry(Base):
     __tablename__ = 'pitcher_entries'
     
     pitch_fx_id = Column(Integer, primary_key=True)
+    baseball_reference_id = Column(String, primary_key=True)
     last_game_date = Column(String)
     first_name = Column(String)
     last_name = Column(String)
@@ -21,12 +22,13 @@ class PitcherEntry(Base):
         self.first_name = pitcher.first_name
         self.last_name = pitcher.last_name
         self.pitch_fx_id = pitcher.pitch_fx_id
+        self.baseball_reference_id = pitcher.baseball_reference_id
         self.last_game_date = pitcher.game_date
         self.team = pitcher.team
         self.pitching_hand = pitcher.playing_hand
         
     def __repr__(self):
-        return "<User(name='%s %s')>" % (
+        return "<PitcherEntry(name='%s %s')>" % (
                                 self.FirstName, self.LastName)
 
 

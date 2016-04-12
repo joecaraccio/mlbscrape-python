@@ -3,7 +3,7 @@
 class Player(object):
     """ A base class for hitters and pitchers
     """
-    def __init__(self, first_name, last_name, id, team, hand):
+    def __init__(self, first_name, last_name, pitchfx_id, baseball_reference_id, team, hand):
         """ Constructor
         :param first_name: first name of the player
         :param last_name: last name of the player
@@ -13,7 +13,8 @@ class Player(object):
         """
         self.first_name = first_name
         self.last_name = last_name
-        self.pitch_fx_id = int(id)
+        self.pitch_fx_id = int(pitchfx_id)
+        self.baseball_reference_id = baseball_reference_id
         self.team = str(team)
         self.draft_kings_points = 0
         self.playing_hand = hand

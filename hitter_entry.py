@@ -8,6 +8,7 @@ class HitterEntry(Base):
     __tablename__ = 'hitter_entries'
     
     pitch_fx_id = Column(Integer, primary_key=True)
+    baseball_reference_id = Column(String, primary_key=True)
     last_game_date = Column(String)
     first_name = Column(String)
     last_name = Column(String)
@@ -21,6 +22,7 @@ class HitterEntry(Base):
         self.first_name = hitter.first_name
         self.last_name = hitter.last_name
         self.pitch_fx_id = hitter.pitch_fx_id
+        self.baseball_reference_id = hitter.baseball_reference_id
         self.last_game_date = hitter.game_date
         self.team = hitter.team
         self.batting_hand = hitter.playing_hand
@@ -29,7 +31,7 @@ class HitterEntry(Base):
         """
         :return: string representation identifying the Hitter entry
         """
-        return "<User(name='%s %s')>" % (
+        return "<HitterEntry(name='%s %s')>" % (
                                 self.FirstName, self.LastName)
 
 

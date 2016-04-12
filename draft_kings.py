@@ -6,7 +6,8 @@ class Draftkings(object):
     
     def __init(self):
         return
-    
+
+    def
     
     # Find the link to a head-to-head matchup and get the CSV data
     def get_daily_csv(self):

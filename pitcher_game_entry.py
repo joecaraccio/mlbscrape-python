@@ -7,6 +7,7 @@ class PitcherGameEntry(Base):
     __tablename__ = 'pitcher_game_entries'
     
     pitch_fx_id = Column(String, primary_key=True)
+    baseball_reference_id = Column(String, primary_key=True)
     game_id = Column(String,primary_key=True)
     draft_kings_points = Column(Float)
     first_name = Column(String)
@@ -80,6 +81,7 @@ class PitcherGameEntry(Base):
         self.first_name = pitcher.first_name
         self.last_name = pitcher.last_name
         self.pitch_fx_id = pitcher.pitch_fx_id
+        self.baseball_reference_id = pitcher.baseball_reference_id
         self.game_id = pitcher.game_id
         self.team = pitcher.team
         self.draft_kings_points = pitcher.draft_kings_points

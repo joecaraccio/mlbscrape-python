@@ -10,8 +10,8 @@ class Hitter(Player):
     :param batting_order: the integer place in the batting order for this Hitter
     :param batting_hand: left, right, or switch
     """
-    def __init__(self, first_name, last_name, id, team, batting_order, batting_hand):
-        super(Hitter, self).__init__(first_name, last_name, id, team, batting_hand)
+    def __init__(self, first_name, last_name, pitchfx_id, baseball_ref_id, team, batting_order, batting_hand):
+        super(Hitter, self).__init__(first_name, last_name, pitchfx_id, baseball_ref_id, team, batting_hand)
         self.batting_order = int(batting_order)
 
     def set_game_results(self, game_id, soup_node):
@@ -67,49 +67,30 @@ class Hitter(Player):
             self.career_hr = float(career_stat_node.get("hr")) - self.game_hr
             self.career_rbi = float(career_stat_node.get("rbi")) - self.game_rbi
 
-    def set_vs_stats(self, soup):
+    def set_vs_stats(self, vs_stats, vs_hand_stats, year):
         """ Mine the mlb.com batter XML file and set the vs members
         :param soup: The BeautifulSoup XML object for the batter XML file
         Note: For some reason, these stats don't follow the convention of including the results from the game.
         """
-        # Versus this pitcher
-        vs_stat_node = soup.find("vs_p")
-        if vs_stat_node is not None:
-            self.vs_ab = float(vs_stat_node.get("ab"))
-            self.vs_h = float(vs_stat_node.get("h"))
-            self.vs_bb = float(vs_stat_node.get("bb"))
-            self.vs_so = float(vs_stat_node.get("so"))
-            self.vs_r = float(vs_stat_node.get("r"))
-            self.vs_sb = float(vs_stat_node.get("sb"))
-            self.vs_cs = float(vs_stat_node.get("cs"))
-            self.vs_hr = float(vs_stat_node.get("hr"))
-            self.vs_rbi = float(vs_stat_node.get("rbi"))
+        if vs_stats is not None:
+            self.vs_ab = float(vs_stats.ab)
+            self.vs_h = float(vs_stats.h)
+            self.vs_bb = float(vs_stats.bb)
+            self.vs_so = float(vs_stats.so)
+            self.vs_hr = float(vs_stats.hr)
+            self.vs_rbi = float(vs_stats.rbi)
             
         # Versus left handed pitching
-        vs_stat_node = soup.find("vs_lhp")
-        if vs_stat_node is not None:
-            self.vs_lhp_ab = float(vs_stat_node.get("ab"))
-            self.vs_lhp_h = float(vs_stat_node.get("h"))
-            self.vs_lhp_bb = float(vs_stat_node.get("bb"))
-            self.vs_lhp_so = float(vs_stat_node.get("so"))
-            self.vs_lhp_r = float(vs_stat_node.get("r"))
-            self.vs_lhp_sb = float(vs_stat_node.get("sb"))
-            self.vs_lhp_cs = float(vs_stat_node.get("cs"))
-            self.vs_lhp_hr = float(vs_stat_node.get("hr"))
-            self.vs_lhp_rbi = float(vs_stat_node.get("rbi"))
-            
-        # Versus right handed pitching
-        vs_stat_node = soup.find("vs_rhp")
-        if vs_stat_node is not None:
-            self.vs_rhp_ab = float(vs_stat_node.get("ab"))
-            self.vs_rhp_h = float(vs_stat_node.get("h"))
-            self.vs_rhp_bb = float(vs_stat_node.get("bb"))
-            self.vs_rhp_so = float(vs_stat_node.get("so"))
-            self.vs_rhp_r = float(vs_stat_node.get("r"))
-            self.vs_rhp_sb = float(vs_stat_node.get("sb"))
-            self.vs_rhp_cs = float(vs_stat_node.get("cs"))
-            self.vs_rhp_hr = float(vs_stat_node.get("hr"))
-            self.vs_rhp_rbi = float(vs_stat_node.get("rbi"))
+        if vs_hand_stats is not None:
+            self.vs_hand_ab = float(vs_hand_stats.ab)
+            self.vs_hand_h = float(vs_hand_stats.h)
+            self.vs_hand_bb = float(vs_hand_stats.bb)
+            self.vs_hand_so = float(vs_hand_stats.so)
+            self.vs_hand_r = float(vs_hand_stats.r)
+            self.vs_hand_sb = float(vs_hand_stats.sb)
+            self.vs_hand_cs = float(vs_hand_stats.cs)
+            self.vs_hand_hr = float(vs_hand_stats.hr)
+            self.vs_hand_rbi = float(vs_hand_stats.rbi)
 
     def set_month_stats(self, soup):
         """ # Mine the mlb.com batter XML file and set the month members

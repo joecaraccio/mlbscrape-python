@@ -1,15 +1,14 @@
-
-
-from beautiful_soup_helper import BeautifulSoupHelper
-from baseball_reference import BaseballReference
-from hitter import Hitter
-from hitter_game_entry import HitterGameEntry
-from hitter_entry import HitterEntry
-from pitcher import Pitcher
-from pitcher_game_entry import PitcherGameEntry
-from pitcher_entry import PitcherEntry
-import sqlalchemy
 from datetime import date, timedelta
+
+import sqlalchemy
+from baseball_reference import BaseballReference
+from beautiful_soup_helper import BeautifulSoupHelper
+from sql.hitter_entry import HitterEntry
+from sql.hitter_game_entry import HitterGameEntry
+
+from pitcher import Pitcher
+from sql.pitcher_entry import PitcherEntry
+from sql.pregame_pitcher import PregamePitcherGameEntry
 
 
 class StatMiner(object):

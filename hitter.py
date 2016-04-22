@@ -1,5 +1,6 @@
 from player import Player
 
+#TODO: get rid of this class in favor of SQLAlchemy objects only
 
 class Hitter(Player):
     """ A class housing stats for hitters
@@ -10,9 +11,9 @@ class Hitter(Player):
     :param batting_order: the integer place in the batting order for this Hitter
     :param batting_hand: left, right, or switch
     """
-    def __init__(self, first_name, last_name, pitchfx_id, baseball_ref_id, team, batting_order, batting_hand):
-        super(Hitter, self).__init__(first_name, last_name, pitchfx_id, baseball_ref_id, team, batting_hand)
-        self.batting_order = int(batting_order)
+    def __init__(self, first_name, last_name, pitchfx_id, baseball_ref_id, rotowire_id, team, batting_order, batting_hand):
+        super(Hitter, self).__init__(first_name, last_name, pitchfx_id, baseball_ref_id, rotowire_id, team, batting_hand)
+        self.batting_order = batting_order
 
     def set_game_results(self, game_id, soup_node):
         """ Mine the mlb.com boxscore XML file for the actual results of the game
@@ -92,22 +93,21 @@ class Hitter(Player):
             self.vs_hand_hr = float(vs_hand_stats.hr)
             self.vs_hand_rbi = float(vs_hand_stats.rbi)
 
-    def set_month_stats(self, soup):
+    def set_recent_stats(self, stat_dict):
         """ # Mine the mlb.com batter XML file and set the month members
         :param soup: The BeautifulSoup XML object for the batter XML file
         """
-        vs_stat_node = soup.find("month")
-        if vs_stat_node is not None:
-            self.month_ab = float(vs_stat_node.get("ab")) - self.game_ab
-            self.month_h = float(vs_stat_node.get("h")) - self.game_h
-            self.month_bb = float(vs_stat_node.get("bb")) - self.game_bb
-            self.month_so = float(vs_stat_node.get("so")) - self.game_so
-            self.month_r = float(vs_stat_node.get("r")) - self.game_r
-            self.month_sb = float(vs_stat_node.get("sb")) - self.game_sb
-            self.month_cs = float(vs_stat_node.get("cs")) - self.game_cs
-            self.month_hr = float(vs_stat_node.get("hr")) - self.game_hr
-            self.month_rbi = float(vs_stat_node.get("rbi")) - self.game_rbi
+        self.recent_ab = int(stat_dict["ab"])
+        self.recent_h = int(stat_dict.get("h"))
+        self.recent_bb = int(stat_dict.get("bb"))
+        self.recent_so = int(stat_dict.get("so"))
+        self.recent_r = int(stat_dict.get("r"))
+        self.recent_sb = int(stat_dict.get("sb"))
+        self.recent_cs = int(stat_dict.get("cs"))
+        self.recent_hr = int(stat_dict.get("hr"))
+        self.recent_rbi = int(stat_dict.get("rbi"))
 
+    #TODO: migrate this over to the DraftKings class
     def calculate_draftkings_points(self):
         """ Calculate the DraftKings points from the game results
         """

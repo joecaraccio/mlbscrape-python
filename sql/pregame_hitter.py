@@ -10,6 +10,7 @@ class PregameHitterGameEntry(Base):
     __tablename__ = 'pregame_hitter_entries'
 
     rotowire_id = Column(String, primary_key=True)
+    pitcher_id = Column(String)
     game_id = Column(String, primary_key=True)
     team = Column(String)
     #batting_order = Column(Integer)
@@ -36,14 +37,15 @@ class PregameHitterGameEntry(Base):
     career_hr = Column(Integer)
     career_rbi = Column(Integer)
 
-    # Versus stats
-    """vs_ab = Column(Integer)
+    # Versus the opposing pitcher
+    vs_ab = Column(Integer)
     vs_h = Column(Integer)
     vs_bb = Column(Integer)
     vs_so = Column(Integer)
     vs_hr = Column(Integer)
     vs_rbi = Column(Integer)
-    """
+
+    # Versus the hand of the opposing pitcher
     vs_hand_ab = Column(Integer)
     vs_hand_h = Column(Integer)
     vs_hand_bb = Column(Integer)
@@ -54,7 +56,7 @@ class PregameHitterGameEntry(Base):
     vs_hand_hr = Column(Integer)
     vs_hand_rbi = Column(Integer)
 
-    # Month stats
+    # Recent stats
     recent_ab = Column(Integer)
     recent_h = Column(Integer)
     recent_bb = Column(Integer)
@@ -93,14 +95,12 @@ class PregameHitterGameEntry(Base):
         self.career_rbi = 0
 
         # Versus stats
-        """
-        self.vs_ab = hitter.vs_ab
-        self.vs_h = hitter.vs_h
-        self.vs_bb = hitter.vs_bb
-        self.vs_so = hitter.vs_so
-        self.vs_hr = hitter.vs_hr
-        self.vs_rbi = hitter.vs_rbi
-        """
+        self.vs_ab = 0
+        self.vs_h = 0
+        self.vs_bb = 0
+        self.vs_so = 0
+        self.vs_hr = 0
+        self.vs_rbi = 0
 
         self.vs_hand_ab = 0
         self.vs_hand_h = 0

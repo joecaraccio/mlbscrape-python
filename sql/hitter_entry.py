@@ -6,26 +6,23 @@ class HitterEntry(Base):
     """ Class for SQL entry for a Hitter
     """
     __tablename__ = 'hitter_entries'
-    
-    pitch_fx_id = Column(Integer, primary_key=True)
-    baseball_reference_id = Column(String, primary_key=True)
-    last_game_date = Column(String)
+
+    baseball_reference_id = Column(String)
+    rotowire_id = Column(String, primary_key=True)
     first_name = Column(String)
     last_name = Column(String)
     team = Column(String)
     batting_hand = Column(String)
     
-    def __init__(self, hitter):
+    def __init__(self, first_name, last_name, rotowire_id):
         """ Constructor
-        :param hitter: Hitter object
+        :param first_name: the first name of the player
+        :param last_name: the last name of the player
+        :param rotowire_id: the unique RotoWire ID for this player
         """
-        self.first_name = hitter.first_name
-        self.last_name = hitter.last_name
-        self.pitch_fx_id = hitter.pitch_fx_id
-        self.baseball_reference_id = hitter.baseball_reference_id
-        self.last_game_date = hitter.game_date
-        self.team = hitter.team
-        self.batting_hand = hitter.playing_hand
+        self.first_name = first_name
+        self.last_name = last_name
+        self.rotowire_id = rotowire_id
         
     def __repr__(self):
         """

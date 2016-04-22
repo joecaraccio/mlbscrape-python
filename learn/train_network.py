@@ -1,9 +1,10 @@
-
-import tensorflow as tf
-import numpy as np
-from mlb_database import MlbDatabase
-from hitter_game_entry import HitterGameEntry
 import random
+
+import numpy as np
+import tensorflow as tf
+from sql.hitter_game_entry import HitterGameEntry
+
+from sql.mlb_database import MlbDatabase
 
 
 #TODO: add the 2 hitters right before the hitter of interest in the batting order

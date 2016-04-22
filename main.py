@@ -1,8 +1,8 @@
-
-from miner import StatMiner
-from mlb_database import MlbDatabase
-from rotowire import RotoWire
 import os
+
+from mine.miner import StatMiner
+from sql.mlb_database import MlbDatabase
+from mine.rotowire import RotoWire
 
 os.chdir("/home/cameron/workspaces/MlbDatabase/mlb_scrape/mlbscrape-python")
 
@@ -12,7 +12,11 @@ databaseSession = mlbDatabase.open_session()
 # TODO: enable GPU support
 
 statMiner = StatMiner(databaseSession)
-RotoWire.get_lineups()
+RotoWire.mine_pregame_stats(databaseSession)
+#games = RotoWire.get_game_lineups()
+#RotoWire.update_ids(games, databaseSession)
+#stats = RotoWire.get_pregame_hitting_stats(games)
+#print len(stats)
 #statMiner.mine_yesterday()
 #statMiner.mine_day(4, 10, 2016)
 #statMiner.mine_day("http://mlb.mlb.com/gdcross/components/game/mlb/year_2015/month_05/day_10/")

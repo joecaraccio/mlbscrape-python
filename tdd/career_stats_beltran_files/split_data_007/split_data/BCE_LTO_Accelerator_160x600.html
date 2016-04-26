@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8"><script type="text/javascript">
+    
+      (function() {
+        var relegateNavigation = '';
+        var handleClickTagMessage = function(e) {
+          try {
+            var eventData = JSON.parse(e.data);
+          } catch (err) {
+            return;
+          }
+          if (eventData.isInitClickTag) {
+            if (eventData.clickTags) {
+              for (var i = 0; i < eventData.clickTags.length; i++) {
+                var clkTag = eventData.clickTags[i];
+                window[clkTag.name] = clkTag.url;
+              }
+            } else if (eventData.clickTag) {
+              window.clickTag = eventData.clickTag;
+            }
+            relegateNavigation = eventData.relegateNavigation;
+          }
+        };
+
+        if (open.call) {
+          window.open = function(open) {
+            return function(url, name, features) {
+              if (relegateNavigation === 'parent') {
+                var message = {'clickTag': url, 'isPostClickTag': true};
+                parent.postMessage(JSON.stringify(message), '*');
+              } else {
+                var args = [url, name];
+                if (features) {
+                  args.push(features);
+                }
+                open.apply(window, args);
+              }
+            };
+          }(window.open);
+        }
+
+        if (window.addEventListener) {
+          window.addEventListener(
+              'message', handleClickTagMessage, false);
+        } else {
+          window.attachEvent('onmessage', handleClickTagMessage);
+        }
+      })();
+    
+  </script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<script src="BCE_LTO_Accelerator_160x600_data/TweenMax.js"></script>
+<link rel="stylesheet" type="text/css" href="BCE_LTO_Accelerator_160x600_data/style.css">
+<script type="text/javascript" src="BCE_LTO_Accelerator_160x600_data/script.js"></script>
+<!-- <script type="text/javascript" src="StackBlur.js"></script> -->
+<script type="text/javascript">
+var clickTag = "http://www.americanexpress.com/";
+var clickTag1 = "http://www.google.com/";
+
+function checkGreensockReady(){
+			if ( window.TimelineMax ){
+				//console.log('greensockready');
+				startAd();
+			}else{
+			setTimeout( checkGreensockReady, 50 );
+			}
+			}
+window.onload = checkGreensockReady;
+ 
+</script>
+<title>BCE_Accelerator_160x600</title>
+</head>
+
+<body>
+        <div id="container">
+            <div id="ad">
+                <div id="banner" style="visibility: visible;">
+                    
+                    <div style="opacity: 1;" id="background"></div>
+                    <div style="top: 598px;" id="background2"></div>
+                    <!-- <div id="guide"></div> -->
+        
+                    <div style="left: 15px; opacity: 1;" id="txt1" class="txtsClass">
+                    </div>
+                    <div id="txt2" class="txtsClass">
+                        <span id="txt2Comma"></span>
+                    </div>
+                    <div id="terms" class="txtsClass">
+                        Terms and limitations apply.
+                    </div>
+                    <div style="top: 600px;" id="cardContainer">
+                        <div id="card"></div>
+                        <div id="cardShine"></div>
+                    </div>
+                    <div id="txt3Cont">
+                        <div id="txt3" class="txtsClassBold">
+                            Get up to<br>
+                            $300 back.<br>
+							Offer Ends<br>
+                            6/15/16.
+                        </div>
+                    </div>
+
+                    <div id="txt5Cont">
+                        <div style="left: -300px;" id="txt5" class="txtsClassBold">
+                            Get up to $300 back.<br>
+							Offer Ends 6/15/16.
+                        </div>
+                    </div>
+
+                    <div style="left: -300px;" id="txt6Cont">
+                        <div id="txt6" class="txtsClassBold">
+                            <div id="txt6a">3% Cash Back at</div>
+                            <div id="txt6b">US supermarkets</div>
+                            <div id="txt6c"></div>
+                        </div>
+                    </div>
+
+                    <div id="txt7Cont">
+                        <div style="left: -300px;" id="txt7" class="txtsClassBold">
+                            <span style="color: #90d7e7;">Plus</span>, No Annual Fee
+                        </div>
+                    </div>
+                    
+                    <div id="logo"></div>
+                    <div id="ctaContainer">
+                        <div id="ctaBtn" class="txtsClass">Learn More</div>
+                        <div id="ctaBtnOver"></div>
+                    </div>
+
+                    <div id="rates" class="txtsClassBold" onclick="fnExitHandler(2)">
+                        Rates and Fees
+                    </div>
+
+                    <div style="opacity: 0;" id="invisibleOver" onclick="fnExitHandler(1)"></div>
+                                       
+                </div>
+            </div>
+        </div>
+
+    
+</body></html>

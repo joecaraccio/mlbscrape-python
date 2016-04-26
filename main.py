@@ -4,7 +4,7 @@ from mine.miner import StatMiner
 from sql.mlb_database import MlbDatabase
 from mine.rotowire import RotoWire
 
-os.chdir("/home/cameron/workspaces/MlbDatabase/mlb_scrape/mlbscrape-python")
+os.chdir("/home/cameron/workspaces/MlbDatabase/mlb_scrape/mlbscrape_python")
 
 #TODO: add some data for the starting pitcher and catcher giving up stolen bases
 mlbDatabase = MlbDatabase()

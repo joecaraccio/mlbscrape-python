@@ -1,0 +1,7 @@
+(function(){
+  document.write('<div id="adsatlas-141517762" style="position:relative;width:160px;height:600px;overflow:hidden">');
+  document.write('<iframe src=\"https://ad.atdmt.com/as/direct;p=11042209660636;as=11042208931019;a=11042209641644;crs=11042209620900;cr=11042209641599;i.ts=1461433651;csp=1/index.html?click=http://a.rfihub.com/acs/b/c3Q9aHRtbCZhYT0yMjI5NjIzLDIxODczNzc1LDk0Njk4Myw0MjIxOTc3Myw1ODk1OSw2ODY5MDUsZWEzOWEwNWUzOWE2MmRkNTY2NzJkZDBhNTRjYzYyNWUscCwxMzkzNywyOTAyMTUsMjA1NDc4MTMsMjAyMjIxLDQ5MzQ5MSZtdD0xJnJiPTI1JnJlPTMzNjY3JmhjaT03MjMwMDI5NDEyMTUwMDEwNDI2JnV1aWQ9NzczMjgyMTMwNzI4OTQ5Nzg3JmRpPSZkYz0zJmRpc3JjPTA./n/\" width=\"160\" height=\"600\" frameborder=\"0\" scrolling=\"no\" marginheight=\"0\" marginwidth=\"0\" topmargin=\"0\" leftmargin=\"0\" allowtransparency=\"true\"></iframe>');
+  document.write('</div>');
+  document.write('');
+  document.close();
+})();

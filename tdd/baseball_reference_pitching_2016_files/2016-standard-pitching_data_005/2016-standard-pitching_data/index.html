@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8"><script type="text/javascript">
+    
+      (function() {
+        var relegateNavigation = '';
+        var handleClickTagMessage = function(e) {
+          try {
+            var eventData = JSON.parse(e.data);
+          } catch (err) {
+            return;
+          }
+          if (eventData.isInitClickTag) {
+            if (eventData.clickTags) {
+              for (var i = 0; i < eventData.clickTags.length; i++) {
+                var clkTag = eventData.clickTags[i];
+                window[clkTag.name] = clkTag.url;
+              }
+            } else if (eventData.clickTag) {
+              window.clickTag = eventData.clickTag;
+            }
+            relegateNavigation = eventData.relegateNavigation;
+          }
+        };
+
+        if (open.call) {
+          window.open = function(open) {
+            return function(url, name, features) {
+              if (relegateNavigation === 'parent') {
+                var message = {'clickTag': url, 'isPostClickTag': true};
+                parent.postMessage(JSON.stringify(message), '*');
+              } else {
+                var args = [url, name];
+                if (features) {
+                  args.push(features);
+                }
+                open.apply(window, args);
+              }
+            };
+          }(window.open);
+        }
+
+        if (window.addEventListener) {
+          window.addEventListener(
+              'message', handleClickTagMessage, false);
+        } else {
+          window.attachEvent('onmessage', handleClickTagMessage);
+        }
+      })();
+    
+  </script>
+		<meta charset="utf-8">
+		<title>Banner</title>
+		<meta http-equiv="X-UA-Compatible" content="IE=Edge">
+		<meta name="ad.size" content="width=300,height=250">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+		<link rel="stylesheet" href="index_data/main-min.css">
+	</head>
+
+	<body>
+		<script>
+			var clickTag = '#';
+		</script>
+		<div id="ad_content">
+			<div style="visibility: inherit; opacity: 1;" id="logo" class="sprite-svg logo"></div>
+			<div style="visibility: inherit; opacity: 1;" id="f1_txt_1" class="sprite-svg f1_txt_1"></div>
+			<div style="visibility: inherit; opacity: 1;" id="f2_txt_2" class="sprite-svg f2_txt_2"></div>
+			<div style="visibility: inherit; opacity: 1;" id="f3_txt_1" class="sprite-svg f3_txt_1"></div>
+			<div style="visibility: inherit; opacity: 1;" id="f4_txt_2" class="sprite-svg f4_txt_2"></div>
+			<div style="visibility: hidden; opacity: 0; transform: matrix(0.96592, -0.25881, 0.25881, 0.96592, -1, 2);" id="scissor_light" class="sprite-svg scissor_light"></div>
+			<div style="visibility: visible; transform: matrix(1, 0, 0, 1, -190, -20); background-position: 100px 0px;" id="ribbon_left" class="sprite-svg ribbon"></div>
+			<div style="visibility: visible; transform: matrix(1, 0, 0, 1, 190, 20); background-position: -80px 0px;" id="ribbon_right" class="sprite-svg ribbon"></div>
+			<div style="visibility: hidden; opacity: 0; transform: matrix(0.95105, 0.30901, -0.30901, 0.95105, 5, 0);" id="scissor_dark" class="sprite-svg scissor_dark"></div>
+			<div style="visibility: inherit; opacity: 1;" id="cta">
+				<div id="cta_up" class="sprite-svg cta_up"></div>
+				<div id="cta_over" class="sprite-svg cta_over"></div>
+			</div>
+		</div>
+		&lt;<div id="ie_backup"></div>
+		<!-- Load scripts -->
+		<script src="index_data/TweenMax.js"></script>
+		<script src="index_data/main-min.js"></script>
+	
+
+</body></html>

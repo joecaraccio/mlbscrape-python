@@ -1,0 +1,230 @@
+/*---- 160x600 ----*/
+
+/*--- FRAME 1 ---*/
+
+#line_1_1 {
+	position: absolute;
+	background-position: -62px -215px;
+	width: 101px;
+	height: 26px;
+	left: 59px;
+	top: 56px;
+}
+#line_1_2 {
+	position: absolute;
+	background-position: -8px -245px;
+	width: 155px;
+	height: 26px;
+	left: 5px;
+	top: 86px;
+}
+#line_1_3 {
+	position: absolute;
+	background-position: -61px -275px;
+	width: 102px;
+	height: 26px;
+	left: 58px;
+	top: 116px;
+}
+#line_1_4 {
+	position: absolute;
+	background-position: -12px -305px;
+	width: 151px;
+	height: 26px;
+	left: 9px;
+	top: 146px;
+}
+
+/*--- FRAME 2 ---*/
+
+#line_2_1 {
+	position: absolute;
+	background-position: -4px -339px;
+	width: 159px;
+	height: 26px;
+	left: 1px;
+	top: 56px;
+}
+#line_2_2 {
+	position: absolute;
+	background-position: -39px -369px;
+	width: 124px;
+	height: 26px;
+	left: 36px;
+	top: 86px;
+}
+#line_2_3 {
+	position: absolute;
+	background-position: -88px -399px;
+	width: 75px;
+	height: 26px;
+	left: 85px;
+	top: 116px;
+}
+#line_2_4 {
+	position: absolute;
+	background-position: -5px -429px;
+	width: 158px;
+	height: 26px;
+	left: 2px;
+	top: 146px;
+}
+#line_2_5 {
+	position: absolute;
+	background-position: -55px -459px;
+	width: 108px;
+	height: 26px;
+	left: 52px;
+	top: 176px;
+}
+
+/*--- FRAME 3 ---*/
+
+#line_3_1 {
+	position: absolute;
+	background-position: -78px -493px;
+	width: 85px;
+	height: 26px;
+	left: 75px;
+	top: 56px;
+}
+#line_3_2 {
+	position: absolute;
+	background-position: -63px -523px;
+	width: 100px;
+	height: 26px;
+	left: 60px;
+	top: 86px;
+}
+#line_3_3 {
+	position: absolute;
+	background-position: -13px -553px;
+	width: 150px;
+	height: 26px;
+	left: 10px;
+	top: 116px;
+}
+#line_3_4 {
+	position: absolute;
+	background-position: -28px -583px;
+	width: 135px;
+	height: 26px;
+	left: 25px;
+	top: 146px;
+}
+/*#line_3_5 {
+	position: absolute;
+	background-position: 
+	left: px;
+	top: px;
+}*/
+
+#video {
+	position: absolute;
+	overflow: hidden;
+	z-index: 1;
+	width: 160px;
+	height: 250px;
+	left: 0px;
+	top: 216px;
+}
+
+/*--------- END EDITABLES ---------*/
+
+/*elements appear from right side - make right border*/
+.textOnPanel {
+	border-right: 50px solid #000;
+	/*left: -50px !important;*/
+}
+
+.bg {
+	position: absolute;
+	width: 160px;
+	height: 600px;
+}
+
+.sprite {
+	display: inline-block;
+	overflow: hidden;
+	background-repeat: no-repeat;
+	background-image:url(images/160x600_sprites_crushed.png);
+}
+
+.logo {
+	position: absolute;
+	background-position: -3px -3px;
+	width: 160px;
+	height: 67px;
+
+	/*bottom padding for elastic ease*/
+	border-bottom: 50px solid black;
+}
+
+.cta {
+	position: absolute;
+	background-position: -3px -73px;
+	width: 160px;
+	height: 67px;
+}
+.cta_over {
+	position: absolute;
+	background-position: -3px -143px;
+	width: 160px;
+	height: 67px;
+}
+
+#loading			,
+#text_shell			,
+#cta				,
+#cta_default		,
+#cta_default_shell	,
+#cta_over			,
+#logo
+{
+	position:absolute;
+}
+
+#loading{
+	z-index: 1000;
+}
+
+#text_shell	{
+	width: 100%;
+	height: 100%;
+	z-index:10;
+}
+
+#logo {
+	top:533px;
+}
+
+/* -------------------------------------------------------- cta */
+#cta{
+	width:160px;
+	height:67px;
+	left:0px;
+	top:466px;
+	overflow:hidden;
+
+	border-bottom: 50px solid #14ABE0;
+}
+#cta_default,
+#cta_over,
+#cta_default_shell 	{
+	width:100%;
+	height:100%;
+}
+#cta_default_shell {
+	height:67px;
+	z-index:20;
+	overflow: hidden;
+
+	border-bottom: 50px solid #14ABE0;
+}
+#cta_default{
+	height:67px;
+}
+#cta-over{
+	height:67px;
+	z-index:10;
+}

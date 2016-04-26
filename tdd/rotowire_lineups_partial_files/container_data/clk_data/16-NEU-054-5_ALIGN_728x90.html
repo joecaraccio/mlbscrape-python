@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html><head><script src="16-NEU-054-5_ALIGN_728x90_data/16-NEU-054-5_ALIGN_728x90_edge.js"></script><script type="text/javascript">
+    
+      (function() {
+        var relegateNavigation = '';
+        var handleClickTagMessage = function(e) {
+          try {
+            var eventData = JSON.parse(e.data);
+          } catch (err) {
+            return;
+          }
+          if (eventData.isInitClickTag) {
+            if (eventData.clickTags) {
+              for (var i = 0; i < eventData.clickTags.length; i++) {
+                var clkTag = eventData.clickTags[i];
+                window[clkTag.name] = clkTag.url;
+              }
+            } else if (eventData.clickTag) {
+              window.clickTag = eventData.clickTag;
+            }
+            relegateNavigation = eventData.relegateNavigation;
+          }
+        };
+
+        if (open.call) {
+          window.open = function(open) {
+            return function(url, name, features) {
+              if (relegateNavigation === 'parent') {
+                var message = {'clickTag': url, 'isPostClickTag': true};
+                parent.postMessage(JSON.stringify(message), '*');
+              } else {
+                var args = [url, name];
+                if (features) {
+                  args.push(features);
+                }
+                open.apply(window, args);
+              }
+            };
+          }(window.open);
+        }
+
+        if (window.addEventListener) {
+          window.addEventListener(
+              'message', handleClickTagMessage, false);
+        } else {
+          window.attachEvent('onmessage', handleClickTagMessage);
+        }
+      })();
+    
+  </script>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <meta name="ad.size" content="width=728,height=90">
+	<script type="text/javascript">
+	var clickTag = "http://www.google.com"; </script>
+	<title>Untitled</title>
+<!--Adobe Edge Runtime-->
+    <script type="text/javascript" charset="utf-8" src="16-NEU-054-5_ALIGN_728x90_data/edge.js"></script>
+    <style>
+        .edgeLoad-EDGE-194555538 { visibility:hidden; }
+    </style>
+<script>
+   AdobeEdge.loadComposition('16-NEU-054-5_ALIGN_728x90', 'EDGE-194555538', {
+    scaleToFit: "none",
+    centerStage: "none",
+    minW: "0px",
+    maxW: "undefined",
+    width: "728px",
+    height: "90px"
+}, {"dom":{}}, {"dom":{}});
+</script>
+<!--Adobe Edge Runtime End-->
+
+<link href="16-NEU-054-5_ALIGN_728x90_data/css_002.css" rel="stylesheet" type="text/css"><link href="16-NEU-054-5_ALIGN_728x90_data/css.css" rel="stylesheet" type="text/css"></head>
+<body style="margin:0;padding:0;">
+<a href="javascript:window.open(window.clickTag)">
+	<div style="position: relative; height: 90px; width: 728px; z-index: 0; right: auto; bottom: auto; background-color: rgb(255, 255, 255); overflow: hidden; text-overflow: clip; background-size: 100% 100%;" id="Stage" class="EDGE-194555538">
+	<div class="Stage_NEU-728x90-Back_id" style="position: absolute; margin: 0px; left: 0px; top: 0px; width: 728px; height: 90px; right: auto; bottom: auto; background-image: url(&quot;images/NEU-728x90-Back.png&quot;); background-color: transparent; background-repeat: no-repeat; background-size: 100% 100%; background-position: 0px 0px;" id="Stage_NEU-728x90-Back"></div><div class="Stage_NEULogo-Stacked_id" style="position: absolute; margin: 0px; left: 534px; top: -1px; width: 300px; height: 100px; right: auto; bottom: auto; background-image: url(&quot;images/NEULogo-Stacked.svg&quot;); background-color: transparent; background-repeat: no-repeat; background-size: 100% 100%; background-position: 0px 0px;" id="Stage_NEULogo-Stacked"></div><div class="Stage_Text1_id" style="position: absolute; margin: 0px; left: 0px; top: 0px; width: auto; height: auto; right: auto; bottom: auto; font-family: Roboto Slab; font-size: 27px; font-weight: 300; line-height: 28px; text-transform: none; color: rgb(255, 255, 255); text-decoration: none; font-style: normal; word-wrap: break-word; text-align: left; white-space: nowrap; transform: translate(39px, 93px) rotate(0deg) scale(1, 1);" id="Stage_Text1"><p style="margin: 0px;">Don't just move up a few rungs.<span style="font-size: 26px;">​</span></p></div><div class="Stage_Text2_id" style="position: absolute; margin: 0px; left: 0px; top: 0px; width: auto; height: auto; right: auto; bottom: auto; font-family: Roboto Slab; font-size: 27px; font-weight: 300; line-height: 26px; text-transform: none; color: rgb(255, 255, 255); text-decoration: none; font-style: normal; word-wrap: break-word; text-align: left; white-space: nowrap; transform: translate(39px, 93px) rotate(0deg) scale(1, 1);" id="Stage_Text2"><p style="margin: 0px;">Change the ladder completely.</p></div><div class="Stage_AlignWhiteDot_id" style="position: absolute; margin: 0px; left: 0px; top: 0px; width: 612px; height: 792px; right: auto; bottom: auto; background-image: url(&quot;images/AlignWhiteDot.svg&quot;); background-color: transparent; background-repeat: no-repeat; background-size: 100% 100%; background-position: 0px 0px; transform: translate(-231px, -358px) rotate(0deg) scale(1, 1);" id="Stage_AlignWhiteDot"></div><div class="Stage_Text3_id" style="position: absolute; margin: 0px; left: 0px; top: 0px; width: auto; height: auto; right: auto; bottom: auto; font-family: Roboto Condensed; font-size: 22px; font-weight: 300; line-height: 21px; text-transform: none; color: rgb(255, 255, 255); text-decoration: none; font-style: normal; word-wrap: break-word; text-align: left; white-space: nowrap; transform: translate(121px, 34px) rotate(0deg) scale(1, 1);" id="Stage_Text3"><p style="margin: 0px; line-height: 21px;">Master's Program</p></div><div class="Stage_Text6_id" style="position: absolute; margin: 0px; left: 0px; top: 0px; width: auto; height: auto; right: auto; bottom: auto; font-family: &quot;Roboto Condensed&quot;; font-size: 18px; font-weight: 300; line-height: 17px; text-transform: none; color: rgb(255, 255, 255); text-decoration: none; font-style: normal; word-wrap: break-word; text-align: left; white-space: nowrap; transform: translate(284px, 30px) rotate(0deg) scale(1, 1);" id="Stage_Text6"><p style="margin: 0px;">​The practical way to</p><p style="margin: 0px;">​change career course.</p></div><div class="Stage_GrayArrow_id" style="position: absolute; margin: 0px; opacity: 1; left: 0px; top: 0px; width: 21px; height: 34px; right: auto; bottom: auto; background-image: url(&quot;images/GrayArrow.png&quot;); background-color: transparent; background-repeat: no-repeat; background-size: 100% 100%; background-position: 0px 0px; transform: translate(507px, 28px) rotate(0deg) scale(1, 1);" id="Stage_GrayArrow"></div><div class="Stage_Learn_More_id" style="position: absolute; margin: 0px; opacity: 1; left: 0px; top: 0px; width: auto; height: auto; right: auto; bottom: auto; font-family: Arial,Helvetica,sans-serif; font-size: 24px; font-weight: 400; line-height: 24px; text-transform: none; color: rgb(0, 0, 0); text-decoration: none; font-style: normal; word-wrap: break-word; text-align: right; white-space: nowrap; transform: translate(473px, 35px) rotate(0deg) scale(1, 1);" id="Stage_Learn_More"><p style="margin: 0px; font-family: 'Roboto Condensed'; font-weight: 300; font-style: normal; text-decoration: none; font-size: 13px; color: rgb(255, 255, 255); background-color: rgba(0, 0, 0, 0); letter-spacing: 0px; text-transform: none; word-spacing: 0px; text-indent: 0px; line-height: 12px;"><span style="font-size: 12px;">START</span></p><p style="margin: 0px; font-family: 'Roboto Condensed'; font-weight: 300; font-style: normal; text-decoration: none; font-size: 13px; color: rgb(255, 255, 255); background-color: rgba(0, 0, 0, 0); letter-spacing: 0px; text-transform: none; word-spacing: 0px; text-indent: 0px; line-height: 12px;"><span style="font-size: 12px;">​NOW</span></p></div><div class="Stage_Text_id" style="position: absolute; margin: 0px; left: 13px; top: -83px; width: 147px; height: 25px; right: auto; bottom: auto; font-family: Arial,Helvetica,sans-serif; font-size: 24px; font-weight: normal; color: rgb(0, 0, 0); text-decoration: none; word-wrap: break-word; text-align: center;" id="Stage_Text">Loop #1</div><div class="Stage_Frame_id" style="position: absolute; margin: 0px; left: 0px; top: 0px; width: 726px; height: 89px; right: auto; bottom: auto; background-color: rgba(192, 192, 192, 0); background-size: 100% 100%; border-width: 1px; border-color: rgb(0, 0, 0); border-style: solid;" id="Stage_Frame"></div></div>
+    </a>
+
+</body></html>

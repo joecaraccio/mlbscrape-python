@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8"><script type="text/javascript">
+    
+      (function() {
+        var relegateNavigation = '';
+        var handleClickTagMessage = function(e) {
+          try {
+            var eventData = JSON.parse(e.data);
+          } catch (err) {
+            return;
+          }
+          if (eventData.isInitClickTag) {
+            if (eventData.clickTags) {
+              for (var i = 0; i < eventData.clickTags.length; i++) {
+                var clkTag = eventData.clickTags[i];
+                window[clkTag.name] = clkTag.url;
+              }
+            } else if (eventData.clickTag) {
+              window.clickTag = eventData.clickTag;
+            }
+            relegateNavigation = eventData.relegateNavigation;
+          }
+        };
+
+        if (open.call) {
+          window.open = function(open) {
+            return function(url, name, features) {
+              if (relegateNavigation === 'parent') {
+                var message = {'clickTag': url, 'isPostClickTag': true};
+                parent.postMessage(JSON.stringify(message), '*');
+              } else {
+                var args = [url, name];
+                if (features) {
+                  args.push(features);
+                }
+                open.apply(window, args);
+              }
+            };
+          }(window.open);
+        }
+
+        if (window.addEventListener) {
+          window.addEventListener(
+              'message', handleClickTagMessage, false);
+        } else {
+          window.attachEvent('onmessage', handleClickTagMessage);
+        }
+      })();
+    
+  </script>
+	<meta charset="UTF-8">
+	<title>OB380-15_JNS_160x600_flights</title>
+	<link href="Amex_PRG_Flights_v1_160x600_data/css.css" rel="stylesheet" type="text/css">
+	<style>#amex_jns_txt,body{font-family:'Open Sans',sans-serif}.sprite{display:inline-block;overflow:hidden;background-repeat:no-repeat;background-image:url(160x600-flights-spritesheet.jpg)}.card{width:110px;height:69px;background-position:0 -313px;-webkit-border-radius:5px;-moz-border-radius:5px;-ms-border-radius:5px;border-radius:5px}.img1,.img2,.img3{height:311px;width:160px}.img1{background-position:0 0}.img2{background-position:-162px 0}.img3{background-position:-324px 0}html{-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}div{position:absolute}#amex_jns_txt,.container,.dot,sup{position:relative}body{background:#FFF;color:#FFF;font-size:17px;font-weight:700;line-height:0;letter-spacing:-.25px;margin:0;padding:0}.container{background-color:#5e2750;height:600px;overflow:hidden;width:160px;line-height:.95;cursor:pointer}.container-border{width:158px;height:598px;border:1px solid #000;left:0;top:0}.mask_forBackgrounds{width:160px;height:600px;margin:0;overflow:hidden}.bmp_goldcard{width:110px;height:71px;top:326px;left:9px}.bmp_ocean{width:160px;height:311px;margin:0}.bmp_shopper,.bmp_suitcase{width:160px;height:311px;margin:289px 0 0 160px}.copy_get25000pointsPlus{width:160px;height:57px;margin:285px 0 0 10px;font-weight:400;font-size:12px;line-height:1;letter-spacing:-.5px}.copy_get25000pointsPlus .txt3{margin-top:17px;font-weight:700;line-height:1.2}.copy_headline0{width:160px;height:66px;top:410px;left:9px;font-size:24px;line-height:.95}.copy_headline1,.copy_headline2{width:160px;height:28px;margin:409px 0 0 9px}.copy_headline3,.copy_headline4{width:160px;height:42px;margin:411px 0 0 9px}.copy_headline4 .txt2{top:33px;letter-spacing:-.5px}.txt1{font-weight:700}.txt2{font-weight:400}.txt3{font-weight:600}.copy_premierRewardsGoldCard{width:160px;height:59px;left:10px;top:197px;font-size:21px;line-height:.96;text-transform:uppercase}.copy_ratesAndFees1,.copy_ratesAndFees2{font-weight:600;width:70px;line-height:9px;text-decoration:underline;cursor:pointer}.copy_ratesAndFees1{height:10px;top:567px;left:11px;font-size:9px;letter-spacing:0;color:rgba(255,255,255,.75)}.copy_ratesAndFees2{height:9px;bottom:14px;left:12px;font-size:9px;letter-spacing:0;color:rgba(0,0,0,.65)}.copy_termsAndLimitations1,.copy_termsAndLimitations2{width:300px;height:9px;left:11px;font-size:9px;letter-spacing:0;font-weight:600}.copy_termsAndLimitations1{bottom:10px;color:rgba(255,255,255,.75)}.copy_termsAndLimitations2{bottom:78px;color:rgba(0,0,0,.65)}.copy_theJourneyNeverStops{width:160px;height:14px;margin:410px 0 0 8px}#amex_jns_txt{display:block;padding-left:2px;font-size:12px;line-height:12px;font-weight:600;text-align:left;letter-spacing:-.5px;color:#FFF}sup{font-size:6px;vertical-align:top;top:-1px;padding-left:1px}#dot-holder{width:100%;top:26px;left:0;height:8px;font-size:0;word-spacing:0}.dot{width:7px;height:7px;margin-left:3px;display:inline-block;-webkit-border-radius:50%;-moz-border-radius:50%;-ms-border-radius:50%;border-radius:50%}.dot:nth-child(1){background:#9f8b48}.dot:nth-child(2){background:#d3c25f}.dot:nth-child(3){background:#e7e0b9}.btn_learnMore{left:10px;top:10px;width:116px;height:35px;overflow:hidden;-webkit-border-radius:5px;-moz-border-radius:5px;-ms-border-radius:5px;border-radius:5px;background:#20367a;background:-moz-linear-gradient(top,rgba(32,54,122,1) 0,rgba(24,43,98,1) 100%);background:-webkit-gradient(linear,left top,left bottom,color-stop(0,rgba(32,54,122,1)),color-stop(100%,rgba(24,43,98,1)));background:-webkit-linear-gradient(top,rgba(32,54,122,1) 0,rgba(24,43,98,1) 100%);background:-o-linear-gradient(top,rgba(32,54,122,1) 0,rgba(24,43,98,1) 100%);background:-ms-linear-gradient(top,rgba(32,54,122,1) 0,rgba(24,43,98,1) 100%);background:linear-gradient(to bottom,rgba(32,54,122,1) 0,rgba(24,43,98,1) 100%);filter:progid:DXImageTransform.Microsoft.gradient( startColorstr='#20367a', endColorstr='#182b62', GradientType=0 )}#cta_highlight{top:0;left:125px;width:240px;height:35px;opacity:.75}.cta_highlight{background:-moz-linear-gradient(-45deg,rgba(255,255,255,0) 0,rgba(255,255,255,0) 10%,rgba(255,255,255,.5) 50%,rgba(255,255,255,0) 90%,rgba(255,255,255,0) 100%);background:-webkit-gradient(linear,left top,right bottom,color-stop(0,rgba(255,255,255,0)),color-stop(10%,rgba(255,255,255,0)),color-stop(50%,rgba(255,255,255,.5)),color-stop(90%,rgba(255,255,255,0)),color-stop(100%,rgba(255,255,255,0)));background:-webkit-linear-gradient(-45deg,rgba(255,255,255,0) 0,rgba(255,255,255,0) 10%,rgba(255,255,255,.5) 50%,rgba(255,255,255,0) 90%,rgba(255,255,255,0) 100%);background:-o-linear-gradient(-45deg,rgba(255,255,255,0) 0,rgba(255,255,255,0) 10%,rgba(255,255,255,.5) 50%,rgba(255,255,255,0) 90%,rgba(255,255,255,0) 100%);background:-ms-linear-gradient(-45deg,rgba(255,255,255,0) 0,rgba(255,255,255,0) 10%,rgba(255,255,255,.5) 50%,rgba(255,255,255,0) 90%,rgba(255,255,255,0) 100%);background:linear-gradient(135deg,rgba(255,255,255,0) 0,rgba(255,255,255,0) 10%,rgba(255,255,255,.5) 50%,rgba(255,255,255,0) 90%,rgba(255,255,255,0) 100%);filter:progid:DXImageTransform.Microsoft.gradient( startColorstr='#00ffffff', endColorstr='#00ffffff', GradientType=1 )}.btn_learnMore_txt{font-weight:700;color:#fff;font-size:14px;width:100%;text-align:center;top:10px;letter-spacing:-.25px}.gfx_ctaLogoPanel{width:160px;height:137px;margin:464px 0 0;background-color:#fff}.gfx_dot{width:10px;height:10px;border-radius:50%}.gfx_headline1_dot1,.gfx_headline2_dot1,.gfx_headline3_dot1,.gfx_headline4_dot1{background-color:#9f8b48}.gfx_headline1_dot2,.gfx_headline2_dot2,.gfx_headline3_dot2,.gfx_headline4_dot2{background-color:#d3c25f}.gfx_headline1_dot3,.gfx_headline2_dot3,.gfx_headline3_dot3,.gfx_headline4_dot3{background-color:#e7e0b9}.gfx_headline1_dot1,.gfx_headline2_dot1{top:443px;left:9px}.gfx_headline1_dot2,.gfx_headline2_dot2{top:443px;left:22px}.gfx_headline1_dot3,.gfx_headline2_dot3{top:443px;left:36px}.gfx_headline3_dot1{top:460px;left:9px}.gfx_headline3_dot2{top:460px;left:22px}.gfx_headline3_dot3{top:460px;left:36px}.gfx_headline4_dot1{top:525px;left:9px}.gfx_headline4_dot2{top:525px;left:22px}.gfx_headline4_dot3{top:525px;left:36px}.panel{background-color:#5e2750;width:160px;height:600px;margin:0 0 0 150px}.logo_amexBluebox{width:45px;height:45px;right:14px;bottom:8px;background:url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4MS43IDcyLjQiPgogIDxwYXRoIGZpbGw9IiMwMDdEQzMiIGQ9Ik00LjkgNzAuNWgtLjZjLS4xLS4yLS4xLS43LS4xLS44IDAtLjIgMC0uNS0uNS0uNWgtLjl2MS4zaC0uNnYtMy4yaDEuNWMuNSAwIDEuMS4yIDEuMS45IDAgLjQtLjIuNi0uMy43LjEuMS4zLjIuMy42di42YzAgLjIgMCAuMi4yLjN2LjF6bS0uNy0yLjJjMC0uNC0uMy0uNC0uNS0uNGgtMXYuOWguOWMuNC0uMS42LS4xLjYtLjV6bTIuNi43YzAtMS45LTEuNS0zLjQtMy40LTMuNFMwIDY3LjEgMCA2OXMxLjUgMy40IDMuNCAzLjQgMy40LTEuNSAzLjQtMy40em0tLjUgMGMwIDEuNi0xLjIgMi45LTIuOSAyLjlTLjUgNzAuNi41IDY5YzAtMS42IDEuMi0yLjkgMi45LTIuOXMyLjkgMS4zIDIuOSAyLjl6Ii8+CiAgPHJhZGlhbEdyYWRpZW50IGlkPSJhIiBjeD0iMjEuNTQ3IiBjeT0iMTIuNDMzIiByPSI4NS41NzQiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzg0RDVGNyIvPgogICAgPHN0b3Agb2Zmc2V0PSIuMDYzIiBzdG9wLWNvbG9yPSIjN0VEMUY2Ii8+CiAgICA8c3RvcCBvZmZzZXQ9Ii4xNDYiIHN0b3AtY29sb3I9IiM2OUM5RjIiLz4KICAgIDxzdG9wIG9mZnNldD0iLjI0MiIgc3RvcC1jb2xvcj0iIzQwQkNFRCIvPgogICAgPHN0b3Agb2Zmc2V0PSIuMzQ1IiBzdG9wLWNvbG9yPSIjMDBBREU3Ii8+CiAgICA8c3RvcCBvZmZzZXQ9Ii4zNzEiIHN0b3AtY29sb3I9IiMwMEFBRTUiLz4KICAgIDxzdG9wIG9mZnNldD0iLjQ2NiIgc3RvcC1jb2xvcj0iIzAwOUNEQiIvPgogICAgPHN0b3Agb2Zmc2V0PSIuNTkxIiBzdG9wLWNvbG9yPSIjMDA4RUQwIi8+CiAgICA8c3RvcCBvZmZzZXQ9Ii43MiIgc3RvcC1jb2xvcj0iIzAwODRDOCIvPgogICAgPHN0b3Agb2Zmc2V0PSIuODUzIiBzdG9wLWNvbG9yPSIjMDA3RkM0Ii8+CiAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMwMDdEQzMiLz4KICA8L3JhZGlhbEdyYWRpZW50PgogIDxwYXRoIGZpbGw9InVybCgjYSkiIGQ9Ik04MS4zIDBIOS41djcyaDcxLjhWNDguM2MuMy0uNC40LS45LjQtMS42IDAtLjctLjEtMS4yLS40LTEuNlYweiIvPgogIDxwYXRoIGZpbGw9IiNGRkYiIGQ9Ik05LjUgMzYuNWgzLjRsLjgtMS45aDEuN2wuOCAxLjlIMjNWMzVsLjYgMS40aDMuNWwuNi0xLjV2MS41aDE2Ljl2LTMuMWguM2MuMiAwIC4zIDAgLjMuNHYyLjdoOC43di0uN2MuNy40IDEuOC43IDMuMi43aDMuN2wuOC0xLjloMS43bC44IDEuOWg3LjF2LTEuOGwxLjEgMS44SDc4VjI0LjdoLTUuNnYxLjRsLS44LTEuNGgtNS44djEuNGwtLjctMS40aC03LjhjLTEuMyAwLTIuNC4yLTMuNC43di0uN2gtNS40di43Yy0uNi0uNS0xLjQtLjctMi4zLS43SDI2LjdsLTEuMyAzLTEuMy0zaC02LjJ2MS40bC0uNy0xLjRoLTUuM2wtMi40IDUuNnY2LjJ6bTY2LjYtMS43aC0yLjlsLTMuOC02LjN2Ni4zaC00LjFsLS44LTEuOWgtNC4ybC0uOCAxLjloLTIuNGMtMSAwLTIuMi0uMi0yLjktLjktLjctLjctMS4xLTEuNy0xLjEtMy4yIDAtMS4zLjItMi40IDEuMS0zLjMuNy0uNyAxLjctMSAzLjEtMWgxLjl2MS44aC0xLjljLS43IDAtMS4yLjEtMS42LjUtLjMuNC0uNiAxLS42IDEuOSAwIC45LjIgMS41LjYgMiAuMy4zLjkuNCAxLjQuNGguOWwyLjgtNi42aDNsMy40IDh2LThoMy4xbDMuNSA1Ljl2LTUuOWgyLjF2OC40em0tMjMuOCAwaC0yLjF2LTguNGgyLjF2OC40ek00OSAyOC42YzAgMS4zLS45IDItMS40IDIuMi40LjIuOC41IDEgLjcuMy40LjMuOC4zIDEuNXYxLjdoLTJ2LTEuMWMwLS41IDAtMS4yLS4zLTEuNi0uMy0uMy0uNy0uNC0xLjUtLjRoLTIuMnYzLjFoLTJ2LTguNGg0LjZjMSAwIDEuOCAwIDIuNC40LjcuNSAxLjEgMSAxLjEgMS45em0tOS41IDYuMmgtNi43di04LjRoNi43djEuOGgtNC43djEuNWg0LjZ2MS43aC00LjZ2MS43aDQuN3YxLjd6bS04LjIgMGgtMi4xdi02LjZsLTIuOSA2LjZoLTEuOGwtMi45LTYuNnY2LjZoLTQuMWwtLjgtMS45aC00LjJsLS44IDEuOUg5LjVsMy42LTguNGgzbDMuNCA4di04aDMuM2wyLjYgNS43IDIuNC01LjdoMy40djguNHptMzIuNi0zLjZsLTEuNC0zLjQtMS40IDMuNGgyLjh6bS0xNy41LTEuNGMtLjMuMi0uNi4yLTEgLjJoLTIuNXYtMS45aDIuNWMuNCAwIC43IDAgMSAuMS4zLjEuNC40LjQuNyAwIC41LS4yLjgtLjQuOXpNMTYgMzEuMmwtMS40LTMuNC0xLjQgMy40SDE2em0zMi42IDEyLjVjMCAyLjMtMS43IDIuOC0zLjUgMi44aC0yLjV2Mi44aC0zLjlsLTIuNS0yLjgtMi42IDIuOGgtOHYtOC40aDguMWwyLjUgMi44IDIuNi0yLjhoNi40YzEuNiAwIDMuNC40IDMuNCAyLjh6bS0xNiAzLjloLTV2LTEuN0gzMnYtMS43aC00LjR2LTEuNWg1LjFsMi4yIDIuNS0yLjMgMi40em04IDFsLTMuMS0zLjQgMy4xLTMuM3Y2Ljd6bTQuNi0zLjhoLTIuNnYtMi4xaDIuNmMuNyAwIDEuMi4zIDEuMiAxcy0uNCAxLjEtMS4yIDEuMXptMTMuNi0zLjloNi43djEuN2gtNC43djEuNWg0LjZ2MS43aC00LjZ2MS43aDQuN3YxLjhoLTYuN3YtOC40em0tMi42IDQuNWMuNC4yLjguNSAxIC43LjMuNC4zLjguMyAxLjV2MS43aC0ydi0xLjFjMC0uNSAwLTEuMy0uMy0xLjYtLjMtLjMtLjctLjQtMS41LS40aC0yLjJ2My4xaC0ydi04LjRoNC43YzEgMCAxLjggMCAyLjQuNC42LjQgMSAuOSAxIDEuOS4xIDEuMy0uOCAyLTEuNCAyLjJ6bS0xLjItMWMtLjMuMi0uNi4yLTEgLjJoLTIuNXYtMS45SDU0Yy40IDAgLjcgMCAxIC4xLjMuMS40LjQuNC44IDAgLjMtLjEuNi0uNC44em0xOC4yLjVjLjQuNC42LjkuNiAxLjggMCAxLjgtMS4xIDIuNy0zLjIgMi43aC0zLjl2LTEuOGgzLjljLjQgMCAuNy0uMS44LS4yLjEtLjEuMi0uMy4yLS41cy0uMS0uNC0uMi0uNmMtLjItLjEtLjQtLjItLjctLjItMS45LS4xLTQuMi4xLTQuMi0yLjYgMC0xLjIuOC0yLjUgMi45LTIuNWg0djEuOGgtMy43Yy0uNCAwLS42IDAtLjguMi0uMi4xLS4zLjMtLjMuNnMuMi41LjQuNmMuMi4xLjQuMS44LjFoMS4xYzEuMS0uMSAxLjkuMSAyLjMuNnptOC4xIDMuNGMtLjUuNy0xLjQgMS4xLTIuNyAxLjFoLTMuOXYtMS44aDMuOWMuNCAwIC43LS4xLjgtLjIuMS0uMS4yLS4zLjItLjVzLS4xLS40LS4yLS42Yy0uMi0uMi0uNC0uMy0uOC0uMy0xLjktLjEtNC4zLjEtNC4zLTIuNiAwLTEuMi44LTIuNSAyLjktMi41aDR2LTEuN2gtMy43Yy0xLjEgMC0xLjkuMy0yLjUuN3YtLjdoLTUuNWMtLjkgMC0xLjkuMi0yLjQuN3YtLjdoLTkuOXYuN2MtLjgtLjYtMi4xLS43LTIuNy0uN0g0OHYuN2MtLjYtLjYtMi0uNy0yLjgtLjdoLTcuM0wzNi4yIDQxbC0xLjYtMS44SDIzLjhWNTFoMTAuN2wxLjctMS44IDEuNiAxLjhoNi42di0yLjhoLjZjLjkgMCAxLjkgMCAyLjgtLjRWNTFoNS40di0zLjFoLjNjLjMgMCAuNCAwIC40LjNWNTFoMTYuNWMxIDAgMi4xLS4zIDIuNy0uOHYuOGg1LjJjMS4xIDAgMi4xLS4yIDMtLjV2LTIuMnptMC01LjZoLTMuN2MtLjQgMC0uNiAwLS44LjItLjIuMS0uMy4zLS4zLjZzLjIuNS40LjZjLjIuMS40LjEuOC4xaDEuMWMxLjEgMCAxLjguMiAyLjMuN2wuMi4ydi0yLjR6Ii8+Cjwvc3ZnPg==) no-repeat}#hotspot_rates1,#hotspot_rates2{width:70px;height:14px;left:10px}#hotspot_banner,#hotspot_cta,#hotspot_rates1,#hotspot_rates2{background-color:rgba(0,0,0,0);cursor:pointer}#hotspot_banner{width:160px;height:600px}#hotspot_cta{width:116px;height:35px;top:474px;left:10px}#hotspot_rates1{top:565px}#hotspot_rates2{top:576px}</style>
+</head>
+
+<body>
+<div class="container" id="banner" style="visibility: inherit; opacity: 1;">
+
+	<div style="top: 118px;" class="bmp_goldcard sprite card"></div>
+	<div style="transform: matrix(1, 0, 0, 1, 0, -600);" class="mask_forBackgrounds">
+		<div style="transform: matrix(1, 0, 0, 1, -160, 289);" class="bmp_ocean sprite img1"></div>
+		<div style="transform: matrix(1, 0, 0, 1, -320, 0);" class="bmp_shopper sprite img2"></div>
+		<div style="transform: matrix(1, 0, 0, 1, -160, 311);" class="bmp_suitcase sprite img3"></div>
+	</div>
+
+	<div style="transform: matrix(1, 0, 0, 1, -290, 0);" class="copy_headline0">PREMIER<br>REWARDS<br>GOLD CARD</div>
+
+	<div style="opacity: 0; transform: matrix(1, 0, 0, 1, -290, 0);" class="copy_headline1">ADVENTURES<br>AWAIT</div>
+	<div style="opacity: 0; transform: matrix(1, 0, 0, 1, -290, 0);" class="gfx_dot gfx_headline1_dot1"></div>
+	<div style="opacity: 0; transform: matrix(1, 0, 0, 1, -290, 0);" class="gfx_dot gfx_headline1_dot2"></div>
+	<div style="opacity: 0; transform: matrix(1, 0, 0, 1, -290, 0);" class="gfx_dot gfx_headline1_dot3"></div>
+
+	<div style="opacity: 0; transform: matrix(1, 0, 0, 1, -290, 0);" class="copy_headline2">SO DO<br>BENEFITS</div>
+	<div style="opacity: 0; transform: matrix(1, 0, 0, 1, -290, 0);" class="gfx_dot gfx_headline2_dot1"></div>
+	<div style="opacity: 0; transform: matrix(1, 0, 0, 1, -290, 0);" class="gfx_dot gfx_headline2_dot2"></div>
+	<div style="opacity: 0; transform: matrix(1, 0, 0, 1, -290, 0);" class="gfx_dot gfx_headline2_dot3"></div>
+
+	<div style="opacity: 0; transform: matrix(1, 0, 0, 1, -290, 0);" class="copy_headline3">NO FOREIGN<br>TRANSACTION<br>FEES</div>
+	<div style="opacity: 0; transform: matrix(1, 0, 0, 1, -290, 0);" class="gfx_dot gfx_headline3_dot1"></div>
+	<div style="opacity: 0; transform: matrix(1, 0, 0, 1, -290, 0);" class="gfx_dot gfx_headline3_dot2"></div>
+	<div style="opacity: 0; transform: matrix(1, 0, 0, 1, -290, 0);" class="gfx_dot gfx_headline3_dot3"></div>
+
+	<div style="opacity: 0; transform: matrix(1, 0, 0, 1, -290, 0);" class="copy_headline4">
+		<div class="txt1">$100 AIRLINE<br>FEE CREDIT.</div>
+		<div class="txt2">GET UP TO<br>$100 A YEAR<br>FOR BAGGAGE<br>FEES AND MORE<br>WITH ONE AIRLINE.</div>
+	</div>
+	<div style="opacity: 0; transform: matrix(1, 0, 0, 1, -290, 0);" class="gfx_dot gfx_headline4_dot1"></div>
+	<div style="opacity: 0; transform: matrix(1, 0, 0, 1, -290, 0);" class="gfx_dot gfx_headline4_dot2"></div>
+	<div style="opacity: 0; transform: matrix(1, 0, 0, 1, -290, 0);" class="gfx_dot gfx_headline4_dot3"></div>
+
+	<div style="opacity: 1; transform: matrix(1, 0, 0, 1, 0, 0);" class="copy_premierRewardsGoldCard">Premier Rewards<br>Gold Card</div>
+	<div style="opacity: 1; transform: matrix(1, 0, 0, 1, 0, 0);" class="copy_get25000pointsPlus">
+		<div class="txt2">Get 25,000 Points</div>
+		<div class="txt3">Plus, Receive 3X Points<br>For Flights Booked<br>Directly With Airlines</div>
+	</div>
+
+	<div style="visibility: hidden; opacity: 0; transform: matrix(1, 0, 0, 1, -300, 0);" id="rates1" class="copy_ratesAndFees1">Rates and Fees</div>
+	<div style="visibility: hidden; opacity: 0; transform: matrix(1, 0, 0, 1, -290, 0);" class="copy_termsAndLimitations1">Terms and Conditions apply.</div>
+
+	<div style="opacity: 1; transform: matrix(1, 0, 0, 1, 0, 0);" class="copy_theJourneyNeverStops">
+		<div id="amex_jns_txt">the journey<br>never stops<sup>SM</sup></div>
+		<div id="dot-holder">
+			<div class="dot"></div>
+			<div class="dot"></div>
+			<div class="dot"></div>
+		</div>
+	</div>
+
+	<div style="transform: matrix(1, 0, 0, 1, 0, 0);" class="gfx_ctaLogoPanel">
+		<div class="logo_amexBluebox"></div>
+		<div class="btn_learnMore">
+			<div style="left: 120px;" id="cta_highlight" class="cta_highlight"></div>
+			<div class="btn_learnMore_txt">Learn More</div>
+		</div>
+		<div id="rates2" class="copy_ratesAndFees2">Rates and Fees</div>
+		<div class="copy_termsAndLimitations2">Terms and Conditions apply.</div>
+	</div>
+
+	<div class="container-border"></div>
+
+	<div id="hotspot_banner"></div>
+	<div style="visibility: inherit; opacity: 1;" id="hotspot_cta"></div>
+	<div style="visibility: hidden; opacity: 0; transform: matrix(1, 0, 0, 1, -300, 0);" id="hotspot_rates1"></div>
+	<div style="visibility: inherit; opacity: 1;" id="hotspot_rates2"></div>
+
+</div>
+
+<script src="Amex_PRG_Flights_v1_160x600_data/TweenMax.js"></script>
+<script>
+	var clickTag = "https://www.google.com";
+	var clickTag1 = "https://www.americanexpress.com";
+	window.onload = function ()
+	{
+		TweenMax.set('#banner', {autoAlpha:1});
+		TweenMax.set(['#hotspot_rates2','#hotspot_cta'], {autoAlpha:0});
+
+		TweenMax.to('.mask_forBackgrounds', 0.5, {delay: 1.0, y:-289, ease:Quad.easeOut});
+		TweenMax.to('.bmp_ocean', 0.5, {delay: 1.0, y:289, ease:Quad.easeOut});
+		TweenMax.to('.copy_headline0', 0.5, {delay: 1.0, x:-290, ease:Quad.easeOut});
+
+		TweenMax.from('.copy_headline1', 0.5, {delay: 1.0, x:160, alpha:0, ease:Quad.easeOut});
+		TweenMax.from('.gfx_headline1_dot1', 0.5, {delay: 1.1, x:160, alpha:0, ease:Quad.easeOut});
+		TweenMax.from('.gfx_headline1_dot2', 0.5, {delay: 1.2, x:160, alpha:0, ease:Quad.easeOut});
+		TweenMax.from('.gfx_headline1_dot3', 0.5, {delay: 1.3, x:160, alpha:0, ease:Quad.easeOut});
+
+		TweenMax.to('.copy_headline1', 0.5, {delay: 3.4, x:-290, alpha:0, ease:Quad.easeOut});
+		TweenMax.to('.gfx_headline1_dot1', 0.5, {delay: 3.4, x:-290, alpha:0, ease:Quad.easeOut});
+		TweenMax.to('.gfx_headline1_dot2', 0.5, {delay: 3.45, x:-290, alpha:0, ease:Quad.easeOut});
+		TweenMax.to('.gfx_headline1_dot3', 0.5, {delay: 3.5, x:-290, alpha:0, ease:Quad.easeOut});
+
+		TweenMax.from('.copy_headline2', 0.5, {delay: 3.4, x:160, alpha:0, ease:Quad.easeOut});
+		TweenMax.from('.gfx_headline2_dot1', 0.5, {delay: 3.5, x:160, alpha:0, ease:Quad.easeOut});
+		TweenMax.from('.gfx_headline2_dot2', 0.5, {delay: 3.6, x:160, alpha:0, ease:Quad.easeOut});
+		TweenMax.from('.gfx_headline2_dot3', 0.5, {delay: 3.7, x:160, alpha:0, ease:Quad.easeOut});
+
+		TweenMax.to('.copy_headline2', 0.5, {delay: 6.1, x:-290, alpha:0, ease:Quad.easeOut});
+		TweenMax.to('.gfx_headline2_dot1', 0.5, {delay: 6.1, x:-290, alpha:0, ease:Quad.easeOut});
+		TweenMax.to('.gfx_headline2_dot2', 0.5, {delay: 6.15, x:-290, alpha:0, ease:Quad.easeOut});
+		TweenMax.to('.gfx_headline2_dot3', 0.5, {delay: 6.2, x:-290, alpha:0, ease:Quad.easeOut});
+
+		TweenMax.from('.copy_headline3', 0.5, {delay: 6.1, x:160, alpha:0, ease:Quad.easeOut});
+		TweenMax.from('.gfx_headline3_dot1', 0.5, {delay: 6.2, x:160, alpha:0, ease:Quad.easeOut});
+		TweenMax.from('.gfx_headline3_dot2', 0.5, {delay: 6.3, x:160, alpha:0, ease:Quad.easeOut});
+		TweenMax.from('.gfx_headline3_dot3', 0.5, {delay: 6.4, x:160, alpha:0, ease:Quad.easeOut});
+
+		TweenMax.from(['#hotspot_rates1','.copy_ratesAndFees1','.copy_termsAndLimitations1'], 0.3, {delay: 6.2, x:300, autoAlpha:0, ease:Quad.easeOut});
+		TweenMax.to('.bmp_ocean', 0.5, {delay: 6.2, x:-160, ease:Quad.easeOut});
+		TweenMax.to('.bmp_shopper', 0.5, {delay: 6.2, x:-160, ease:Quad.easeOut});
+
+		TweenMax.to('.copy_headline3', 0.5, {delay: 9.0, x:-290, alpha:0, ease:Quad.easeOut});
+		TweenMax.to('.gfx_headline3_dot1', 0.5, {delay: 9.0, x:-290, alpha:0, ease:Quad.easeOut});
+		TweenMax.to('.gfx_headline3_dot2', 0.5, {delay: 9.05, x:-290, alpha:0, ease:Quad.easeOut});
+		TweenMax.to('.gfx_headline3_dot3', 0.5, {delay: 9.1, x:-290, alpha:0, ease:Quad.easeOut});
+
+		TweenMax.from('.copy_headline4', 0.5, {delay: 9.0, x:400, alpha:0, ease:Quad.easeOut});
+		TweenMax.from('.gfx_headline4_dot1', 0.5, {delay: 9.1, x:160, alpha:0, ease:Quad.easeOut});
+		TweenMax.from('.gfx_headline4_dot2', 0.5, {delay: 9.2, x:160, alpha:0, ease:Quad.easeOut});
+		TweenMax.from('.gfx_headline4_dot3', 0.5, {delay: 9.3, x:160, alpha:0, ease:Quad.easeOut});
+		TweenMax.to(['#hotspot_rates1','.copy_ratesAndFees1'], 0.5, {delay: 9.0, x:-300, autoAlpha:0, ease:Quad.easeOut});
+		TweenMax.to('.bmp_shopper', 0.5, {delay: 9.0, x:-320, ease:Quad.easeOut});
+		TweenMax.to('.bmp_suitcase', 0.5, {delay: 9.0, x:-160, ease:Quad.easeOut});
+
+		TweenMax.to('.copy_headline4', 0.5, {delay: 11.75, x:-290, alpha:0, ease:Quad.easeOut});
+		TweenMax.to('.gfx_headline4_dot1', 0.5, {delay: 11.75, x:-290, alpha:0, ease:Quad.easeOut});
+		TweenMax.to('.gfx_headline4_dot2', 0.5, {delay: 11.8, x:-290, alpha:0, ease:Quad.easeOut});
+		TweenMax.to('.gfx_headline4_dot3', 0.5, {delay: 11.85, x:-290, alpha:0, ease:Quad.easeOut});
+		TweenMax.to('.copy_termsAndLimitations1', 0.5, {delay: 11.85, x:-290, autoAlpha:0, ease:Quad.easeOut});
+
+		TweenMax.to('.mask_forBackgrounds', 0.5, {delay: 11.75, y:-600, ease:Quad.easeOut});
+		TweenMax.to('.bmp_suitcase', 0.5, {delay: 11.75, y:311, ease:Quad.easeOut});
+		TweenMax.to('.bmp_goldcard', 0.5, {delay: 11.75, top:118, ease:Quad.easeOut});
+		TweenMax.from('.gfx_ctaLogoPanel', 0.5, {delay: 11.75, y:137, ease:Quad.easeOut});
+		TweenMax.set(['#hotspot_rates2','#hotspot_cta'], {delay: 11.75, autoAlpha:1});
+
+		TweenMax.from('.copy_premierRewardsGoldCard', 0.5, {delay: 12.2, y:"+=20", alpha:0, ease:Quad.easeOut});
+		TweenMax.from('.copy_get25000pointsPlus', 0.5, {delay: 13.0, y:"+=20", alpha:0, ease:Quad.easeOut});
+		TweenMax.from('.copy_theJourneyNeverStops', 0.5, {delay: 13.0, y:"+=20", alpha:0, ease:Quad.easeOut});
+		TweenMax.delayedCall(13.25, displayCTAHighlight);
+
+		document.getElementById("hotspot_banner").addEventListener("click", function ()
+		{
+			window.open(window.clickTag);
+		}, false);
+		document.getElementById("hotspot_cta").addEventListener("click", function ()
+		{
+			window.open(window.clickTag);
+		}, false);
+		document.getElementById("hotspot_rates1").addEventListener("click", function ()
+		{
+			window.open(window.clickTag1);
+		}, false);
+		document.getElementById("hotspot_rates2").addEventListener("click", function ()
+		{
+			window.open(window.clickTag1);
+		}, false);
+
+		document.getElementById("hotspot_cta").addEventListener("mouseover", function ()
+		{
+			displayCTAHighlight();
+		}, false);
+
+		function displayCTAHighlight()
+		{
+			return TweenMax.fromTo(['#cta_highlight'],1,{left:-200},{left:120, ease:Power2.easeOut, paused:true}).restart();
+		}
+
+		document.getElementById("hotspot_rates1").addEventListener("mouseover", function ()
+		{
+			return TweenMax.fromTo(['.copy_ratesAndFees1'],0.25,{color: 'rgba(255,255,255,0.75)'},{color: 'rgba(255,255,255,1)', paused:true}).restart();
+		}, false);
+		document.getElementById("hotspot_rates1").addEventListener("mouseout", function ()
+		{
+			return TweenMax.to(['.copy_ratesAndFees1'],0.25,{color: 'rgba(255,255,255,0.75)'});
+		}, false);
+
+
+		document.getElementById("hotspot_rates2").addEventListener("mouseover", function ()
+		{
+			return TweenMax.fromTo(['.copy_ratesAndFees2'],0.25,{color: 'rgba(0,0,0,0.65)'},{color: 'rgba(0,0,0,1)', paused:true}).restart();
+		}, false);
+		document.getElementById("hotspot_rates2").addEventListener("mouseout", function ()
+		{
+			return TweenMax.to(['.copy_ratesAndFees2'],0.25,{color: 'rgba(0,0,0,0.65)'});
+		}, false);
+	}
+
+</script>
+
+
+</body></html>

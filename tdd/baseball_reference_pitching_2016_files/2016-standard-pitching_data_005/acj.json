@@ -1,0 +1,29 @@
+OX_6848718573({
+  "ads":{
+    "chain":1,
+    "medium":"w",
+    "record_tmpl":"http://us-ads.openx.net/{medium}/1.0/{rtype}?ts={txn_state}",
+    "pixels":"http://us-u.openx.net/w/1.0/pd?plm=6&ph=94ef58655625200a8cfc5b15afcd0b94ad52d590",
+    "adunits" : [
+      {
+        "auid":"537209676",
+        "chain_timeout":"1000",
+        "chain":[
+          {
+            "is_fallback":0,
+            "framed":1,
+            "ad_id":"537149982",
+            "adv_acct_id":"537073286",
+            "width":"160",
+            "height":"600",
+            "html":"<iframe src=\"http://eastads.simpli.fi/ads/171692/1175421/ad.html?sifi=5957,171692,1175421,66557882172488,3,8180,8206,17305,0,299,5,v,11517181.00000,AAABVEO8PO21ZlOKwQ7mvDe5Ty_U6YupwV-PFQ,0,0,1,10,9DB2A86CB4D24B56B34B6C45020FDC1B,0,3,0,0,400,1,0,0,601,802,701,dcbid77:9009-1461425290054-66470257,0,1,199185,2,2,20,494415,02210,0,0.45,0,0,406827967,0,0,0,1,-4,0,1&sifi_uid=9DB2A86CB4D24B56B34B6C45020FDC1B&sifi_exchange_uid=0e4ee9b5-792d-1e3c-85ee-bc020830b3c0&request_id=e719c046-3ec1-4a32-aff4-59f90eefb44f&sifi_transaction=dcbid77:9009-1461425290054-66470257\" width=\"160\" height=\"600\" frameborder=\"0\" marginwidth=\"0\" marginheight=\"0\" scrolling=\"no\"></iframe>",
+            "target":"_blank",
+            "ts":"1fHJpZD1lNTliYTNkOS03OGU4LTQwNzgtYmY3OS1hMGZmNTQ4OGRjMWN8cnQ9MTQ2MTQyNTI4OXxhdWlkPTUzNzIwOTY3NnxhdW09RE1JRC5XRUJ8c2lkPTUzNzEzNDM2MXxwdWI9MTEzMjE1fHBjPVVTRHxyYWlkPWFkZTA2YTNmLWQ3YWYtNDEyNC04Y2I0LTcxOTE5M2E0NzIwZnxjbD0xfGFpZD01MzcxNDk5ODJ8dD0xMnxhcz0xNjB4NjAwfGxpZD01MzcxMjA3MTB8b2lkPTUzNzA5NjI1NHxwPTg2MHxwcj01NjJ8YXRiPTg4NXxhZHY9NTM3MDczMjg2fGFjPVVTRHxwbT1QUklDSU5HLkNQTXxtPTF8YWk9MTUyZDA3YjEtZGE0MS00YzQwLWFkMTgtZmU3NGMyNjk1MzRhfG1jPVVTRHxtcj0yOTh8cGk9NTYyfG11aT00NmM5OWJlMy0wMGZiLTQ0ZTYtY2FlOS1iNzFkMDQ4NTQwZjl8bWE9ZTcxOWMwNDYtM2VjMS00YTMyLWFmZjQtNTlmOTBlZWZiNDRmfG1ydD0xNDYxNDI1Mjg5fG1yYz1TUlRfV09OfG13YT01MzcwNzMyODZ8bXdiaT02MzEwNHxtd2I9ODg1fG1hcD04NjB8ZWxnPTF8bW9jPVVTRHxtb3I9Mjk4fG1wYz1VU0R8bXByPTU2MnxtcGY9MzAwfG1tZj0zMDB8bXBuZj00MDB8bW1uZj00MDB8cGN2PTIwMTYwMzA4fG1vPU9YfGVjPTExNzU0MjF8bXB1PTU2MnxtY3A9ODYwfGFxdD1ydGJ8bXdjPTUzNzA5NjI1NHxtd3A9NTM3MTIwNzEwfG13Y3I9NTM3MTQ5OTgyfG13aXM9MXxtd3B0PW94X3Byb3RvfGNpPTF8dXI9dW5TMVdtV2RaTHxsZD1ib3N0b25zcG9ydHNtZWQuY29t",
+            "type":"html",
+            "ad_url":"<iframe src=\"http://eastads.simpli.fi/ads/171692/1175421/ad.html?sifi=5957,171692,1175421,66557882172488,3,8180,8206,17305,0,299,5,v,11517181.00000,AAABVEO8PO21ZlOKwQ7mvDe5Ty_U6YupwV-PFQ,0,0,1,10,9DB2A86CB4D24B56B34B6C45020FDC1B,0,3,0,0,400,1,0,0,601,802,701,dcbid77:9009-1461425290054-66470257,0,1,199185,2,2,20,494415,02210,0,0.45,0,0,406827967,0,0,0,1,-4,0,1&sifi_uid=9DB2A86CB4D24B56B34B6C45020FDC1B&sifi_exchange_uid=0e4ee9b5-792d-1e3c-85ee-bc020830b3c0&request_id=e719c046-3ec1-4a32-aff4-59f90eefb44f&sifi_transaction=dcbid77:9009-1461425290054-66470257\" width=\"160\" height=\"600\" frameborder=\"0\" marginwidth=\"0\" marginheight=\"0\" scrolling=\"no\"></iframe>"
+          }
+        ]
+      }
+    ]
+  }
+});

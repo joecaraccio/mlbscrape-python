@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8"><script type="text/javascript">
+    
+      (function() {
+        var relegateNavigation = '';
+        var handleClickTagMessage = function(e) {
+          try {
+            var eventData = JSON.parse(e.data);
+          } catch (err) {
+            return;
+          }
+          if (eventData.isInitClickTag) {
+            if (eventData.clickTags) {
+              for (var i = 0; i < eventData.clickTags.length; i++) {
+                var clkTag = eventData.clickTags[i];
+                window[clkTag.name] = clkTag.url;
+              }
+            } else if (eventData.clickTag) {
+              window.clickTag = eventData.clickTag;
+            }
+            relegateNavigation = eventData.relegateNavigation;
+          }
+        };
+
+        if (open.call) {
+          window.open = function(open) {
+            return function(url, name, features) {
+              if (relegateNavigation === 'parent') {
+                var message = {'clickTag': url, 'isPostClickTag': true};
+                parent.postMessage(JSON.stringify(message), '*');
+              } else {
+                var args = [url, name];
+                if (features) {
+                  args.push(features);
+                }
+                open.apply(window, args);
+              }
+            };
+          }(window.open);
+        }
+
+        if (window.addEventListener) {
+          window.addEventListener(
+              'message', handleClickTagMessage, false);
+        } else {
+          window.attachEvent('onmessage', handleClickTagMessage);
+        }
+      })();
+    
+  </script>
+    <meta charset="UTF-8">
+    <title>BCP_LTO_Supermarkets_160x600</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link rel="stylesheet" href="BCP_LTO_Supermarkets_160x600_data/reset.css">
+    <link rel="stylesheet" href="BCP_LTO_Supermarkets_160x600_data/160x600.css">
+    <script type="text/javascript">
+    var clickTag = "http://www.americanexpress.com/";
+    // var clickTag2 = "http://www.google.com/";
+    function checkGreensockReady() {
+        if (window.TimelineMax) {
+            //console.log('greensockready');
+            startAd();
+        } else {
+            setTimeout(checkGreensockReady, 50);
+        }
+    }
+    window.onload = checkGreensockReady;
+    </script>
+</head>
+
+<body>
+    <!-- Start your Banner here -->
+    <div class="banner" id="banner">
+        <span class="text images-second-text" id="second-text"></span>
+        <span class="text images-third-text" id="third-text">
+				<span class="text images-terms1" id="terms1"></span>
+        </span>
+        <div class="images-card" id="card"></div>
+        <div id="earn-text">
+            <span class="text images-earn" id="earn-title"></span>
+            <div id="numbers">
+                <span id="number">0</span>
+                <span id="porcentage">%</span>
+            </div>
+            <span class="text images-supermakets" id="category1"></span>
+            <span class="text images-gas" id="category2"></span>
+            <span class="text images-other-purchase" id="category3"></span>
+            <span class="text images-terms" id="terms"></span>
+        </div>
+        <div id="final-frame">
+            <span class="text images-ff-text1" id="ff-title"></span>
+            <span class="text images-ff-text2" id="ff-cashback"></span>
+            <span class="text images-ff-terms" id="ff-terms"></span>
+            <div id="logo"></div>
+        </div>
+        <div id="cta">
+            <div class="images-button" id="button"></div>
+            <div id="shiner"></div>
+        </div>
+        <div id="initial-white"></div>
+        <div id="initial-blue">
+            <span class="text images-intro-text" id="intro-text"></span>
+        </div>
+        <div id="second-blue"></div>
+        <div id="clicktag" onclick="fnExitHandler()"></div>
+    </div>
+    <!-- Finish your Banner here -->
+    <script src="BCP_LTO_Supermarkets_160x600_data/Enabler.js"></script>
+    <script src="BCP_LTO_Supermarkets_160x600_data/TweenMax.js"></script>
+    <script src="BCP_LTO_Supermarkets_160x600_data/160x600.js"></script>
+
+
+
+</body></html>

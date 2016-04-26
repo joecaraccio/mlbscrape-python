@@ -1,0 +1,75 @@
+@charset "UTF-8";
+
+body {
+	margin: 0;
+}
+*:not(br) {
+	position:absolute;
+	-webkit-font-smoothing:antialiased;
+}
+* {
+	-webkit-user-select: none;  /* Chrome all / Safari all */
+	-moz-user-select: none;     /* Firefox all */
+	-ms-user-select: none;      /* IE 10+ */
+	user-select: none; 
+}
+sup {
+    position: relative;
+    font-size: 60%;
+    vertical-align: baseline;
+    top: -.35em;
+}
+.tiny {
+	-webkit-font-smoothing: subpixel-antialiased;
+}
+.openQuote,
+.closeQuote	{
+	font-size: 42px;
+	font-family: 'Passion One', cursive;
+}
+span, strong {
+	position: relative;
+}
+.gold {
+	color: #f1b65c;
+}
+.hashtag {
+	letter-spacing: -0.5px;
+}
+.lead3_2 {
+	letter-spacing: -0.25px;
+}
+
+
+
+/* Div layer for the entire banner. */
+.banner-container {
+	border:1px solid #666666;
+	position: relative;
+	width: 726px;
+	height: 88px;
+	top: 0px;
+	left: 0px;
+	/*margin: auto;*/
+	z-index:1;
+	overflow:hidden;
+}
+/*
+#clickSpace {
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	width: 728px;
+	height: 90px;
+	z-index: 400;
+	cursor: pointer;
+}
+*/
+.hitSpot{
+  position: absolute;
+  width: 728px;
+  height: 90px;
+  cursor: pointer;
+  background: rgba(0,0,0,0.001);
+  z-index: 9999;
+}

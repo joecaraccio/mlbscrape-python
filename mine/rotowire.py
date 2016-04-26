@@ -83,6 +83,7 @@ class RotoWire(object):
         :return: list of Game objects representing the lineups for the day
         """
         #TODO: add feature to look if the lineup is pending
+        #TODO: add feature to look if it's going to rain
         lineup_soup = BeautifulSoupHelper.get_soup_from_url(RotoWire.DAILY_LINEUPS_URL)
         header_nodes = lineup_soup.findAll("div", {"class": RotoWire.TEAM_REGION_LABEL})
         games = list()
@@ -106,8 +107,6 @@ class RotoWire(object):
             current_game = RotoWire.Game(away_team_lineup, away_team_pitcher, home_team_lineup, home_team_pitcher)
             if current_game.is_valid():
                 games.append(current_game)
-                #TODO: remove this debugging line
-                #break
             else:
                 print "Game between %s and %s is not valid." % (away_team_abbreviation, home_team_abbreviation)
 
@@ -226,7 +225,7 @@ class RotoWire(object):
                                                                         date.today().year,
                                                                         pitcher_soup)
             except BaseballReference.NameNotFound:
-                print "Skipping committing this hitter '%s %s'." % (first_name, last_name)
+                print "Skipping committing this pitcher '%s %s'." % (first_name, last_name)
                 return
 
             RotoWire.create_new_pitcher_entry(pitcher, baseball_reference_id, database_session)
@@ -259,16 +258,18 @@ class RotoWire(object):
             for current_hitter in game.away_lineup:
                 pitcher_hand = game.home_pitcher.hand
                 print "Mining %s." % current_hitter.name
-                pregame_hitter_entry = RotoWire.get_hitter_stats(current_hitter.rotowire_id,
+                try:
+                    pregame_hitter_entry = RotoWire.get_hitter_stats(current_hitter.rotowire_id,
                                                                  game.home_pitcher.rotowire_id,
                                                                  current_hitter.team,
                                                                  pitcher_hand,
                                                                  database_session)
-                pregame_hitter_entry.game_id = RotoWire.get_game_id(game.away_lineup[0].team, game.home_lineup[0].team)
-                RotoWire.predict_draftkings_points(pregame_hitter_entry)
-                database_session.add(pregame_hitter_entry)
-                try:
+                    pregame_hitter_entry.game_id = RotoWire.get_game_id(game.away_lineup[0].team, game.home_lineup[0].team)
+                    RotoWire.predict_draftkings_points(pregame_hitter_entry)
+                    database_session.add(pregame_hitter_entry)
                     database_session.commit()
+                except RotoWire.HitterNotFound as e:
+                    print e
                 except IntegrityError:
                     print "Attempt to duplicate hitter entry: %s %s" % (current_hitter.name,
                                                                         pregame_hitter_entry.game_id)
@@ -276,16 +277,18 @@ class RotoWire(object):
             for current_hitter in game.home_lineup:
                 pitcher_hand = game.away_pitcher.hand
                 print "Mining %s." % current_hitter.name
-                pregame_hitter_entry = RotoWire.get_hitter_stats(current_hitter.rotowire_id,
+                try:
+                    pregame_hitter_entry = RotoWire.get_hitter_stats(current_hitter.rotowire_id,
                                                                  game.away_pitcher.rotowire_id,
                                                                  current_hitter.team,
                                                                  pitcher_hand,
                                                                  database_session)
-                pregame_hitter_entry.game_id = RotoWire.get_game_id(game.away_lineup[0].team, game.home_lineup[0].team)
-                RotoWire.predict_draftkings_points(pregame_hitter_entry)
-                database_session.add(pregame_hitter_entry)
-                try:
+                    pregame_hitter_entry.game_id = RotoWire.get_game_id(game.away_lineup[0].team, game.home_lineup[0].team)
+                    RotoWire.predict_draftkings_points(pregame_hitter_entry)
+                    database_session.add(pregame_hitter_entry)
                     database_session.commit()
+                except RotoWire.HitterNotFound as e:
+                    print e
                 except IntegrityError:
                     print "Attempt to duplicate hitter entry: %s %s" % (current_hitter.name,
                                                                         pregame_hitter_entry.game_id)
@@ -301,35 +304,50 @@ class RotoWire(object):
             current_pitcher = game.away_pitcher
             print "Mining %s." % current_pitcher.name
             game_id = RotoWire.get_game_id(game.away_pitcher.team, game.home_pitcher.team)
-            pregame_pitcher_entry = RotoWire.get_pitcher_stats(current_pitcher.rotowire_id,
-                                                               current_pitcher.team,
-                                                               game_id,
-                                                               database_session)
-            pregame_pitcher_entry.game_id = RotoWire.get_game_id(game.away_lineup[0].team, game.home_lineup[0].team)
-            RotoWire.predict_draftkings_points(pregame_pitcher_entry)
-            database_session.add(pregame_pitcher_entry)
             try:
+                pregame_pitcher_entry = RotoWire.get_pitcher_stats(current_pitcher.rotowire_id,
+                                                                   current_pitcher.team,
+                                                                   game_id,
+                                                                   database_session)
+
+                RotoWire.predict_draftkings_points(pregame_pitcher_entry)
+                database_session.add(pregame_pitcher_entry)
                 database_session.commit()
             except IntegrityError:
                 print "Attempt to duplicate pitcher entry: %s %s" % (pregame_pitcher_entry.name,
                                                                      pregame_pitcher_entry.game_id)
                 database_session.rollback()
+            except RotoWire.PitcherNotFound as e:
+                print e
 
             current_pitcher = game.home_pitcher
             print "Mining %s." % current_pitcher.name
             game_id = RotoWire.get_game_id(game.away_pitcher.team, game.home_pitcher.team)
-            pregame_pitcher_entry = RotoWire.get_pitcher_stats(current_pitcher.rotowire_id,
-                                                               current_pitcher.team,
-                                                               game_id,
-                                                               database_session)
-            RotoWire.predict_draftkings_points(pregame_pitcher_entry)
-            database_session.add(pregame_pitcher_entry)
             try:
+                pregame_pitcher_entry = RotoWire.get_pitcher_stats(current_pitcher.rotowire_id,
+                                                                   current_pitcher.team,
+                                                                   game_id,
+                                                                   database_session)
+
+                RotoWire.predict_draftkings_points(pregame_pitcher_entry)
+                database_session.add(pregame_pitcher_entry)
                 database_session.commit()
             except IntegrityError:
                 print "Attempt to duplicate pitcher entry: %s %s" % (pregame_pitcher_entry.name,
                                                                      pregame_pitcher_entry.game_id)
                 database_session.rollback()
+            except RotoWire.PitcherNotFound as e:
+                print e
+
+    class HitterNotFound(Exception):
+        def __init__(self, id_str):
+            super(RotoWire.HitterNotFound, self).__init__("Hitter '%s' not found in the database" %
+                                                                 id_str)
+
+    class PitcherNotFound(Exception):
+        def __init__(self, id_str):
+            super(RotoWire.PitcherNotFound, self).__init__("Pitcher '%s' not found in the database" %
+                                                                 id_str)
 
     @staticmethod
     def get_hitter_stats(batter_id, pitcher_id, team, pitcher_hand, database_session):
@@ -344,7 +362,10 @@ class RotoWire(object):
         pregame_hitter_entry.team = team
 
         # Career stats
-        hitter_entry = database_session.query(HitterEntry).filter(HitterEntry.rotowire_id == batter_id)[0]
+        hitter_entries = database_session.query(HitterEntry).filter(HitterEntry.rotowire_id == batter_id)
+        if hitter_entries.count() == 0:
+            raise RotoWire.HitterNotFound(batter_id)
+        hitter_entry = hitter_entries[0]
         hitter_career_soup = BaseballReference.get_hitter_page_career_soup(hitter_entry.baseball_reference_id)
         career_stats = BaseballReference.get_career_hitting_stats(hitter_entry.baseball_reference_id, hitter_career_soup)
         pregame_hitter_entry.career_ab = career_stats.ab
@@ -401,17 +422,22 @@ class RotoWire(object):
         pregame_hitter_entry.season_so = season_stats.so
 
         # Career versus this pitcher
-        pitcher_id = database_session.query(PitcherEntry).filter(PitcherEntry.rotowire_id == pregame_hitter_entry.pitcher_id)[0].baseball_reference_id
-        vs_pitcher_stats = BaseballReference.get_vs_pitcher_stats(hitter_entry.baseball_reference_id,
+        pitcher_entries = database_session.query(PitcherEntry).filter(PitcherEntry.rotowire_id == pregame_hitter_entry.pitcher_id)
+        # Couldn't find the pitcher, just continue and use default values
+        if pitcher_entries.count() == 0:
+            return pregame_hitter_entry
+        else:
+            pitcher_entry = pitcher_entries[0]
+            vs_pitcher_stats = BaseballReference.get_vs_pitcher_stats(pitcher_entry.baseball_reference_id,
                                                                   pitcher_id)
-        pregame_hitter_entry.vs_ab = vs_pitcher_stats.ab
-        pregame_hitter_entry.vs_h = vs_pitcher_stats.h
-        pregame_hitter_entry.vs_hr = vs_pitcher_stats.hr
-        pregame_hitter_entry.vs_rbi = vs_pitcher_stats.rbi
-        pregame_hitter_entry.vs_bb = vs_pitcher_stats.bb
-        pregame_hitter_entry.vs_so = vs_pitcher_stats.so
+            pregame_hitter_entry.vs_ab = vs_pitcher_stats.ab
+            pregame_hitter_entry.vs_h = vs_pitcher_stats.h
+            pregame_hitter_entry.vs_hr = vs_pitcher_stats.hr
+            pregame_hitter_entry.vs_rbi = vs_pitcher_stats.rbi
+            pregame_hitter_entry.vs_bb = vs_pitcher_stats.bb
+            pregame_hitter_entry.vs_so = vs_pitcher_stats.so
 
-        return pregame_hitter_entry
+            return pregame_hitter_entry
 
     @staticmethod
     def get_pitcher_stats(pitcher_id, team, game_id, database_session):
@@ -426,7 +452,11 @@ class RotoWire(object):
         pregame_hitter_entry.game_id = game_id
 
         # Career stats
-        pitcher_entry = database_session.query(PitcherEntry).filter(PitcherEntry.rotowire_id == pitcher_id)[0]
+        pitcher_entries = database_session.query(PitcherEntry).filter(PitcherEntry.rotowire_id == pitcher_id)
+        if pitcher_entries.count() == 0:
+            raise RotoWire.PitcherNotFound(pitcher_id)
+        pitcher_entry = pitcher_entries[0]
+
         pitcher_career_soup = BaseballReference.get_pitcher_page_career_soup(pitcher_entry.baseball_reference_id)
 
         career_stats = BaseballReference.get_career_pitching_stats(pitcher_entry.baseball_reference_id, pitcher_career_soup)
@@ -447,10 +477,10 @@ class RotoWire(object):
             pregame_hitter_entry.vs_bb += hitter.vs_bb
             pregame_hitter_entry.vs_so += hitter.vs_so
             pregame_hitter_entry.vs_hr += hitter.vs_hr
-            pregame_hitter_entry.vs_ab += hitter.vs_ab
+            # TODO: add plate apperances to hitter stats so we can accurately keep track of batters faced
+            pregame_hitter_entry.vs_bf += hitter.vs_ab
             # Approximate earned runs by the RBIs of opposing hitters
             pregame_hitter_entry.vs_er += hitter.vs_rbi
-            #TODO: how to calculate innings pitched?
 
         # Recent stats
         recent_stats = BaseballReference.get_recent_pitcher_stats(pitcher_entry.baseball_reference_id, pitcher_career_soup)
@@ -501,7 +531,7 @@ class RotoWire(object):
                               BAL="Baltimore Orioles",
                               BOS="Boston Red Sox",
                               CHC="Chicago Cubs",
-                              CHW="Chicago White Sox",
+                              CWS="Chicago White Sox",
                               CIN="Cincinnati Reds",
                               CLE="Cleveland Indians",
                               COL="Colorado Rockies",

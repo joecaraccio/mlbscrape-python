@@ -1,0 +1,343 @@
+/* CSS BASE RESET */
+html {
+  -ms-text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+    /*Universal box sizing with inheritance */
+  box-sizing: border-box;
+}
+
+*, *:before, *:after {
+    box-sizing: inherit;
+}
+
+body, body * {
+  vertical-align: baseline;
+  border: 0;
+  outline: 0;
+  padding: 0;
+  margin: 0;
+}
+
+sup {
+  font-size: 40%;
+  line-height: 12px;
+  position: absolute;
+}
+
+#container {
+	top: 0px;
+	left: 0px;
+	width: 160px;
+	height: 600px;
+	display: block;
+	position: relative;
+	cursor: pointer;
+	border: 1px solid black;
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+	overflow: hidden;
+}
+
+#banner {
+	top: 0px;
+	left: 0px;
+	width: 160px;
+	height: 600px;
+	display: block;
+	overflow: hidden;
+    background-color:  #006890;   
+    margin: auto;
+}
+
+#background {
+    position: absolute;
+    width: 160px;
+    height: 600px;
+    opacity: 0;
+    background-image: url(bg.jpg);
+   
+}
+#background2 {
+    position: absolute;
+    width:160px;
+    height: 600px;
+    top: 600px;
+    z-index: 2;
+    background-color: #006890;      
+}
+
+.txtsClass {
+    position: absolute;
+    text-align: left;
+    font-family:  Arial, sans-serif;
+    font-weight: 100;
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.txtsClassBold {
+    position: absolute;
+    text-align: left;
+    font-family:  Arial, sans-serif;
+    font-weight: bold;
+    color: #ffffff;
+    text-decoration: none;
+}
+
+#txt1 {
+    position: absolute;
+    top: 12px;
+    left: 15px;
+    /*text-align: right;*/
+    width: 118px;
+    height: 101px;
+    line-height: 110%;
+    font-size: 24px; 
+    color: #4d4f53;
+    /*z-index: 1;*/
+	background: url('text.png') no-repeat 0px -50px;
+}
+
+#txt1 .sty1 {
+    font-weight: bold;
+    color: #006890;
+    /*z-index: 1;*/
+}
+
+#txt1 .sty2 {
+    position: absolute;
+    left: 74px;
+}
+
+#txt2 {
+    position: absolute;
+    top: 68px;
+    left: 360px;
+    height: 43px;
+    width: 137px;
+    font-size: 20px;
+    z-index: 2;
+    opacity: 0;
+	background: url('text.png') no-repeat;
+}
+
+#terms {
+    position: absolute;
+    top: 394px;
+    left: 0px;
+    opacity:0;
+    width: 160px;
+    height: 10px;
+    font-size: 10px;
+    text-align: center;
+    letter-spacing: 0.2px;
+    z-index: 2;
+    white-space: nowrap;
+}
+
+#rates {
+    position: absolute;
+    top: 491px;
+    left: 36px;
+    width: 126px;
+    height: 19px;
+    font-size: 12px;
+    text-decoration: underline;
+    opacity: 0;
+    z-index: 2;
+}
+
+#cardContainer{
+    position: absolute;
+    width: 144px;
+    height: 92px;
+    top: 600px;
+    left: 7px;
+    overflow: hidden;
+    -moz-border-radius: 6px;
+    -webkit-border-radius: 6px;
+    border-radius: 6px;
+    z-index: 3;
+}
+
+#cardShine {    
+    position: absolute;
+    background: url('shimmer.png') no-repeat;
+    width: 100px;
+    height: 250px;
+    opacity: 0.8;
+    left:-110px;
+     z-index: 3;
+}
+
+#card {
+    position: absolute;
+    background: url('card.png') no-repeat -1px 0;
+    background-size:146px 93px;
+    width: 144px;
+    height: 92px;
+    z-index: 3;
+}
+
+#txt3Cont {
+    position: absolute;
+    top: 125px;
+    left: 11px;
+    overflow: hidden;
+    width: 285px;
+    height: 160px;
+    z-index: 2;
+}
+
+#txt3 {
+    position: absolute;
+    top: -145px;
+    left: 0px;
+    width: 270px;
+    height: 145px;
+    font-size: 20px;
+	font-weight: 700;
+    letter-spacing: 0.4px;
+    line-height: 22px;
+    z-index: 2;
+}
+
+#txt5Cont {
+    position: absolute;
+    top: 140px;
+    left: 0px;
+    overflow: hidden;
+    width: 160px;
+    height: 50px;
+    z-index: 2;
+}
+#txt5 {
+    position: absolute;
+    /*left: 44px;*/
+    top: 0px;
+    /*width: 51px;
+    height: 24px;*/
+    width: 160px;
+    height: auto;
+    font-size: 14px;
+    letter-spacing: 0.7px;
+    z-index: 2;
+	text-align: center;
+}
+
+#txt7Cont {
+    position: absolute;
+    top: 288px;
+    left: 17px;
+    overflow: hidden;
+    width: 140px;
+    height: 50px;
+    z-index: 2;
+}
+#txt7 {
+    position: absolute;
+    /*left: 44px;*/
+    top: 0px;
+    /*width: 60px;
+    height: 24px;*/
+    width: auto;
+    height: auto;
+    font-size: 12px;
+    z-index: 2;
+}
+
+#txt6Cont {
+    position: absolute;
+    top: 196px;
+    left: 6px;
+    overflow: hidden;
+    width: 122px;
+    height: 80px;
+    z-index: 2;
+    border-top: 1.5px solid #fff;
+}
+
+#txt6 {
+    position: absolute;
+    left: 0px;
+	right: 0px;
+	margin: 0 auto;
+    top: 22px;
+    width: 124px;
+    height: 80px;
+    z-index: 2;
+	text-align: center;
+}
+#txt6a, #txt6c {
+    font-size: 14px;
+    line-height: 17px;
+    letter-spacing: 0.3px;
+    width: auto;
+    height: auto;
+}
+
+#txt6 #txt6b {
+    font-size: 15px;
+    width: auto;
+    height: auto;
+}
+
+#logo {
+    position: absolute;
+    top: 547px;
+    left: 99px;
+    background: url('amexBlue.png') no-repeat;
+    width: 50px;
+    height: 43px;
+    opacity:0;
+    z-index: 2;
+}
+
+#ctaContainer {
+    position: absolute;
+    top: 454px;
+    left: 20px;
+    width: 118px;
+    height: 29px;
+    float: right;
+    overflow: hidden;
+    border-radius: 4px;
+    opacity: 0;
+    z-index: 2;
+}
+
+#ctaBtn {
+    position: absolute;
+    width: 118px;
+    height: 35px;
+    background-color: #FFF;
+    color: #002663;
+    font-size: 14px;
+    text-align: center;
+    font-weight: 700;
+    line-height: 28px;
+    z-index: 2;
+}
+
+#ctaBtnOver {
+    position: absolute;
+    left: -100px;
+    background: url('blueShimmer.png') no-repeat;
+    width: 118px;
+    height: 35px;
+    z-index: 2;
+}
+
+#invisibleOver {
+    position: absolute;
+    top: 0px;
+	left: 0px;
+    width: 160px;
+    height: 600px;
+    z-index: 4;
+	background-color: #000;
+	opacity: 0;
+}

@@ -1,0 +1,346 @@
+html, body, div, span, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+abbr, address, cite, code,
+del, dfn, em, img, ins, kbd, q, samp,
+small, strong, sub, sup, var,
+b, i,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, figcaption, figure, 
+footer, header, hgroup, menu, nav, section, summary,
+time, mark, audio, video {
+    margin:0;
+    padding:0;
+    border:0;
+    outline:0;
+    font-size:100%;
+    vertical-align:baseline;
+    background:transparent;
+}
+
+body {
+    background: #fff;
+}
+
+#banner {
+    position: relative;
+    overflow: hidden;
+    width: 158px;
+    height: 598px;
+    cursor: pointer;
+    border: 1px #333 solid;
+    background: #fff;
+}
+
+.text {
+    position: absolute;
+    display: block;
+}
+
+#initial-white {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 160px;
+    height: 600px;
+    background: url(gradient.png);
+}
+
+#initial-blue {
+    position: absolute;
+    top: 0;
+    left: 17px;
+    width: 143px;
+    height: 600px;
+    background: url(gradient-blue.png);
+}
+
+#intro-text {
+    top: 243px;
+    left: 8px;
+}
+
+#second-blue {
+    position: absolute;
+    top: 0;
+    left: -17px;
+    width: 17px;
+    height: 600px;
+    background: #006890;
+}
+
+#second-text {
+    z-index: 1;
+    top: 615px;
+    left: 24px;
+    opacity: 0;
+}
+
+
+#third-text {
+    z-index: 1;
+    top: 161px;
+    left: 22px;
+    opacity: 0;
+}
+
+
+#card {
+    position: absolute;
+    z-index: 2;
+    top: 650px;
+    left: 5px;
+}
+
+#earn-title {
+    z-index: 1;
+    top: -119px;
+    left: 23px;
+}
+
+
+#category1 {
+    z-index: 1;
+    top: 332px;
+    left: -165px;
+}
+
+#category2 {
+    z-index: 1;
+    top: 332px;
+    left: -154px;
+}
+
+#category3 {
+    z-index: 1;
+    top: 332px;
+    left: -173px;
+}
+
+#terms {
+    z-index: 1;
+    bottom: 77px;
+    left: 24px;
+    opacity: 0;
+}
+
+#terms1 {
+    z-index: 1;
+    top: 349px;
+    left: 0px;
+    opacity: 1;
+}
+
+#numbers {
+    position: relative;
+    z-index: 1;
+    top: 650px;
+    left: 60px;
+}
+#numbers #number {
+    font-family: Arial, sans-serif;
+    font-size: 80px;
+    font-weight: bold;
+    position: absolute;
+    top: 0;
+    left: 0;
+    color: #006890;
+}
+#numbers #porcentage {
+    font-family: Arial, sans-serif;
+    font-size: 40px;
+    position: absolute;
+    top: 9px;
+    left: 45px;
+    color: #006890;
+}
+
+#ff-title {
+    position: absolute;
+    z-index: 1;
+    top: 159px;
+    left: -166px;
+}
+
+#ff-cashback {
+    position: absolute;
+    z-index: 1;
+    top: 210px;
+    left: -261px;
+}
+
+
+#ff-terms {
+    position: absolute;
+    z-index: 1;
+    bottom: 136px;
+    left: 24px;
+    opacity: 0;
+}
+
+#button {
+    position: absolute;
+    z-index: 1;
+    bottom: 0px;
+    left: 0px;
+    opacity: 0;
+}
+
+#shiner {
+    position: absolute;
+    background: url(shine.png);
+    opacity: 0.5;
+    top: 0;
+    left: 0;
+    width: 99px;
+    height: 28px;
+    z-index: 1;
+}
+
+#cta {
+    position: relative;
+    z-index: 4;
+    top: 409px;
+    left: 25px;
+    width: 122px;
+    height: 33px;
+    overflow: hidden;
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    display: none;
+}
+
+#logo {
+    position: absolute;
+    z-index: 1;
+    right: 46px;
+    bottom: 50px;
+    width: 67px;
+    height: 59px;
+    opacity: 0;
+    background: url(logo.png);
+    /*background-size: 100% 100%;*/
+}
+
+#clicktag {
+    position: absolute;
+    z-index: 5;
+    width: 158px;
+    height: 598px;
+    top: 0;
+    left: 0;
+}
+
+.images-sprite,
+.images-button,
+.images-earn,
+.images-ff-terms,
+.images-ff-text1,
+.images-ff-text2,
+.images-gas,
+.images-intro-text,
+.images-logo,
+.images-other-purchase,
+.images-second-text,
+.images-third-text,
+.images-supermakets,
+.images-terms1,
+.images-terms {
+    background-image: url(sprite.png);
+    background-repeat: no-repeat;
+}
+
+.images-button {
+    width: 122px;
+    height: 33px;
+    background-position: 0 -671px;
+}
+
+.images-card {
+    background: url('card.png');
+    width: 148px;
+    height: 94px;
+    border-radius: 5px;
+    box-shadow: 3px 3px 2px #8f9499;
+}
+
+.images-earn {
+    width: 131px;
+    height: 59px;
+    background-position: 0 -376px;
+}
+
+.images-ff-terms {
+    width: 124px;
+    height: 10px;
+    background-position: -1px -491px;
+}
+
+.images-ff-text1 {
+    width: 125px;
+    height: 36px;
+    background-position: 0 -538px;
+}
+
+.images-ff-text2 {
+    width: 107px;
+    height: 87px;
+    background-position: 0 -572px;
+}
+
+.images-gas {
+    width: 123px;
+    height: 16px;
+    background-position: 0 -505px;
+}
+
+.images-intro-text {
+    width: 127px;
+    height: 58px;
+    background-position: -3px 0px;
+}
+
+.images-logo {
+    width: 67px;
+    height: 60px;
+    background: url('logo.png');
+    background-size: 100% 100%;
+}
+
+.images-other-purchase {
+    width: 138px;
+    height: 15px;
+    background-position: 0 -523px;
+}
+
+.images-second-text {
+    width: 135px;
+    height: 124px;
+    background-position: 0 -252px;
+}
+
+.images-third-text {
+    width: 123px;
+    height: 185px;
+    background-position: -1px -60px;
+}
+
+.images-supermakets {
+    width: 126px;
+    height: 13px;
+    background-position: 0 -477px;
+}
+
+.images-terms {
+    width: 75px;
+    height: 11px;
+    background-position: 0px -658px;
+}
+
+.images-terms1 {
+    width: 124px;
+    height: 10px;
+    background-position: -1px -491px;
+}

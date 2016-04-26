@@ -1,0 +1,207 @@
+@charset "UTF-8";
+/* Modified Poor Man’s Reset
+ * -------------------------------------------------------
+ */
+html, body {
+  padding: 0;
+  margin: 0;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none; }
+
+html {
+  font-size: 1em; }
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale; }
+
+a img, :link img, :visited img {
+  border: 0; }
+
+/* Utilities
+ * -------------------------------------------------------
+ */
+.visibility-off {
+  visibility: hidden; }
+
+.alpha-0 {
+  opacity: 0; }
+
+.gpu {
+  -webkit-backface-visibility: hidden;
+          backface-visibility: hidden;
+  -webkit-transform: translateZ(0);
+          transform: translateZ(0);
+  -webkit-transform: rotate(0.1deg);
+          transform: rotate(0.1deg); }
+
+/* Variables
+ * -------------------------------------------------------
+ */
+/* Ad content
+ * -------------------------------------------------------
+ */
+#ad_content {
+  background: #e4e5e3;
+  border: 1px solid black;
+  box-sizing: border-box;
+  cursor: pointer;
+  overflow: hidden;
+  position: absolute;
+  width: 160px;
+  height: 600px; }
+  #ad_content div, #ad_content img, #ad_content li {
+    position: absolute; }
+
+#f1_txt_1 {
+  visibility: hidden;
+  left: 10px;
+  top: 103px; }
+
+#f2_txt_2 {
+  visibility: hidden;
+  left: 10px;
+  top: 103px; }
+
+#f3_txt_1 {
+  visibility: hidden;
+  left: 10px;
+  top: 249px; }
+
+#f4_txt_2 {
+  visibility: hidden;
+  left: 10px;
+  top: 305px; }
+
+#scissor_light {
+  visibility: hidden;
+  left: 56px;
+  top: 396px; }
+
+#scissor_dark {
+  visibility: hidden;
+  left: 53px;
+  top: 404px; }
+
+#ribbon_left {
+  visibility: hidden;
+  left: 0px;
+  top: 357px;
+  width: 84px; }
+
+#ribbon_right {
+  visibility: hidden;
+  left: 84px;
+  top: 357px;
+  width: 130px;
+  background-position: -84px 0px; }
+
+#logo {
+  visibility: hidden;
+  left: 83px;
+  top: 546px; }
+
+#cta {
+  visibility: hidden;
+  left: 45px;
+  top: 495px; }
+
+#cta_over {
+  visibility: hidden; }
+
+#ie_backup {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 160px;
+  height: 600px;
+  background-image: url("ieBackup.gif");
+  display: none; }
+
+.sprite-png{
+  background-image: url('spritesheet.png');
+}
+
+.ribbon {
+  background-position: 0px 0px;
+  width: 300px;
+  height: 147px;
+}
+.scissor_dark {
+  background-position: 0px -148px;
+  width: 69px;
+  height: 86px;
+}
+.scissor_light {
+  background-position: -301px 0px;
+  width: 34px;
+  height: 105px;
+}
+
+
+.sprite-svg {
+	background: url("svgsprite.svg") no-repeat;
+}
+
+.cta_over {
+	background-position: 44.88235294117647% 79.74517374517376%;
+	width: 104px;
+	height: 32px;
+}
+
+.cta_up {
+	background-position: 0 99.83397683397685%;
+	width: 104px;
+	height: 32px;
+}
+
+.f1_txt_1 {
+	background-position: 0 44.659834547475%;
+	width: 137.34px;
+	height: 48.03px;
+}
+
+.f2_txt_2 {
+	background-position: 0 82.8385458009208%;
+	width: 137.34px;
+	height: 102.03px;
+}
+
+.f3_txt_1 {
+	background-position: 48.311523849725624% 64.95435684647303%;
+	width: 125.72px;
+	height: 50px;
+}
+
+.f4_txt_2 {
+	background-position: 47.853658536585364% 41.74906698472548%;
+	width: 123px;
+	height: 31.09px;
+}
+
+.logo {
+	background-position: 98.92690058479532% 35.2712088970972%;
+	width: 68px;
+	height: 41.93px;
+}
+
+.ribbon {
+	background-position: 0 0;
+	width: 302px;
+	height: 108.51px;
+}
+
+.scissor_dark {
+	background-position: 99.94977843426884% 0;
+	width: 71.5px;
+	height: 87.85px;
+}
+
+.scissor_light {
+	background-position: 80.81997484411379% 0;
+	width: 36.33px;
+	height: 110.52px;
+}
+

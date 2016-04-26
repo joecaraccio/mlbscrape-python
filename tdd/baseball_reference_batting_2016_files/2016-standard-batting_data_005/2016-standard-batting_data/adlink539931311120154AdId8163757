@@ -1,0 +1,109 @@
+if (!window.mraid) {document.write('\x3cdiv class="GoogleActiveViewClass" ' +'id="DfaVisibilityIdentifier_1561692072"\x3e');}
+/**
+ * Adat - Adobe Digital Ad Targeting 
+ */
+
+Adat=window.Adat||{};
+/* SETTINGS & CUSTOMIZATION */
+Adat.settings = {
+    data :  {
+        
+        //data 4 ATT, dmtry calls
+        d_campaign: "9277991",
+        d_site: "1584282",  
+        d_placement: "125969459",
+        d_creative_dat: "STATIC",        
+        d_creative: "64927157",
+        d_experience_id: "",
+
+        //data mbox
+        publisher : "N8667.151350.QUANTCAST",
+        pixel_id : "",
+        aam_cv: "",
+
+        weather: true,
+        zipcode : (function(){ 
+                    var results = new RegExp("[\\?&]zp=([^&#]*)").exec("ct=US&st=MA&city=13250&dma=8&zp=02127&bw=3");
+                    return results == null ? "11201" : decodeURIComponent(results[1].replace(/\+/g, " "));
+            })(),
+
+        
+        // Required variables
+        clickTrackingUrl: "https://adclick.g.doubleclick.net/pcs/click?xai=AKAOjsvcBGULY79-_IGhrcHfy6c4lLp0owf3RKaE_O2AQv5v32ZI7qfGCPvHJGbdoojdmEPfgbWo9MBzfo9COBDUWc5Np0a4V_1i_FIG7ovgtS2GV8F9afbZk1jJ3AmA-k2-4bwHfSZLK83kEE2jNGIIdoa5uAME7Ynw-Y0ohh4sF3cWJ1bEVllcYrWrgiw&sig=Cg0ArKJSzDzl5fSyQ0uIEAE&urlfix=1&adurl=",
+        adSize: "160x600",
+        mboxName: 'Q4-2015-JS-NED-ACQ-v24',
+        mediaSource:'https://918ec7bd8a979be8d8f3-6e95fed53fb5a58b4332bc479f2dd214.ssl.cf5.rackcdn.com/HTML5/GM_DHV_ENG_X1DOUBLEPLAYGENERIC_BUNDLEANDSAVE_NOOFF_SM_160x600.jpg',
+        defaultMediaSource:'https://918ec7bd8a979be8d8f3-6e95fed53fb5a58b4332bc479f2dd214.ssl.cf5.rackcdn.com/HTML5/GM_DHV_ENG_X1DOUBLEPLAYGENERIC_BUNDLEANDSAVE_NOOFF_SM_160x600.jpg',
+        mediaSelector: '',
+        landingPage: 'www.xfinity.com'
+
+    },
+
+    mboxParams : "width={{width}},height={{height}},AAMsegment={{aam_cv}},weather={{weather}},pixel_id={{pixel_id}},publisher={{publisher}}",
+
+    preMboxCalls : [    
+                        
+                        {type:'script',url:'https://comcast.demdex.net/event?d_stuff=1&d_dst=1&d_rtbd=json&d_cts=1&d_cb=Adat.aam_tnt_cb'}
+                        
+                         ,{type:'script',url:'https://www.cweatherdatatrigger.com/get-one-zip-weather.php?zipcode={{zipcode}}&callBack=Adat.tntMboxJsSpecificCode'} //==>DO NOT CHANGE THIS LINE [PARSED BY DAT GENERATOR]
+                    ],
+
+    postMboxCalls : [
+                        
+                        {type:'image',url:"https://comcast.demdex.net/event?d_campaign={{d_campaign}}" + "&d_site={{d_site}}" + "&d_placement={{d_placement}}" + "&d_creative={{d_creative}}" + "&d_creative_dat={{d_creative_dat}}" + "&d_experience_id={{d_experience_id}}" + "&d_cb=" + Math.floor(Math.random()*10000) + "&d_event=imp&d_src=1478"}
+                        
+                    ]
+
+};
+
+Adat.tntMboxJsSpecificCode = function(weatherData) {
+    Adat.settings.data.weather = weatherData;  
+}
+
+//Additional helper functions for AAM callback
+Adat.aam_tnt_cb = function (){     
+    if(typeof(arguments[0].stuff) != "undefined" && arguments[0].stuff != ""){
+        for(var i = 0; i < arguments[0].stuff.length; i++){
+            if(arguments[0].stuff[i].cn =="aam_tnt"){
+                if(console&&console.log)console.log('aam_cv is set!')
+                var cv = arguments[0].stuff[i].cv;
+                Adat.settings.data.aam_cv = cv;
+                //build AAM arguments, if any
+                if (typeof cv ==='string' && cv.length>0) {//ex: a=1;b=2;c=3,4,5;d=6
+                    var args = [];
+                    var aam_cv_vals = (cv.indexOf(';')!=-1) ? cv.split(';') : [cv];
+                    for (var j = aam_cv_vals.length - 1; j >= 0; j--) {
+                        var val = aam_cv_vals[j];
+                        if (val.indexOf('=')!=-1) {
+                            var parts = val.split('=');
+                            args.push( parts[0]+'='+ encodeURIComponent(parts[1]) );  
+                        };
+                    };
+                    if (args.length>0) {
+                        Adat.settings.mboxParams+=','+args.join(',')
+                    };
+                };
+
+            }
+            if (i>50) {break};
+        }
+    }
+};
+/* /END SETTINGS & CUSTOMIZING */
+
+
+/* DO NOT CHANGE ANYTHING BELOW THIS LINE */
+!function(A){
+    A.settings.data.width = (function(){return (A.settings.data.adSize.indexOf('x')!=-1)?A.settings.data.adSize.split('x')[0]:0;})();
+    A.settings.data.height = (function(){return (A.settings.data.adSize.indexOf('x')!=-1)?A.settings.data.adSize.split('x')[1]:0;})();
+    A.roodId =  (function(){return A.settings.data.mboxName.replace(/[^A-Za-z0-9\_]/g,"_");})();
+    A.mboxUrl = 'https://918ec7bd8a979be8d8f3-6e95fed53fb5a58b4332bc479f2dd214.ssl.cf5.rackcdn.com/mbox/mbox_2016-XOnly.js';
+    //A.mboxPath = 'https://cimage.adobe.com/comcast/mbox_2016-XOnly.js';
+}(Adat);
+
+document.write('<div id="' + Adat.roodId + '_container"></div>');
+document.write('\n\n\n\x3cscript type\x3d\x22text/javascript\x22 src\x3d\x22'+Adat.mboxUrl+'\x22\x3e\x3c/script\x3e\n\n');
+document.write('\n\n\n\x3cscript type\x3d\x22text/javascript\x22 src\x3d\x22https://cimage.adobe.com/DAT/dat.core.0.0.9.js\x22\x3e\x3c/script\x3e\n\n');
+//document.write('\n\n\n\x3cscript type\x3d\x22text/javascript\x22 src\x3d\x22dat-lib/dat.core.0.0.10.js\x22\x3e\x3c/script\x3e\n\n');
+
+if (!window.mraid) {document.write('\x3c/div\x3e');}if (!window.mraid) {(function() {var avDiv = document.getElementById("DfaVisibilityIdentifier_1561692072");if (!avDiv) {avDiv = {};window["DfaVisibilityIdentifier_1561692072_avData"] = avDiv;}if (avDiv) {avDiv['_avi_'] = 'B8MECAZQbV-CoFtCI3AHf2IygAwAAAAAQATgB4AQCiAWnpLYEoAY_';avDiv['_avihost_'] = 'pagead2.googlesyndication.com';avDiv['_avm_'] = 'la\x3d0\x26';}var glidar = document.createElement('script');glidar.type = 'text/javascript';glidar.async = true;glidar.src = '//pagead2.googlesyndication.com/pagead/js/lidar.js';var s = document.getElementsByTagName('script')[0];s.parentNode.insertBefore(glidar, s);})();} else {document.write('\x3cimg src="//pagead2.googlesyndication.com/activeview?avi\x3dB8MECAZQbV-CoFtCI3AHf2IygAwAAAAAQATgB4AQCiAWnpLYEoAY_&id=lidar2&r=w&rs=5j" style="display:none;"\x3e\x3c/img\x3e');}document.write('\x3cimg src\x3d\x22https://comcast.demdex.net/event?d_event\x3dimp\x26amp;d_src\x3d1478\x26amp;d_site\x3d1584282\x26amp;d_creative\x3d64927157\x26amp;d_placement\x3d125969459\x26amp;d_campaign\x3d9277991\x26amp;d_cb\x3d1561692072\x22 height\x3d\x221\x22 width\x3d\x221\x22 border\x3d\x220\x22\x3e\x3cscript type\x3d\x22text/javascript\x22 src\x3d\x22https://js.dmtry.com/antenna2.js?0_3879_125969459_64927157\x22\x3e\x3c/script\x3e\x3cscript type\x3d\x22text/javascript\x22 src\x3d\x22https://cdn.doubleverify.com/dvtp_src.js?ctx\x3d971108\x26amp;cmp\x3d9277991\x26amp;sid\x3d1584282\x26amp;plc\x3d125969459\x26amp;num\x3d\x26amp;adid\x3d\x26amp;advid\x3d4053494\x26amp;adsrv\x3d1\x26amp;region\x3d30\x26amp;btreg\x3d302495024\x26amp;btadsrv\x3ddoubleclick\x26amp;crt\x3d64927157\x26amp;crtname\x3d\x26amp;chnl\x3d\x26amp;unit\x3d\x26amp;pid\x3d\x26amp;uid\x3d\x26amp;dvtagver\x3d6.1.src\x22\x3e\x3c/script\x3e\x3cscript type\x3d\x22text/javascript\x22 src\x3d\x22https://choices.truste.com/ca?pid\x3dcomcast01\x26amp;aid\x3dcomcast01\x26amp;cid\x3d%ebuy_1584282_125969459_64927157\x26amp;js\x3dst_0\x22\x3e\x3c/script\x3e');

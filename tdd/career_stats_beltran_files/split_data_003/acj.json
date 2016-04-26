@@ -1,0 +1,29 @@
+OX_3709374097({
+  "ads":{
+    "chain":1,
+    "medium":"w",
+    "record_tmpl":"http://us-ads.openx.net/{medium}/1.0/{rtype}?ts={txn_state}",
+    "pixels":"http://us-u.openx.net/w/1.0/pd?plm=6&ph=94ef58655625200a8cfc5b15afcd0b94ad52d590",
+    "adunits" : [
+      {
+        "auid":"538103338",
+        "chain_timeout":"1500",
+        "chain":[
+          {
+            "is_fallback":0,
+            "framed":1,
+            "ad_id":"537190214",
+            "adv_acct_id":"537073264",
+            "width":"728",
+            "height":"90",
+            "html":"<iframe src='http://ad-e2.media6degrees.com/adserv/cs?tId=3602085394256187|cb=1461523677|adType=iframe|cId=83179|ec=1|spId=248456|advId=590|exId=23|price=AAABVEmZhIS3Y90aAUEbOPckeyDGFgFHuhoe_g|pubId=9722|secId=859|invId=14985|tpInvId=537217926|notifyServer=aeq1144.eq.pl.pvt|notifyPort=8080|srcAppVersion=8.6.1155|bdie=08sa2t67t8y7a|bid=1.96|bms=537217926|envType=WEB|fps=1|sp=1.40|sps=1|spsid=270876|srcUrlEnc=http%3A%2F%2Fwww.baseball-reference.com%2Fplayers%2Fsplit.cgi%3Fid%3Dbeltrca01%26year%3DCareer%26t%3Db|mobileAdLocation=|dc=1|dos=3|bst=Dstillery|dIds=ChEIFhINMDhzYTJ0Njd0OHk3YQ|' frameborder='0' scrolling='no' marginheight='0' marginwidth='0' topmargin='0' leftmargin='0' allowtransparency='true' width='728' height='90'></iframe>",
+            "target":"_blank",
+            "ts":"1fHJpZD01ZDM4ZGY5OS05MzdhLTRlZmYtYmYxYS04MzBjZjRhZDQyMDV8cnQ9MTQ2MTUyMzY3N3xhdWlkPTUzODEwMzMzOHxhdW09RE1JRC5XRUJ8c2lkPTUzNzIxNzkyNnxwdWI9NTM3MTE5MjExfHBjPVVTRHxyYWlkPWZmNjQwNTE5LTA0OWYtNGUzMi05NjhhLTY1MDliMjczZTk3OXxjbD0xfGFpZD01MzcxOTAyMTR8dD0xMnxhcz03Mjh4OTB8bGlkPTUzNzE0NTgwNnxvaWQ9NTM3MDk2MTYyfHA9MTIxMHxwcj04Njh8YXRiPTE5NjB8YWR2PTUzNzA3MzI2NHxhYz1VU0R8cG09UFJJQ0lORy5DUE18bT0xfGFpPTE1MmQwN2IxLWRhNDEtNGM0MC1hZDE4LWZlNzRjMjY5NTM0YXxtYz1VU0R8bXI9MzQyfHBpPTg2OHxtdWk9NDZjOTliZTMtMDBmYi00NGU2LWNhZTktYjcxZDA0ODU0MGY5fG1hPTEzYWVlNWNlLTE4YzQtNDFkYy1hZTMwLTJmOTRlYTEwZWI1MHxtcnQ9MTQ2MTUyMzY3N3xtcmM9U1JUX1dPTnxtd2E9NTM3MDczMjY0fG13Ymk9MTYxMnxtd2I9MTk2MHxtYXA9MTIxMHxlbGc9MXxtb2M9VVNEfG1vcj0zNDJ8bXBjPVVTRHxtcHI9ODY4fG1wZj03MjB8bW1mPTcyMHxtcG5mPTgwMHxtbW5mPTgwMHxwY3Y9MjAxNjAzMDh8bW89T1h8ZWM9ODMxNzl8bXB1PTg2OHxtY3A9MTIxMHxhcXQ9cnRifG13Yz01MzcwOTYxNjJ8bXdwPTUzNzE0NTgwNnxtd2NyPTUzNzE5MDIxNHxtd2lzPTF8bXdwdD1veF9wcm90b3xjaT0xfHVyPWYxWkVWR2xlT2x8bG49NTM3MDk2MTYyIzUzNzE0NTgwNiM1MzcxOTAyMTQjIzEzYWVlNWNlLTE4YzQtNDFkYy1hZTMwLTJmOTRlYTEwZWI1MCMxNTJkMDdiMS1kYTQxLTRjNDAtYWQxOC1mZTc0YzI2OTUzNGEjb3hfcHJvdG8jNTM3MDczMjY0fGxkPWNpdGkuY29t",
+            "type":"html",
+            "ad_url":"<iframe src='http://ad-e2.media6degrees.com/adserv/cs?tId=3602085394256187|cb=1461523677|adType=iframe|cId=83179|ec=1|spId=248456|advId=590|exId=23|price=AAABVEmZhIS3Y90aAUEbOPckeyDGFgFHuhoe_g|pubId=9722|secId=859|invId=14985|tpInvId=537217926|notifyServer=aeq1144.eq.pl.pvt|notifyPort=8080|srcAppVersion=8.6.1155|bdie=08sa2t67t8y7a|bid=1.96|bms=537217926|envType=WEB|fps=1|sp=1.40|sps=1|spsid=270876|srcUrlEnc=http%3A%2F%2Fwww.baseball-reference.com%2Fplayers%2Fsplit.cgi%3Fid%3Dbeltrca01%26year%3DCareer%26t%3Db|mobileAdLocation=|dc=1|dos=3|bst=Dstillery|dIds=ChEIFhINMDhzYTJ0Njd0OHk3YQ|' frameborder='0' scrolling='no' marginheight='0' marginwidth='0' topmargin='0' leftmargin='0' allowtransparency='true' width='728' height='90'></iframe>"
+          }
+        ]
+      }
+    ]
+  }
+});

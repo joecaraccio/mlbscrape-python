@@ -1,0 +1,30 @@
+
+var ftGUID_1792497="25048EC813DBF8";
+var ftConfID_1792497="0";
+var ftParams_1792497="ftx=&fty=&ftadz=&ftscw=&ft_custom=&ft_section=25&ftOBA=1&ft_referrer=http%3A%2F%2Fwww.baseball-reference.com%2Fplayers%2Fsplit.cgi%3Fid%3Dbeltrca01%26year%3DCareer%26t%3Db&cachebuster=138301.13640893283";
+var ftKeyword_1792497="";
+var ftCustom_1792497="";
+var ftSection_1792497="25";
+var ftSegment_1792497="cbf_sports,cbf,ejt,ejtBOS_MCO,fe8,f4g,g8b,fsk,f3y,f30,e0v,gwe,g6k,hys,cbf9342559,fss144,jg0,j35";
+var ftSegmentList_1792497=[{m:'shEventType',s:'cbf_sports'},{s:'cbf'},{s:'ejt',t:27810000},{m:'c1777',s:'ejtBOS_MCO',t:27810000},{s:'fe8'},{s:'f4g'},{s:'g8b'},{s:'fsk'},{s:'f3y'},{s:'f30'},{s:'e0v'},{s:'gwe'},{m:'dflt',s:'g6k'},{s:'hys'},{m:'shViewed',s:'cbf9342559'},{m:'shGUID',s:'fss144'},{s:'jg0'},{s:'j35'}];
+var ftRuleMatch_1792497="0";
+var ftTimestamp_1792497="1461523612";
+var ftGeoC2_1792497="us";
+var ftGeoState_1792497="ma";
+var ftGeoCity_1792497="boston";
+var ftISP_1792497="comcast cable communications inc.";
+var ftSpeed_1792497="cable";
+var ftDMA_1792497="506";
+var ftLong_1792497="-71.0426";
+var ftLat_1792497="42.3457";
+var ftPostal_1792497="02210";
+var ftTimeZone_1792497="-400";
+var ftMobileCarrier_1792497="";
+var ftImp1792497 = {};
+ftImp1792497.privacy = "x";
+ftImp1792497.guidAge = "532";
+ftImp1792497.impID = "3036686A434021";
+
+
+document.write('<scr'+'ipt src="http://cdn.flashtalking.com/xre/179/1792497/1379295/js/j-1792497-1379295.js" id="ftscript_m1792497" name="ftscript_m1792497"></scr'+'ipt>');
+                    

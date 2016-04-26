@@ -1,0 +1,139 @@
+<!-- 160x600 Flashtalking HTML5 Animation -->
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+		<style></style><meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta name="ad.size" content="width=160,height=600">
+		<title>SlingTV 160x600 | USP LiveTV</title>
+		<link rel="stylesheet" href="index_data/style.css" type="text/css">
+		<style type="text/css">
+
+			* { margin:0; padding:0; border:0; outline:0; vertical-align:baseline; background:transparent; -webkit-touch-callout:none; -webkit-user-select:none; -webkit-text-size-adjust:none; }
+
+			#ad {
+				display: block;
+				border: #999 1px solid;
+				overflow: hidden;
+				width: 158px;
+				height: 598px;
+				-moz-user-select: -moz-none;
+				-khtml-user-select: none;
+				-webkit-user-select: none;
+				-ms-user-select: none;
+				user-select: none;
+			}
+
+			#banner {
+				position: absolute;
+				display: block;
+				width: 158px;
+				height: 598px;
+				overflow: hidden;
+				/*background-color: #fdc039;*/
+				/*background-color: white;*/ /*full bleed - white bg*/
+				background: url(images/bg_160x600.svg);
+  				background-size: 160px 600px;
+  				background-color: #fdc039;
+			}
+
+			#loading {
+				position: absolute;
+				width: 100%;
+				height: 100%;
+				z-index: 1001;
+				opacity: 1;
+				background-image: url("images/sling_loader.gif");
+				background-repeat: no-repeat;
+				background-position: 50% 50%;
+				background-color: white;
+			}
+
+		</style>
+
+		<script>
+		var canvas, stage, exportRoot;
+		function initCanvas() {
+			// --- write your JS code here ---
+
+			canvas = document.getElementById("canvas");
+			exportRoot = new lib._160x600();
+
+			stage = new createjs.Stage(canvas);
+			stage.addChild(exportRoot);
+			stage.update();
+
+			createjs.Ticker.setFPS(lib.properties.fps);
+			createjs.Ticker.addEventListener("tick", stage);
+		}
+
+		</script>
+
+	</head>
+
+	<body>
+		<div style="cursor: pointer; background-image: url(&quot;about:blank&quot;);" id="ad" clicktag="">
+			<div id="banner">
+				<div style="cursor: pointer; opacity: 0;" id="loading"></div>
+
+				<div id="text_shell">
+
+					<div style="transform: matrix(1, 0, 0, 1, 158, 0);" id="line_1_1" class="sprite textOnPanel"></div>
+					<div style="transform: matrix(1, 0, 0, 1, 158, 0);" id="line_1_2" class="sprite textOnPanel"></div>
+					<div style="transform: matrix(1, 0, 0, 1, 158, 0);" id="line_1_3" class="sprite textOnPanel"></div>
+					<div style="transform: matrix(1, 0, 0, 1, 158, 0);" id="line_1_4" class="sprite textOnPanel"></div>
+
+					<div style="transform: matrix(1, 0, 0, 1, 158, 0);" id="line_2_1" class="sprite textOnPanel"></div>
+					<div style="transform: matrix(1, 0, 0, 1, 158, 0);" id="line_2_2" class="sprite textOnPanel"></div>
+					<div style="transform: matrix(1, 0, 0, 1, 158, 0);" id="line_2_3" class="sprite textOnPanel"></div>
+					<div style="transform: matrix(1, 0, 0, 1, 158, 0);" id="line_2_4" class="sprite textOnPanel"></div>
+					<div style="transform: matrix(1, 0, 0, 1, 158, 0);" id="line_2_5" class="sprite textOnPanel"></div>
+					
+					<div style="transform: matrix(1, 0, 0, 1, 0, 0);" id="line_3_1" class="sprite textOnPanel"></div>
+					<div style="transform: matrix(1, 0, 0, 1, 0, 0);" id="line_3_2" class="sprite textOnPanel"></div>
+					<div style="transform: matrix(1, 0, 0, 1, 0, 0);" id="line_3_3" class="sprite textOnPanel"></div>
+					<div style="transform: matrix(1, 0, 0, 1, 0, 0);" id="line_3_4" class="sprite textOnPanel"></div>
+					<!-- <div id="line_3_5" class="sprite textOnPanel"></div> -->
+					<!-- <div id="line_3_6" class="sprite textOnPanel"></div> -->
+
+					<div id="cta">
+						<div id="cta_default_shell">
+							<div id="cta_default">
+								<span class="cta sprite"></span>
+							</div>
+						</div>
+						<div id="cta_over"><span class="cta_over sprite"></span></div>
+					</div>
+					<div id="logo"><span class="logo sprite"></span></div>
+
+				</div><!-- text -->
+
+				<div id="video">
+
+					<canvas id="canvas" width="160" height="250"></canvas>
+
+				</div>
+
+			</div><!-- banner -->
+		</div><!-- ad -->
+
+		<script src="index_data/TweenLite.js"></script>
+		<script src="index_data/TimelineLite.js"></script>
+		<script src="index_data/easepack.js"></script>
+		<script src="index_data/cssplugin.js"></script>
+		<script src="index_data/anim.js"></script>
+
+		<script src="index_data/createjs-2015.js"></script>
+		<script src="index_data/160x600.js"></script>
+
+		<script src="index_data/html5API.js"></script>
+
+		<script type="text/javascript">
+			container = myFT.$("#ad");
+			myFT.applyClickTag(container, 1);
+		</script>
+
+		<script type="text/javascript">init();</script>
+
+	
+</body></html>

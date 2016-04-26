@@ -1,0 +1,29 @@
+OX_3730650372({
+  "ads":{
+    "chain":1,
+    "medium":"w",
+    "record_tmpl":"http://us-ads.openx.net/{medium}/1.0/{rtype}?ts={txn_state}",
+    "pixels":"http://us-u.openx.net/w/1.0/pd?plm=6&ph=94ef58655625200a8cfc5b15afcd0b94ad52d590",
+    "adunits" : [
+      {
+        "auid":"537209676",
+        "chain_timeout":"1000",
+        "chain":[
+          {
+            "is_fallback":0,
+            "framed":1,
+            "ad_id":"537153255",
+            "adv_acct_id":"537073294",
+            "width":"160",
+            "height":"600",
+            "html":"<script src='http://ad.turn.com/server/ads.js?pub=6552283&cch=6553230&code=6554469&l=160x600&aid=38435262&ahcid=14273402&bimpd=~K-ZYOwJuVa1Oi57c_8UchcQXBUb1fqlHHb7HgtFeih229zw2PhL4XMmiCKnqu2bQyppiMSOXxIOouQp7jkVLV7F7m4OrhCG6fSyqRuYF6rSrp59xrfBex4sYucKLNeVp1IVzV1QyipqAATki7D61xZbbR_iYSB68Rz39pJU64wB_CSR_VnfIZKTYSlcMAY7PmRovv6oLsu30idiOMOtAAmSW7J4uFURTF4EJs_8rV1H8kcVnF2eaTed99sfSZWcw6BmkdkXhWyHOsVPE7f-DGX1vOmiS3RVom0Olr3XEkdIDFGUWtgoTaNTRTZA_PJbUTOLAF-h9HIu6bleRGAhSY_2zgJvoKlN_8V3iiN8_yJ4mKj4AjWKFQ6Q329vJscWfL-jp_OqpctaoKhwvUARvBJCseu8u4Fs1VVaSen0_NLxXelke1Hc7TDFnYKjk9yRmv-BXBcET6tEGL1L8M6kVoN1Y6ZixMckSwqNz00gZEQBnVYhwwjaN5Fx5binzaaYHLAguFnnmzKe6CBHTfS74j0Kc545X-YflkfcW4GpACs1fcR6ckV7mOdwvRAEw09-tKdEJt4asWanFxzSgcxhLTWvK7WuiWUO2YeZz1FJLlzkVwMJvShYbvbUT2Ii0EFRP6XlI2khRc7-OSbLqifiJN7oSkMS5GUFKD6HEpr8SzfCdMQjHzzrMCHOo5QHmltSQKX25TfuvCy-KzmPFcvvEMoe34rtaCZG5pbTQfDa9-7l3wWmrv526Wifonz0DEFwI3eyQZfsKNg0hMpBiLn6b5_DvzYgmTnDo2bPVa-2JHnhEPPl52W2z7gRthcibWKJme7GsxCMbXoU7Fn_jAxFmiebWcdpLA0JQ36HfnMhpOK2UDjEVXfJ5UYx31p_6qQbsiFff1aQs2VybiCM7JDYZrt2tmx0tCrBND6RmUA5Q5t3XXSxlh8YMXdF1Y5dFNh0jqjjTwHFH25rMHyMpIOcu-Q&acp=AAABVEO8PZJdjvH4lwkGrigJ43GAEDGWYy6_qg'></script>",
+            "target":"_blank",
+            "ts":"1fHJpZD03ZGQ2MWMzZC1kODAzLTRmNmEtODVkNC1mMjI0MGZjNmY3NWZ8cnQ9MTQ2MTQyNTI4OXxhdWlkPTUzNzIwOTY3NnxhdW09RE1JRC5XRUJ8c2lkPTUzNzEzNDM2MXxwdWI9MTEzMjE1fHBjPVVTRHxyYWlkPTlhMjlkMjViLTQzYWYtNGQ2My04ZDFmLTdiNzhmODYwMzdmZnxjbD0xfGFpZD01MzcxNTMyNTV8dD0xMnxhcz0xNjB4NjAwfGxpZD01MzcxMjI3Mjh8b2lkPTUzNzA5NjMwN3xwPTEwMTB8cHI9NjMyfGF0Yj0yMTY4fGFkdj01MzcwNzMyOTR8YWM9VVNEfHBtPVBSSUNJTkcuQ1BNfG09MXxhaT0xNTJkMDdiMS1kYTQxLTRjNDAtYWQxOC1mZTc0YzI2OTUzNGF8bWM9VVNEfG1yPTM3OHxwaT02MzJ8bXVpPTQ2Yzk5YmUzLTAwZmItNDRlNi1jYWU5LWI3MWQwNDg1NDBmOXxtYT1lZmQyZTI4YS1jNWQzLTRiOWMtYTM4OC01NTEwM2JlOTJlYmJ8bXJ0PTE0NjE0MjUyODl8bXJjPVNSVF9XT058bXdhPTUzNzA3MzI5NHxtd2JpPTI0MHxtd2I9MjE2OHxtYXA9MTAxMHxlbGc9MXxtb2M9VVNEfG1vcj0zNzh8bXBjPVVTRHxtcHI9NjMyfG1wZj0zMDB8bW1mPTMwMHxtcG5mPTQwMHxtbW5mPTQwMHxwY3Y9MjAxNjAzMDh8bW89T1h8ZWM9MTYwMjYzNzI4N3xtd3M9YmQ0N2U5NzAtOWY2OS00M2ZhLTg5NGMtNjAxMWNiZGYyZGRhfG1wdT02MzJ8bWNwPTEwMTB8YXF0PXJ0Ynxtd2M9NTM3MDk2MzA3fG13cD01MzcxMjI3Mjh8bXdjcj01MzcxNTMyNTV8bXdpcz0xfG13cHQ9b3BlbnJ0Yl9qc29ufGNpPTF8dXI9MGx5MUhYTHBvRXxsZD1jbG9yb3guY29t",
+            "type":"html",
+            "ad_url":"<script src='http://ad.turn.com/server/ads.js?pub=6552283&cch=6553230&code=6554469&l=160x600&aid=38435262&ahcid=14273402&bimpd=~K-ZYOwJuVa1Oi57c_8UchcQXBUb1fqlHHb7HgtFeih229zw2PhL4XMmiCKnqu2bQyppiMSOXxIOouQp7jkVLV7F7m4OrhCG6fSyqRuYF6rSrp59xrfBex4sYucKLNeVp1IVzV1QyipqAATki7D61xZbbR_iYSB68Rz39pJU64wB_CSR_VnfIZKTYSlcMAY7PmRovv6oLsu30idiOMOtAAmSW7J4uFURTF4EJs_8rV1H8kcVnF2eaTed99sfSZWcw6BmkdkXhWyHOsVPE7f-DGX1vOmiS3RVom0Olr3XEkdIDFGUWtgoTaNTRTZA_PJbUTOLAF-h9HIu6bleRGAhSY_2zgJvoKlN_8V3iiN8_yJ4mKj4AjWKFQ6Q329vJscWfL-jp_OqpctaoKhwvUARvBJCseu8u4Fs1VVaSen0_NLxXelke1Hc7TDFnYKjk9yRmv-BXBcET6tEGL1L8M6kVoN1Y6ZixMckSwqNz00gZEQBnVYhwwjaN5Fx5binzaaYHLAguFnnmzKe6CBHTfS74j0Kc545X-YflkfcW4GpACs1fcR6ckV7mOdwvRAEw09-tKdEJt4asWanFxzSgcxhLTWvK7WuiWUO2YeZz1FJLlzkVwMJvShYbvbUT2Ii0EFRP6XlI2khRc7-OSbLqifiJN7oSkMS5GUFKD6HEpr8SzfCdMQjHzzrMCHOo5QHmltSQKX25TfuvCy-KzmPFcvvEMoe34rtaCZG5pbTQfDa9-7l3wWmrv526Wifonz0DEFwI3eyQZfsKNg0hMpBiLn6b5_DvzYgmTnDo2bPVa-2JHnhEPPl52W2z7gRthcibWKJme7GsxCMbXoU7Fn_jAxFmiebWcdpLA0JQ36HfnMhpOK2UDjEVXfJ5UYx31p_6qQbsiFff1aQs2VybiCM7JDYZrt2tmx0tCrBND6RmUA5Q5t3XXSxlh8YMXdF1Y5dFNh0jqjjTwHFH25rMHyMpIOcu-Q&acp=AAABVEO8PZJdjvH4lwkGrigJ43GAEDGWYy6_qg'></script>"
+          }
+        ]
+      }
+    ]
+  }
+});

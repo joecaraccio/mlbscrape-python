@@ -1,0 +1,79 @@
+html {
+  box-sizing: border-box;
+}
+body {
+    margin: 0;
+}
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+.sc-banner {
+    height: 600px;
+    width: 160px;
+    background-image: url(images/bg.jpg);
+    position: relative;
+}
+.sc-banner__logo {
+    background-image: url("images/logo.svg");
+    background-repeat: no-repeat;
+    bottom: 36px;
+    height: 77px;
+    left: 50%;
+    position: absolute;
+    transform: translate3d(-50%, 0px, 0px);
+    width: 120px;
+    z-index: 9;
+}
+.sc-banner__text {
+    background-image: url("images/text.png");
+    background-repeat: no-repeat;
+    height: 150px;
+    left: 50%;
+    position: absolute;
+    top: 100px;
+    transform: translate3d(-50%, 0px, 0px);
+    width: 160px;
+    z-index: 9;
+}
+.sc-banner__form {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+}
+.sc-banner__input {
+    background-color: #fff;
+    background-image: url("images/input-text.png");
+    background-position: center center;
+    background-repeat: no-repeat;
+    border: medium none;
+    bottom: 289px;
+    box-shadow: 0 1px 5px 0 rgba(0, 0, 0, 0.3) inset;
+    font-size: 14px;
+    height: 25px;
+    left: 50%;
+    padding: 0px;
+    position: absolute;
+    text-align: center;
+    transform: translate3d(-50%, 0px, 0px);
+    width: 130px;
+}
+.sc-banner__input:focus,
+.sc-banner__input:valid {
+    background-image: none;
+}
+.sc-banner__btn {
+    background-color: #fcb01a;
+    background-image: url("images/btn-text.png");
+    background-position: center center;
+    background-repeat: no-repeat;
+    border: medium none;
+    border-radius: 5px;
+    bottom: 244px;
+    cursor: pointer;
+    height: 27px;
+    left: 50%;
+    position: absolute;
+    transform: translate3d(-50%, 0px, 0px);
+    width: 132px;
+}

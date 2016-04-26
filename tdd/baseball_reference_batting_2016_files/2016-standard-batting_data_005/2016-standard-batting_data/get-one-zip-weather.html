@@ -1,0 +1,1 @@
+if (window.Adat.tntMboxJsSpecificCode) Adat.tntMboxJsSpecificCode("bau");

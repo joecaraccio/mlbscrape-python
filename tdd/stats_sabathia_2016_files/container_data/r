@@ -1,0 +1,10 @@
+document.write("<ins class='dcmads' style='display:inline-block;width:300px;height:250px'\n");
+document.write("    data-dcm-placement='N6482.151350QUANTCAST110/B9643521.130974648'\n");
+document.write("data-dcm-click-tracker='https%3A//adserver-qcmtc.adtechus.com/adlink%2F5399%2F2772124%2F0%2F170%2FAdId%3D8212722%3BBnId%3D1%3Bguid%3DffNktn6iYedl%5FjW3K%5F98sHikN%2DZloTexe6Yn2mp%2D%3Bitime%3D516294459%3Bkvp36%3Dp36%2D0u1yixhs8i0heypm%3Bkva%3Dp%2Dnfszyj5psl3g6%3Bkr14135%3D2383234%3Bkvc%3D859823%3Bkvi%3Dvxz4bqaiaeqkgqcsxqbnpa%3Bkr11092%3D2383267%3Bkvl%3D208276%3Bkvs%3D300x250%3Bkp%3D1097491%3Blink%3Dhttps%3A%2F%2Fadclick%2Eg%2Edoubleclick%2Enet%2Faclk%3Fsa%3Dl%26ai%3DCjdiIBfgcV8SAIJKOhASkz4HoBf7TmbcGjuH7lq8BwI23ARABIABgyYbtiISk7A%2DCARdjYS1wdWItNzI3OTQxMDA0ODAyNDI0OKAB0JTA8wPIAQngAgCoAwGqBO4BT9D4EW8RdDD8ORj9%5FfHMPYbzyR%5Fuvg8ksKfO6gU3r6Zll4MCZ4ul2cCydDkqxPOBb1Mjfpp3gLicRKiy6EjjPcW3mM1k04u2wr2%2DwrojtlrWqDhESVfQK7yeCDJjMH361Jiwh0UyqEb2eKaSJac2aD40JGxy1ogo6Ur2NOZubp3lHWODEScqwfD6y5ssknVVfFB8Q3%5FKpZNjsFnZMSwZRWEZ6mWdN%2DyJg8jVlvy96SOGkCME9YB7tlAo5Oe6LQm2kyf3%5F0Q1eSnj5qlLErhnitTbwSoBv%2DUZZbckLBT79jHWwbYqcspNAnKVE7cDB%2DAEAYAG8bn2hYLUip7tAaAGIagHpr4b2AcA%26num%3D1%26sig%3DAOD64%5F1kz5Kp%2DVkxCMHJJEOUeMh%5F4s5hNw%26client%3Dca%2Dpub%2D7279410048024248%26adurl%3Dhttp%3A%2F%2Fexch%2Equantserve%2Ecom%2Fr%3Fa%3Dp%2DnFSZyJ5PsL3g6%3Blabels%3D%5Fqc%2Eclk%2C%5Fclick%2Eadserver%2Ertb%2C%5Fclick%2Erand%2E3111%3Brtbip%3D64%2E7%2E198%2E20%3Brtbdata2%3DEAAaIk1MQl9Cb3N0b25SZWRTb3hfUmVwbGF5VkNQTV9RMjIwMTYguNoZKJTbDDCvvTQ6IWh0dHA6Ly93d3cuYmFzZWJhbGwtcmVmZXJlbmNlLmNvbVooQ25zNnRna3FQLWNTZG11M1hIY2lzQThzYWVZU0tXbXhEQzdUMGhxbnX3LC5DgAHDiOeNB6ABAagBgOfVAroBHUNBRVNFRXMyUllCSVJMQjA5dVMxVXJKVjlUTToxwAGw%2DeoCyAGcrKPJxCraARZWeHo0QlFBSUFFUUtnUWNTWFFCbnBB5QEyTPI86AFkmAKi5w2oAgWoAgawAgi6AgRAB8YUwAICyAIA0ALg6NvTjJjT7ZkB4AIA%3Bredirecturl2%3D'    \n");
+document.write("data-dcm-rendering-mode='iframe'\n");
+document.write("    data-dcm-https-only\n");
+document.write("    data-dcm-resettable-device-id=''>\n");
+document.write("<scr"+"ipt src='https://www.googletagservices.com/dcm/dcmads.js'></scr"+"ipt>\n");
+document.write("</ins>\n");
+
+

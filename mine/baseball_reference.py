@@ -2,7 +2,7 @@
 from beautiful_soup_helper import BeautifulSoupHelper
 import bisect
 from sortedcontainers import SortedList, SortedListWithKey
-from hitter import Hitter
+from mlbscrape_python.hitter import Hitter
 from datetime import date
 import bidict
 import sys
@@ -93,201 +93,9 @@ class BaseballReference(object):
         end_url = end_url[len(end_url)-1]
         return end_url.split(".")[0]
 
-    @staticmethod
-    def get_player_set_from_year(year, url, table_name):
-        """ Get a dictionary of players from the
-        :param year: integer representation of the year
-        :return: Dictionary of player structs
-        """
-        player_year_soup = BeautifulSoupHelper.get_soup_from_url(url)
-        player_table = player_year_soup.find("table", {"id": table_name})
-        """ Note: using a SortedList is to be safe. Given BaseballReference's current page, it is already in
-        alphabetical order.
-        """
-        player_set = PlayerSortedList(key=lambda r: r.first_name + " " + r.last_name)
-        if player_table is None:
-            print "The player table for year " + str(year) + " could not be found. Check the URL: " + url
-            return player_set
-
-        player_table_body = player_table.find("tbody")
-        for player in player_table_body.findAll("tr"):
-
-            # Filter out headers and the table totals
-            if "thead" in player.get("class") or "league_average_table" in player.get("class"):
-                continue
-
-            table_entries = player.findAll("td")
-
-            # Get the first and last name of the batter
-            try:
-                name = table_entries[1].find("a").text
-            except IndexError:
-                print "Player Set: The player %s does not have enough entries in the table." % player
-                assert 0
-            name = name.split()
-            try:
-                first_name = name[0]
-                last_name = " ".join(str(x) for x in name[1:len(name)])
-            except IndexError:
-                print "Player Set: The player % does not contain a space between first and last name." % player
-                assert 0
-
-            # Get the URL for the batter in the table
-            try:
-                player_url = table_entries[1].find("a").get("href")
-            except IndexError:
-                print "Player Set: The player %s %s does not have enough entries to provide the URL for the player." %\
-                      (first_name, last_name)
-                assert 0
-            try:
-                team = table_entries[3].find("a").text
-            except IndexError:
-                print "Player Set: The player %s %s does not have enough entries to provide the team for the player." %\
-                      (first_name, last_name)
-            except AttributeError:
-                print "Player Set Warning: The player %s %s played for both leagues in the year." % (first_name, last_name)
-            player = BaseballReference.PlayerStruct(first_name, last_name,
-                                                    BaseballReference.get_id_from_url(player_url),
-                                                    team)
-            player_set.add(player)
-
-        print len(player_set)
-        return player_set
-
-    @staticmethod
-    def get_batter_set_from_year(year):
-        batter_url = BaseballReference.BASE_URL + "/leagues/MLB/" + str(year) + "-standard-batting.shtml"
-        return BaseballReference.get_player_set_from_year(year, batter_url, "players_standard_batting")
-
-    @staticmethod
-    def get_pitcher_set_from_year(year):
-        pitcher_url = BaseballReference.BASE_URL + "/leagues/MLB/" + str(year) + "-standard-pitching.shtml"
-        return BaseballReference.get_player_set_from_year(year, pitcher_url, "players_standard_pitching")
-
-    @staticmethod
-    def get_vs_pitcher_stats_by_year(batter_id, pitcher_id, year):
-        vs_url = BaseballReference.BASE_URL + "/play-index/batter_vs_pitcher.cgi?batter=" + batter_id + "&pitcher=" + \
-                 pitcher_id
-        batter_soup = BeautifulSoupHelper.get_soup_from_url(vs_url)
-        if batter_soup is not None:
-            results_table = batter_soup.find("table", {"id": "ajax_result_table_1"})
-            table_header_list = results_table.find("thead").findAll("th")
-            table_header_list = [x.text for x in table_header_list]
-            year_entries = results_table.find("tbody").findAll("tr")
-            stats = BaseballReference.BatterStatStruct()
-            for year_entry in year_entries:
-                # Create a dictionary of the stat attributes
-                year_stat_dict = dict()
-                year_stats = year_entry.findAll("td")
-                for i in range(1, len(table_header_list)):
-                    year_stat_dict[table_header_list[i]] = year_stats[i].text
-                try:
-                    if int(year_stat_dict["Year"]) > year:
-                        break
-                # We have reached the end of the year-by-year stats, just end
-                except ValueError:
-                    break
-                stats.ab += int(year_stat_dict["AB"])
-                stats.h += int(year_stat_dict["H"])
-                stats.bb += int(year_stat_dict["BB"])
-                stats.so += int(year_stat_dict["SO"])
-                stats.hr += int(year_stat_dict["HR"])
-                stats.rbi += int(year_stat_dict["RBI"])
-
-            return stats
-
     class HandEnum:
         LHP = 1
         RHP = 2
-
-    @staticmethod
-    def get_vs_stats_by_year(batter_id, hand, year):
-        """ Get the current stats for this hitter against the given hand of the opposing pitcher
-        :param batter_id:
-        :param hand:
-        :param year:
-        :return:
-        """
-        vs_url = BaseballReference.BASE_URL + "/players/split.cgi?id=" + str(batter_id) + "&year=Career&t=b"
-        if hand is BaseballReference.HandEnum.LHP:
-            results_id_tag = "vs LHP"
-        else:
-            results_id_tag = "vs RHP"
-        batter_soup = BeautifulSoupHelper.get_soup_from_url(vs_url)
-        if batter_soup is not None:
-            results_table = batter_soup.find("table", {"id": "plato"})
-            table_header_list = results_table.find("thead").findAll("th")
-            table_header_list = [x.text for x in table_header_list]
-            stat_rows = results_table.find("tbody").findAll("tr")
-            stats = BaseballReference.BatterStatStruct()
-            for stat_row in stat_rows:
-                # Create a dictionary of the stat attributes
-                stat_dict = dict()
-                stat_entries = stat_row.findAll("td")
-                for i in range(1, len(table_header_list)):
-                    if stat_entries[i].text == "":
-                        stat_dict[table_header_list[i]] = 0
-                    else:
-                        stat_dict[table_header_list[i]] = stat_entries[i].text
-                try:
-                    if stat_dict["Split"] == results_id_tag:
-                        stats.ab += int(stat_dict["AB"])
-                        stats.h += int(stat_dict["H"])
-                        stats.bb += int(stat_dict["BB"])
-                        stats.so += int(stat_dict["SO"])
-                        stats.hr += int(stat_dict["HR"])
-                        stats.rbi += int(stat_dict["RBI"])
-                        stats.r += int(stat_dict["R"])
-                        stats.sb += int(stat_dict["SB"])
-                        stats.cs += int(stat_dict["CS"])
-                        break
-                # We have reached the end of the year-by-year stats, just end
-                except ValueError:
-                    break
-
-            return stats
-
-    @staticmethod
-    def build_hitter(batters_set, pitchers_set, player_soup, home_away_string, game_url, boxscore_soup, players_soup):
-        """
-        :param batters_set: a SortedListWithKey container containing all the batters from the relevant year
-        :param pitchers_set: a SortedListWithKey container containing all the pitchers from the relevant year
-        :param player_soup: BeautifulSoup object containing the XML info from players.xml
-        :param home_away_string: "home" or "away" indicating
-        :param game_url: the absolute URL of the game containing this batter
-        :param boxscore_soup: BeautifulSoup object of boxscore.xml file
-        :param players_soup: BeautifulSoup object of players.xml file
-        :return: the resulting Hitter object
-        """
-        game_id = boxscore_soup.find("boxscore").get("game_id")
-        baseball_reference_id = batters_set.find_from_pitchfx(player_soup.get("first"),
-                                                              player_soup.get("last"),
-                                                              player_soup.get("team_abbrev")).baseball_reference_id
-
-        hitter = Hitter(player_soup.get("first"), player_soup.get("last"), player_soup.get("id"), baseball_reference_id,
-                        player_soup.get("team_abbrev"), player_soup.get("bat_order"), player_soup.get("bats"))
-        hitter.set_game_results(game_id, boxscore_soup.find("batter", {"id": player_soup.get("id")}))
-
-        # Mine the pregame stats
-        pregame_stats_soup = BeautifulSoupHelper.get_soup_from_url(game_url + "batters/" + player_soup.get("id") + ".xml")
-
-        pitcher_id = BaseballReference.get_pitcher_id(boxscore_soup, players_soup, home_away_string,
-                                                      pitchers_set)
-        hitter.set_season_stats(pregame_stats_soup)
-        hitter.set_career_stats(pregame_stats_soup)
-        hitter.set_month_stats(pregame_stats_soup)
-        year = BaseballReference.url_to_year(game_url)
-        vs_stats = BaseballReference.get_vs_pitcher_stats_by_year(baseball_reference_id, pitcher_id, year)
-        pitcher_hand = BaseballReference.get_pitcher_hand(boxscore_soup, players_soup, home_away_string)
-        if pitcher_hand == "L":
-            vs_hand_stats = BaseballReference.get_vs_stats_by_year(baseball_reference_id, BaseballReference.HandEnum.LHP,
-                                                                  year)
-        else:
-            vs_hand_stats = BaseballReference.get_vs_stats_by_year(baseball_reference_id, BaseballReference.HandEnum.RHP,
-                                                                   year)
-        hitter.set_vs_stats(vs_stats, vs_hand_stats, year)
-
-        return hitter
 
     @staticmethod
     def get_hitter_id(full_name, team, year=None, soup=None):
@@ -316,7 +124,7 @@ class BaseballReference(object):
                     if hitter_name_entry.text.replace(u'\xa0', ' ') == full_name:
                         if team == hitter_entries[3].text:
                             hitter_id = hitter_name_entry.get("href").split("/")
-                            return str(hitter_id[len(hitter_id)-1].split(".")[0])
+                            return str(hitter_id[len(hitter_id)-1]).replace(".shtml", "")
                 except IndexError:
                     continue
                 except AttributeError:
@@ -351,7 +159,7 @@ class BaseballReference(object):
                     if pitcher_name_entry.text.replace(u'\xa0', ' ') == full_name:
                         if team == pitcher_entries[3].text:
                             hitter_id = pitcher_name_entry.get("href").split("/")
-                            return str(hitter_id[len(hitter_id)-1].split(".")[0])
+                            return str(hitter_id[len(hitter_id)-1]).replace(".shtml","")
                 except IndexError:
                     continue
                 except AttributeError:
@@ -388,8 +196,9 @@ class BaseballReference(object):
             table_header_list = [x.text for x in table_header_list]
             stat_rows = results_table.find("tbody").findAll("tr")
             stats = BaseballReference.BatterStatStruct()
-        except:
+        except Exception as e:
             # Just try until we succeed (watch stack overflow)
+            print "Failed: %s" % str(e)
             return BaseballReference.get_hitter_table_dict(soup, table_name, table_row_label, table_column_label)
 
         for stat_row in stat_rows:
@@ -445,12 +254,11 @@ class BaseballReference(object):
                     stat_dict[table_header_list[i]] = stat_entries[i].text
             try:
                 if stat_dict[table_column_label] == table_row_label:
-                    stats.batters_faced += int(stat_dict["BF"])
-                    stats.ip = int(stat_dict["IP"])
+                    stats.batters_faced = int(stat_dict["BF"])
+                    stats.ip = float(stat_dict["IP"])
                     stats.bb = int(stat_dict["BB"])
                     stats.so = int(stat_dict["SO"])
                     stats.hr = int(stat_dict["HR"])
-                    stats.rbi = int(stat_dict["RBI"])
                     stats.wins = int(stat_dict["W"])
                     stats.losses = int(stat_dict["L"])
                     stats.er = int(stat_dict["ER"])

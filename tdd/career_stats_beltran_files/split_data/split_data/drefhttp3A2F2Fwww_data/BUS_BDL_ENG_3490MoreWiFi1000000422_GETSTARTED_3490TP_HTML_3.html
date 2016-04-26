@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8"><script type="text/javascript">
+    
+      (function() {
+        var relegateNavigation = '';
+        var handleClickTagMessage = function(e) {
+          try {
+            var eventData = JSON.parse(e.data);
+          } catch (err) {
+            return;
+          }
+          if (eventData.isInitClickTag) {
+            if (eventData.clickTags) {
+              for (var i = 0; i < eventData.clickTags.length; i++) {
+                var clkTag = eventData.clickTags[i];
+                window[clkTag.name] = clkTag.url;
+              }
+            } else if (eventData.clickTag) {
+              window.clickTag = eventData.clickTag;
+            }
+            relegateNavigation = eventData.relegateNavigation;
+          }
+        };
+
+        if (open.call) {
+          window.open = function(open) {
+            return function(url, name, features) {
+              if (relegateNavigation === 'parent') {
+                var message = {'clickTag': url, 'isPostClickTag': true};
+                parent.postMessage(JSON.stringify(message), '*');
+              } else {
+                var args = [url, name];
+                if (features) {
+                  args.push(features);
+                }
+                open.apply(window, args);
+              }
+            };
+          }(window.open);
+        }
+
+        if (window.addEventListener) {
+          window.addEventListener(
+              'message', handleClickTagMessage, false);
+        } else {
+          window.attachEvent('onmessage', handleClickTagMessage);
+        }
+      })();
+    
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <style type="text/css">#bar14,#copy2,#copy3,#copy4,#copy5{top:75px}#bar7,#bar8,#copyContainer1,#copyContainer2{width:141px;height:34px}#copy6,#copy7,#offer,#phoneNumber{right:0;margin:0 auto;left:0}#CTA,#container{cursor:pointer;overflow:hidden}#CTA,#banner,#container,#ctaBtnOver{overflow:hidden}#banner,#barsContainer,#clicktag,#container{width:300px;height:250px}#bar1,#bar3,#bar6{top:61px}#bar1,#bar10,#bar3,#bar6,#bar9{height:44px;width:1px}#bar1,#bar10,#bar13,#bar3,#bar6,#bar9{width:1px}#bar1,#bar10,#bar13,#bar3,#bar6,#bar7,#bar8,#bar9{display:block;background-color:#00508d;position:absolute}a,abbr,acronym,address,applet,article,aside,audio,b,big,blockquote,body,canvas,caption,center,cite,code,dd,del,details,dfn,div,dl,dt,em,embed,fieldset,figcaption,figure,footer,form,h1,h2,h3,h4,h5,h6,header,hgroup,html,i,iframe,img,ins,kbd,label,legend,li,mark,menu,nav,object,ol,output,p,pre,q,ruby,s,samp,section,small,span,strike,strong,sub,summary,sup,table,tbody,td,tfoot,th,thead,time,tr,tt,u,ul,var,video{margin:0;padding:0;border:0;font:inherit;vertical-align:baseline}article,aside,details,figcaption,figure,footer,header,hgroup,menu,nav,section{display:block}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:after,blockquote:before,q:after,q:before{content:'';content:none}table{border-collapse:collapse;border-spacing:0}#container{top:0;left:0;display:block;position:relative;border:1px solid #999;box-sizing:border-box;-moz-box-sizing:border-box;-webkit-box-sizing:border-box}#banner{top:0;left:0;display:block;background:#fbb917}#clicktag{position:absolute;top:0;left:0;opacity:0;z-index:100}#brand{position:absolute;bottom:15px;right:-5px;z-index:2}#brandEndframe{position:absolute;bottom:10px;right:3px;z-index:2}#copy1{top:32px;left:22px}#copy2{left:17px}#copy3{right:67px}#copy4{right:64px}#copy5{right:17px}#copyContainer1{top:107px;right:8px;position:absolute}#copyContainer2{top:143px;right:8px;position:absolute}#copy6,#copy7{top:11px;z-index:1;position:absolute}#bar7{top:0;right:0}#bar8{bottom:0;right:0}#copy8{top:52px;left:27px}#copy9{top:94px;left:27px}#copy10{top:144px;left:27px}#offer{top:20px}#copy11{bottom:82px;left:34px}#phoneNumber{bottom:53px}#whiteBG{width:300px;height:43px;bottom:-43px;left:0;display:block;background-color:#FFF;position:absolute;z-index:2}#CTA{position:absolute;left:7px;bottom:7px;z-index:2}#ctaBtnOver{top:0;left:-20px;z-index:3;opacity:0}#barsContainer{position:absolute;z-index:1}#bar1{left:0}#bar3{right:56px}#bar6{left:149px}#bar9{top:80px;right:42px}#bar10{top:130px;left:15px}#bar13{height:28px;bottom:75px;left:25px}.CTA,.copy1,.copy10,.copy11,.copy2,.copy3,.copy4,.copy5,.copy6,.copy7,.copy8,.copy9,.ctaBtnOver,.logo,.offer,.phoneNumber{background-image:url(sprite.png);background-repeat:no-repeat;position:absolute}.copy1,.copy10,.copy11,.copy2,.copy3,.copy4,.copy5,.copy8,.copy9,.offer,.phoneNumber{z-index:2;position:absolute;opacity:0}#bar1,#bar10,#bar13,#bar3,#bar6,#bar9{opacity:0}.logo{background-position:-15px -164px;width:188px;height:22px}.copy1,.copy2,.copy3,.copy4,.copy5{height:17px}.copy1{background-position:-18px -20px;width:193px}.copy2{background-position:-15px -62px;width:116px}.copy3{background-position:-155px -62px;width:68px}.copy4{background-position:-157px -93px;width:74px}.copy5{background-position:-16px -95px;width:120px}.copy6{background-position:-13px -132px;width:123px;height:12px}.copy7{background-position:-156px -132px;width:93px;height:12px}.copy10,.copy8,.copy9{height:17px}.copy8{background-position:-254px -23px;width:132px}.copy9{background-position:-248px -61px;width:222px}.copy10{background-position:-251px -92px;width:163px}.copy11{background-position:-260px -134px;width:232px;height:10px}.offer{background-position:-486px -11px;width:214px;height:115px}.phoneNumber{background-position:-357px -169px;width:260px;height:10px}.CTA{background-position:-223px -160px;width:97px;height:29px}.ctaBtnOver{background-position:-406px -11px;width:64px;height:29px}#bar11,#bar12,#bar14,#bar2,#bar4,#bar5{position:absolute;height:0}#bar14{left:0;width:25px;background:url(bar14.png) top left no-repeat}#bar12{bottom:0;left:15px;width:137px;background:url(bar12.png) bottom right no-repeat}#bar11{top:0;right:40px;width:141px;background:url(bar11.png) top right no-repeat}#bar5{top:0;right:27px;width:122px;background:url(bar5.png) top right no-repeat}#bar4{bottom:0;right:54px;width:204px;background:url(bar4.png) bottom right no-repeat}#bar2{bottom:-2px;left:0;width:206px;background:url(bar2.png) bottom right no-repeat}</style>
+</head>
+<body>
+  <div id="container">
+    <div id="ad" onclick="window.open(window.clickTag)">
+      <div id="banner" style="visibility: visible;">
+        <div style="transform: matrix(0.8, 0, 0, 0.8, 0, 0);" id="brand" class="logo"></div>
+
+        <div style="visibility: inherit; opacity: 1;" id="copy1" class="copy1"></div>
+        <div style="visibility: inherit; opacity: 1;" id="copy2" class="copy2"></div>
+        <div style="visibility: inherit; opacity: 0.838671;" id="copy3" class="copy3"></div>
+        <div id="copy4" class="copy4"></div>
+        <div id="copy5" class="copy5"></div>
+        <div id="copy8" class="copy8"></div>
+        <div id="copy9" class="copy9"></div>
+        <div id="copy10" class="copy10"></div>
+
+        <!--BoxAnim-->
+        <div style="height: 0px; bottom: auto; top: 104px; background: transparent url(&quot;bar2.png&quot;) no-repeat scroll left top;" id="bar2"></div>
+        <div style="height: 131px; bottom: auto; top: 103px; background: transparent url(&quot;bar4.png&quot;) no-repeat scroll left top;" id="bar4"></div>
+        <div id="bar5"></div>
+        <div id="bar11"></div>
+        <div id="bar12"></div>
+        <div id="bar14"></div>
+        <!-- -->
+
+        <div style="transform: matrix3d(1, 0, 0, 0, 0, 0, 1, -0.005, 0, -1, 0, 0, 0, 0, 0, 1);" id="copyContainer1">
+          <div id="copy6" class="copy6"></div>
+          <div id="bar7"></div>
+        </div>
+        <div style="transform: matrix3d(1, 0, 0, 0, 0, 0, 1, -0.005, 0, -1, 0, 0, 0, 0, 0, 1);" id="copyContainer2">
+          <div id="copy7" class="copy7"></div>
+          <div id="bar8"></div>
+        </div>
+
+        <div id="barsContainer">
+          <div style="visibility: inherit; opacity: 1; width: 145px;" id="bar1"></div>
+          <div style="visibility: inherit; opacity: 1; width: 95px;" id="bar3"></div>
+          <div id="bar6"></div>
+          <div id="bar9"></div>
+          <div id="bar10"></div>
+          <div id="bar13"></div>
+        </div>
+
+        <div id="offer" class="offer"></div>
+        <div id="phoneNumber" class="phoneNumber"></div>
+        <div id="copy11" class="copy11"></div>
+
+        <div id="whiteBG">
+          <div id="CTA" class="CTA">
+            <div id="ctaBtnOver" class="ctaBtnOver"></div>
+          </div>
+          <div id="brandEndframe" class="logo"></div>
+        </div>
+      </div>
+    </div>	
+  </div>
+  <script src="../../../split_data_007/split_data/BCE_LTO_Accelerator_160x600_data/TweenMax.js"></script>
+  <script>
+    // AdBegins
+
+function startAd(){
+
+TweenMax.set(brand, {scale:0.8});
+TweenMax.set(copyContainer1, {transformPerspective:200, rotationX:90});
+TweenMax.set(copyContainer2, {transformPerspective:200, rotationX:90});
+
+
+
+  
+var adContainer = document.getElementById("container");
+
+
+TweenMax.defaultOverwrite = "false";
+document.getElementById("banner").style.visibility = "visible";
+
+init();
+listeners();
+
+function listeners(){
+        container.addEventListener('mouseenter', ctaOver, false);
+        container.addEventListener('mouseleave', ctaOut, false);
+    }
+    
+function ctaOver(){
+  TweenMax.to(ctaBtnOver, .2, {delay:0, autoAlpha:1, left:25, ease:Sine.easeIn});
+  TweenMax.to(ctaBtnOver, .2, {delay:.2, autoAlpha:0, left:85, ease:Sine.easeOut});
+  TweenMax.to(ctaBtnOver, 0, {delay:.3, autoAlpha:0, left:-20});
+  
+}
+
+function ctaOut(){
+    TweenMax.to(ctaBtnOver, .2, {delay:0, autoAlpha:0, ease:Sine.easeIn});
+  }
+
+
+function init(){
+    setTimeout (function(){frame1()}, 100);
+  }
+
+
+}
+
+// Animations
+
+
+function frame1(){
+  
+  TweenMax.to( "#copy1", 0.5, { autoAlpha:1, ease:Sine.easeOut, delay: 0.3});
+  TweenMax.to( "#bar2", 0.3, { height:"146px", ease:Circ.easeInOut, delay: 0.4});
+  TweenMax.to( "#bar1", 0.3, { width:"145px", autoAlpha:1, ease:Sine.easeOut, delay: 0.7});
+    TweenMax.to( "#bar2", 0, { bottom:"auto", ease:Circ.easeInOut, delay: 1});
+  TweenMax.to( "#bar2", 0, { top:"104px", ease:Circ.easeInOut, delay: 1});
+    TweenMax.to( "#bar2", 0, { background:"no-repeat transparent top left url(bar2.png)", ease:Circ.easeInOut, delay: 1});
+    TweenMax.to( "#bar2", 0.3, { height:"0px", ease:Circ.easeInOut, delay: 1});
+  TweenMax.to( "#copy2", 0.3, { autoAlpha:1, ease:Sine.easeOut, delay: 0.9, onComplete: frame2});
+
+}
+
+function frame2(){
+  TweenMax.to( "#bar4", 0.3, { height:"145px", ease:Circ.easeInOut, delay: 0.3}); 
+  TweenMax.to( "#bar3", 0.3, { width:"95px", autoAlpha:1, ease:Sine.easeOut, delay: 0.6});
+  TweenMax.to( "#bar4", 0, { bottom:"auto", ease:Circ.easeInOut, delay: 0.9});
+  TweenMax.to( "#bar4", 0, { top:"103px", ease:Circ.easeInOut, delay: 0.9});
+  TweenMax.to( "#bar4", 0, { background:"no-repeat transparent top left url(bar4.png)", ease:Circ.easeInOut, delay: 0.9});
+  TweenMax.to( "#bar4", 0.3, { height:"0px", ease:Circ.easeInOut, delay: 0.9});
+  TweenMax.to( "#copy3", 0.3, { autoAlpha:1, ease:Sine.easeOut, delay: 0.8});
+  TweenMax.to( "#copy3", 0.3, { autoAlpha:0, ease:Sine.easeOut, delay: 2.1});
+  TweenMax.to( "#bar3", 0.3, { autoAlpha:0, ease:Sine.easeOut, delay: 2.1, onComplete: frame3});
+
+}
+
+function frame3(){
+  TweenMax.to( "#bar4", 0, { bottom:"0px", top:"auto", background:"no-repeat transparent bottom right url(bar4.png)", ease:Circ.easeInOut, delay: 0});
+  TweenMax.to( "#bar3", 0, { width:"0px", autoAlpha:0, ease:Sine.easeOut, delay: 0});
+  TweenMax.to( "#bar4", 0.3, { height:"145px", ease:Circ.easeInOut, delay: 0}); 
+  TweenMax.to( "#bar3", 0.3, { width:"95px", autoAlpha:1, ease:Sine.easeOut, delay: 0.3});
+  TweenMax.to( "#bar4", 0, { bottom:"auto", ease:Circ.easeInOut, delay: 0.6});
+  TweenMax.to( "#bar4", 0, { top:"103px", ease:Circ.easeInOut, delay: 0.6});
+  TweenMax.to( "#bar4", 0, { background:"no-repeat transparent top left url(bar4.png)", ease:Circ.easeInOut, delay: 0.6});
+  TweenMax.to( "#bar4", 0.3, { height:"0px", ease:Circ.easeInOut, delay: 0.6});
+  TweenMax.to( "#copy4", 0.3, { autoAlpha:1, ease:Sine.easeOut, delay: 0.5});
+  TweenMax.to( "#copy4", 0.3, { autoAlpha:0, ease:Sine.easeOut, delay: 1.8});
+  TweenMax.to( "#bar3", 0.3, { autoAlpha:0, ease:Sine.easeOut, delay: 1.8, onComplete: frame4});
+
+
+}
+
+function frame4(){
+  TweenMax.to( "#bar5", 0.3, { height:"62px", ease:Circ.easeInOut, delay: 0});  
+  TweenMax.to( "#bar6", 0.3, { width:"141px", autoAlpha:1, ease:Sine.easeOut, delay: 0.3});
+  TweenMax.to( "#bar5", 0, { top:"auto", ease:Circ.easeInOut, delay: 0.6});
+  TweenMax.to( "#bar5", 0, { bottom:"186px", ease:Circ.easeInOut, delay: 0.6});
+  TweenMax.to( "#bar5", 0, { background:"no-repeat transparent bottom right url(bar5.png)", ease:Circ.easeInOut, delay: 0.6});
+  TweenMax.to( "#bar5", 0.3, { height:"0px", ease:Circ.easeInOut, delay: 0.6});
+  TweenMax.to( "#copy5", 0.3, { autoAlpha:1, ease:Sine.easeOut, delay: 0.5});
+  TweenMax.to( "#copyContainer1", 0.5, { rotationX:0, transformOrigin:"top", ease:Back.easeOut, delay: 1.8});
+  TweenMax.to( "#copyContainer2", 0.5, { rotationX:0, transformOrigin:"top", ease:Back.easeOut, delay: 2.5});
+  
+  TweenMax.to( "#bar6", 0.3, { autoAlpha:0, ease:Sine.easeOut, delay: 3.5});
+  TweenMax.to( "#copy5", 0.3, { autoAlpha:0, ease:Sine.easeOut, delay: 3.5});
+  TweenMax.to( "#copy1", 0.3, { autoAlpha:0, ease:Sine.easeOut, delay: 3.5});
+  TweenMax.to( "#copy2", 0.3, { autoAlpha:0, ease:Sine.easeOut, delay: 3.5});
+  TweenMax.to( "#bar1", 0.3, { autoAlpha:0, ease:Sine.easeOut, delay: 3.5});
+  TweenMax.to( "#copyContainer1", 0.3, { autoAlpha:0, ease:Sine.easeOut, delay: 3.5});
+  TweenMax.to( "#copyContainer2", 0.3, { autoAlpha:0, ease:Sine.easeOut, delay: 3.5, onComplete: frame5});
+
+}
+
+function frame5(){
+  TweenMax.to( "#copy8", 0.5, { autoAlpha:1, ease:Sine.easeOut, delay: 0});
+  TweenMax.to( "#bar11", 0.3, { height:"81px", ease:Circ.easeInOut, delay: 0.5});
+  TweenMax.to( "#bar9", 0.3, { width:"242px", autoAlpha:1, ease:Sine.easeOut, delay: 0.8});
+  TweenMax.to( "#bar11", 0, { top:"auto", ease:Circ.easeInOut, delay: 1.1});
+  TweenMax.to( "#bar11", 0, { bottom:"167px", ease:Circ.easeInOut, delay: 1.1});
+  TweenMax.to( "#bar11", 0, { background:"no-repeat transparent bottom right url(bar11.png)", ease:Circ.easeInOut, delay: 1.1});
+  TweenMax.to( "#bar11", 0.3, { height:"0px", ease:Circ.easeInOut, delay: 1.1});
+  TweenMax.to( "#copy9", 0.5, { autoAlpha:1, ease:Sine.easeOut, delay: 1});
+  TweenMax.to( "#bar12", 0.3, { height:"76px", ease:Circ.easeInOut, delay: 1.4});
+  TweenMax.to( "#bar10", 0.3, { width:"183px", autoAlpha:1, ease:Sine.easeOut, delay: 1.7});
+  TweenMax.to( "#bar12", 0, { bottom:"auto", ease:Circ.easeInOut, delay: 2});
+  TweenMax.to( "#bar12", 0, { top:"172px", ease:Circ.easeInOut, delay: 2});
+  TweenMax.to( "#bar12", 0, { background:"no-repeat transparent top right url(bar12.png)", ease:Circ.easeInOut, delay: 2});
+  TweenMax.to( "#bar12", 0.3, { height:"0px", ease:Circ.easeInOut, delay: 2});
+  TweenMax.to( "#copy10", 0.5, { autoAlpha:1, ease:Sine.easeOut, delay: 1.9});
+  
+  TweenMax.to( "#copy8", 0.3, { autoAlpha:0, ease:Sine.easeOut, delay: 3.3});
+  TweenMax.to( "#bar9", 0.3, { autoAlpha:0, ease:Sine.easeOut, delay: 3.3});
+  TweenMax.to( "#copy9", 0.3, { autoAlpha:0, ease:Sine.easeOut, delay: 3.3});
+  TweenMax.to( "#copy10", 0.3, { autoAlpha:0, ease:Sine.easeOut, delay: 3.3});
+  TweenMax.to( "#bar10", 0.3, { autoAlpha:0, ease:Sine.easeOut, delay: 3.3, onComplete: frame6});
+
+
+}
+
+function frame6(){
+  TweenMax.to( "#offer", 0.4, { autoAlpha:1, ease:Sine.easeOut, delay: 0});
+  TweenMax.to( "#whiteBG", 0.4, { bottom:"0px", ease:Sine.easeOut, delay: 0});
+  TweenMax.to( "#phoneNumber", 0.4, { autoAlpha:1, ease:Sine.easeOut, delay: 0});
+  TweenMax.to( "#bar14", 0.3, { height:"100px", ease:Circ.easeInOut, delay: 0.4});
+  TweenMax.to( "#bar13", 0.3, { width:"250px", autoAlpha:1, ease:Sine.easeOut, delay: 0.7});
+  TweenMax.to( "#bar14", 0, { top:"auto", ease:Circ.easeInOut, delay: 1});
+  TweenMax.to( "#bar14", 0, { bottom:"74px", ease:Circ.easeInOut, delay: 1});
+  TweenMax.to( "#bar14", 0, { background:"no-repeat transparent bottom right url(bar14.png)", ease:Circ.easeInOut, delay: 1});
+  TweenMax.to( "#bar14", 0.3, { height:"0px", autoAlpha:0, ease:Circ.easeInOut, delay: 1});
+  TweenMax.to( "#copy11", 0.3, { autoAlpha:1, ease:Sine.easeOut, delay: 1, onComplete: Shimmer});
+
+}
+
+function Shimmer(){
+  TweenMax.to( "#ctaBtnOver", 0.2, { autoAlpha:1, left:25, ease:Sine.easeIn, delay: 0});
+  TweenMax.to( "#ctaBtnOver", 0.2, { autoAlpha:0, left:85, ease:Sine.easeOut, delay: 0.2});
+  TweenMax.to( "#ctaBtnOver", 0, { autoAlpha:0, left:-20, delay: 0.3});
+}
+
+  </script>
+  <script type="text/javascript">
+    var clickTag = "http://business.comcast.com/landingpage/3490-tp";
+
+    function checkGreensockReady(){
+      if ( window.TimelineMax ){
+        startAd();
+      }else{
+        setTimeout( checkGreensockReady, 50 );
+      }
+    }
+    window.onload = checkGreensockReady;
+
+  </script>
+
+</body></html>

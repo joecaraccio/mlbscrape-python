@@ -34,7 +34,7 @@ class PregamePitcherGameEntry(Base):
     career_hr = Column(Integer)
     
     # Versus stats
-    vs_ab = Column(Float)
+    vs_bf = Column(Integer)
     vs_so = Column(Integer)
     vs_er = Column(Integer)
     vs_h = Column(Integer)
@@ -80,7 +80,6 @@ class PregamePitcherGameEntry(Base):
         
         # Versus stats
         self.vs_bf = 0
-        self.vs_ip = 0
         self.vs_so = 0
         self.vs_er = 0
         self.vs_h = 0

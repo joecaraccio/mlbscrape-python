@@ -158,8 +158,8 @@ class BaseballReference(object):
                     pitcher_name_entry = pitcher_entries[1].find("a")
                     if pitcher_name_entry.text.replace(u'\xa0', ' ') == full_name:
                         if team == pitcher_entries[3].text:
-                            hitter_id = pitcher_name_entry.get("href").split("/")
-                            return str(hitter_id[len(hitter_id)-1]).replace(".shtml","")
+                            pitcher_id = pitcher_name_entry.get("href").split("/")
+                            return str(pitcher_id[len(pitcher_id)-1]).replace(".shtml", "")
                 except IndexError:
                     continue
                 except AttributeError:
@@ -188,18 +188,20 @@ class BaseballReference(object):
         pitcher_year_url = BaseballReference.BASE_URL + "/leagues/MLB/" + str(year) + "-standard-pitching.shtml"
         return BeautifulSoupHelper.get_soup_from_url(pitcher_year_url)
 
+    class TableNotFound(Exception):
+        def __init__(self, table_name):
+            super(BaseballReference.TableNotFound, self).__init__("Table '%s' not found in the Baseball Reference page" %
+                                                                  table_name)
+
     @staticmethod
-    def get_hitter_table_dict(soup, table_name, table_row_label, table_column_label):
-        try:
-            results_table = soup.find("table", {"id": table_name})
-            table_header_list = results_table.find("thead").findAll("th")
-            table_header_list = [x.text for x in table_header_list]
-            stat_rows = results_table.find("tbody").findAll("tr")
-            stats = BaseballReference.BatterStatStruct()
-        except Exception as e:
-            # Just try until we succeed (watch stack overflow)
-            print "Failed: %s" % str(e)
-            return BaseballReference.get_hitter_table_dict(soup, table_name, table_row_label, table_column_label)
+    def get_table_row_dict(soup, table_name, table_row_label, table_column_label):
+        results_table = soup.find("table", {"id": table_name})
+        if results_table is None:
+            raise BaseballReference.TableNotFound(table_name)
+
+        table_header_list = results_table.find("thead").findAll("th")
+        table_header_list = [x.text for x in table_header_list]
+        stat_rows = results_table.find("tbody").findAll("tr")
 
         for stat_row in stat_rows:
             # Create a dictionary of the stat attributes
@@ -212,62 +214,13 @@ class BaseballReference(object):
                     stat_dict[table_header_list[i]] = stat_entries[i].text
             try:
                 if stat_dict[table_column_label] == table_row_label:
-                    stats.ab = int(stat_dict["AB"])
-                    stats.h = int(stat_dict["H"])
-                    stats.bb = int(stat_dict["BB"])
-                    stats.so = int(stat_dict["SO"])
-                    stats.hr = int(stat_dict["HR"])
-                    stats.rbi = int(stat_dict["RBI"])
-                    try:
-                        stats.r = int(stat_dict["R"])
-                        stats.sb = int(stat_dict["SB"])
-                        stats.cs = int(stat_dict["CS"])
-                    except KeyError:
-                        print "Don't have R, SB, CS stats."
-                    break
+                    return stat_dict
             # We have reached the end of the year-by-year stats, just end
             except ValueError:
                 break
 
-        return stats
-
-    @staticmethod
-    def get_pitcher_table_dict(soup, table_name, table_row_label, table_column_label):
-        try:
-            results_table = soup.find("table", {"id": table_name})
-            table_header_list = results_table.find("thead").findAll("th")
-            table_header_list = [x.text for x in table_header_list]
-            stat_rows = results_table.find("tbody").findAll("tr")
-            stats = BaseballReference.PitcherStatStruct()
-        except Exception as e:
-            # Just try until we succeed (watch stack overflow)
-            #return BaseballReference.get_pitcher_table_dict(soup, table_name, table_row_label, table_column_label)
-            print "Failed %s." % str(e)
-        for stat_row in stat_rows:
-            # Create a dictionary of the stat attributes
-            stat_dict = dict()
-            stat_entries = stat_row.findAll("td")
-            for i in range(0, len(table_header_list)):
-                if stat_entries[i].text == "":
-                    stat_dict[table_header_list[i]] = 0
-                else:
-                    stat_dict[table_header_list[i]] = stat_entries[i].text
-            try:
-                if stat_dict[table_column_label] == table_row_label:
-                    stats.batters_faced = int(stat_dict["BF"])
-                    stats.ip = float(stat_dict["IP"])
-                    stats.bb = int(stat_dict["BB"])
-                    stats.so = int(stat_dict["SO"])
-                    stats.hr = int(stat_dict["HR"])
-                    stats.wins = int(stat_dict["W"])
-                    stats.losses = int(stat_dict["L"])
-                    stats.er = int(stat_dict["ER"])
-                    break
-            # We have reached the end of the year-by-year stats, just end
-            except ValueError:
-                break
-
-        return stats
+        #TODO: add a TableRowNotFound exception
+        raise BaseballReference.TableNotFound(table_name)
 
     @staticmethod
     def get_career_hitting_stats(baseball_reference_id, soup=None):
@@ -275,7 +228,7 @@ class BaseballReference(object):
             soup = BeautifulSoupHelper.get_soup_from_url(BaseballReference.BASE_URL + "/players/split.cgi?id=" +
                                                          str(baseball_reference_id) + "&year=Career&t=b")
 
-        return BaseballReference.get_hitter_table_dict(soup, "total", "Career Totals", "Split")
+        return BaseballReference.get_table_row_dict(soup, "total", "Career Totals", "Split")
 
     @staticmethod
     def get_vs_hand_hitting_stats(baseball_reference_id, hand_value, soup=None):
@@ -291,7 +244,7 @@ class BaseballReference(object):
             print "Invalid hand enum."
             return None
 
-        return BaseballReference.get_hitter_table_dict(soup, "plato", hand, "Split")
+        return BaseballReference.get_table_row_dict(soup, "plato", hand, "Split")
 
     @staticmethod
     def get_recent_hitting_stats(baseball_reference_id, soup=None):
@@ -299,7 +252,7 @@ class BaseballReference(object):
             soup = BeautifulSoupHelper.get_soup_from_url(BaseballReference.BASE_URL + "/players/split.cgi?id=" +
                                                          str(baseball_reference_id) + "&year=Career&t=b")
 
-        return BaseballReference.get_hitter_table_dict(soup, "total", "Last 14 days", "Split")
+        return BaseballReference.get_table_row_dict(soup, "total", "Last 14 days", "Split")
 
     @staticmethod
     def get_season_hitting_stats(baseball_reference_id, year=None, soup=None):
@@ -311,7 +264,7 @@ class BaseballReference(object):
             print url
             soup = BeautifulSoupHelper.get_soup_from_url(url)
 
-        return BaseballReference.get_hitter_table_dict(soup, "total", str(year) + " Totals", "Split")
+        return BaseballReference.get_table_row_dict(soup, "total", str(year) + " Totals", "Split")
 
     @staticmethod
     def get_vs_pitcher_stats(batter_id, pitcher_id, soup=None):
@@ -321,7 +274,7 @@ class BaseballReference(object):
             print url
             soup = BeautifulSoupHelper.get_soup_from_url(url)
 
-        return BaseballReference.get_hitter_table_dict(soup, "ajax_result_table_1", "RegSeason", "Year")
+        return BaseballReference.get_table_row_dict(soup, "ajax_result_table_1", "RegSeason", "Year")
 
     @staticmethod
     def get_hitter_page_career_soup(baseball_reference_id):
@@ -334,7 +287,7 @@ class BaseballReference(object):
             soup = BeautifulSoupHelper.get_soup_from_url(BaseballReference.BASE_URL + "/players/split.cgi?id=" +
                                                          str(baseball_reference_id) + "&year=Career&t=p")
 
-        return BaseballReference.get_pitcher_table_dict(soup, "total_extra", "Career Totals", "Split")
+        return BaseballReference.get_table_row_dict(soup, "total_extra", "Career Totals", "Split")
 
     @staticmethod
     def get_pitcher_page_career_soup(baseball_reference_id):
@@ -352,7 +305,7 @@ class BaseballReference(object):
             print url
             soup = BeautifulSoupHelper.get_soup_from_url(url)
 
-        return BaseballReference.get_pitcher_table_dict(soup, "total_extra", str(year) + " Totals", "Split")
+        return BaseballReference.get_table_row_dict(soup, "total_extra", str(year) + " Totals", "Split")
 
     @staticmethod
     def get_recent_pitcher_stats(baseball_reference_id, soup=None):
@@ -360,7 +313,7 @@ class BaseballReference(object):
             soup = BeautifulSoupHelper.get_soup_from_url(BaseballReference.BASE_URL + "/players/split.cgi?id=" +
                                                          str(baseball_reference_id) + "&year=Career&t=p")
 
-        return BaseballReference.get_pitcher_table_dict(soup, "total_extra", "Last 14 days", "Split")
+        return BaseballReference.get_table_row_dict(soup, "total_extra", "Last 14 days", "Split")
 
     # Two-way dictionary
     team_dict = bidict.bidict(ARI="Arizona Diamondbacks",

@@ -77,6 +77,14 @@ class RotoWire(object):
         RotoWire.get_pregame_pitching_stats(games, database_session)
 
     @staticmethod
+    def mine_yesterdays_stats(database_session):
+        """ Lookup the pregame entries for yesterday and commit the results of the game to the database
+        :param database_session: SQLAlchemy database session
+        """
+        #TODO: implement this function
+        return
+
+    @staticmethod
     def get_game_lineups():
         """ Mine the RotoWire daily lineups page and get the players' name, team, and RotoWire ID
         Note: longer names are abbreviated by RotoWire and need to be resolved by another source
@@ -367,17 +375,20 @@ class RotoWire(object):
             raise RotoWire.HitterNotFound(batter_id)
         hitter_entry = hitter_entries[0]
         hitter_career_soup = BaseballReference.get_hitter_page_career_soup(hitter_entry.baseball_reference_id)
-        career_stats = BaseballReference.get_career_hitting_stats(hitter_entry.baseball_reference_id, hitter_career_soup)
-        pregame_hitter_entry.career_ab = career_stats.ab
-        pregame_hitter_entry.career_r = career_stats.r
-        pregame_hitter_entry.career_h = career_stats.h
-        pregame_hitter_entry.career_hr = career_stats.hr
-        pregame_hitter_entry.career_rbi = career_stats.rbi
-        pregame_hitter_entry.career_sb = career_stats.sb
-        pregame_hitter_entry.career_cs = career_stats.cs
-        pregame_hitter_entry.career_bb = career_stats.bb
-        pregame_hitter_entry.career_so = career_stats.so
-
+        try:
+            career_stats = BaseballReference.get_career_hitting_stats(hitter_entry.baseball_reference_id, hitter_career_soup)
+            pregame_hitter_entry.career_ab = int(career_stats["AB"])
+            pregame_hitter_entry.career_r = int(career_stats["R"])
+            pregame_hitter_entry.career_h = int(career_stats["H"])
+            pregame_hitter_entry.career_hr = int(career_stats["HR"])
+            pregame_hitter_entry.career_rbi = int(career_stats["RBI"])
+            pregame_hitter_entry.career_sb = int(career_stats["SB"])
+            pregame_hitter_entry.career_cs = int(career_stats["CS"])
+            pregame_hitter_entry.career_bb = int(career_stats["BB"])
+            pregame_hitter_entry.career_so = int(career_stats["SO"])
+        #TODO: add ColumnNotFound exception to BaseballReference
+        except BaseballReference.TableNotFound as e:
+            print str(e), "with", str(hitter_entry.first_name), str(hitter_entry.last_name)
         # Vs hand of the opposing pitcher
         if pitcher_hand == "L":
             pitcher_hand_lr = BaseballReference.HandEnum.LHP
@@ -386,40 +397,49 @@ class RotoWire(object):
         else:
             print "Invalid pitcher hand %i" % pitcher_hand
             assert 0
-        vs_hand_stats = BaseballReference.get_vs_hand_hitting_stats(hitter_entry.baseball_reference_id, pitcher_hand_lr, hitter_career_soup)
-        pregame_hitter_entry.vs_hand_ab = vs_hand_stats.ab
-        pregame_hitter_entry.vs_hand_r = vs_hand_stats.r
-        pregame_hitter_entry.vs_hand_h = vs_hand_stats.h
-        pregame_hitter_entry.vs_hand_hr = vs_hand_stats.hr
-        pregame_hitter_entry.vs_hand_rbi = vs_hand_stats.rbi
-        pregame_hitter_entry.vs_hand_sb = vs_hand_stats.sb
-        pregame_hitter_entry.vs_hand_cs = vs_hand_stats.cs
-        pregame_hitter_entry.vs_hand_bb = vs_hand_stats.bb
-        pregame_hitter_entry.vs_hand_so = vs_hand_stats.so
+        try:
+            vs_hand_stats = BaseballReference.get_vs_hand_hitting_stats(hitter_entry.baseball_reference_id, pitcher_hand_lr, hitter_career_soup)
+            pregame_hitter_entry.vs_hand_ab = int(vs_hand_stats["AB"])
+            pregame_hitter_entry.vs_hand_r = int(vs_hand_stats["R"])
+            pregame_hitter_entry.vs_hand_h = int(vs_hand_stats["H"])
+            pregame_hitter_entry.vs_hand_hr = int(vs_hand_stats["HR"])
+            pregame_hitter_entry.vs_hand_rbi = int(vs_hand_stats["RBI"])
+            pregame_hitter_entry.vs_hand_sb = int(vs_hand_stats["SB"])
+            pregame_hitter_entry.vs_hand_cs = int(vs_hand_stats["CS"])
+            pregame_hitter_entry.vs_hand_bb = int(vs_hand_stats["BB"])
+            pregame_hitter_entry.vs_hand_so = int(vs_hand_stats["SO"])
+        except BaseballReference.TableNotFound as e:
+            print str(e), "with", str(hitter_entry.first_name), str(hitter_entry.last_name)
 
         # Recent stats
-        recent_stats = BaseballReference.get_recent_hitting_stats(hitter_entry.baseball_reference_id, hitter_career_soup)
-        pregame_hitter_entry.recent_ab = recent_stats.ab
-        pregame_hitter_entry.recent_r = recent_stats.r
-        pregame_hitter_entry.recent_h = recent_stats.h
-        pregame_hitter_entry.recent_hr = recent_stats.hr
-        pregame_hitter_entry.recent_rbi = recent_stats.rbi
-        pregame_hitter_entry.recent_sb = recent_stats.sb
-        pregame_hitter_entry.recent_cs = recent_stats.cs
-        pregame_hitter_entry.recent_bb = recent_stats.bb
-        pregame_hitter_entry.recent_so = recent_stats.so
+        try:
+            recent_stats = BaseballReference.get_recent_hitting_stats(hitter_entry.baseball_reference_id, hitter_career_soup)
+            pregame_hitter_entry.recent_ab = int(recent_stats["AB"])
+            pregame_hitter_entry.recent_r = int(recent_stats["R"])
+            pregame_hitter_entry.recent_h = int(recent_stats["H"])
+            pregame_hitter_entry.recent_hr = int(recent_stats["HR"])
+            pregame_hitter_entry.recent_rbi = int(recent_stats["RBI"])
+            pregame_hitter_entry.recent_sb = int(recent_stats["SB"])
+            pregame_hitter_entry.recent_cs = int(recent_stats["CS"])
+            pregame_hitter_entry.recent_bb = int(recent_stats["BB"])
+            pregame_hitter_entry.recent_so = int(recent_stats["SO"])
+        except BaseballReference.TableNotFound as e:
+            print str(e), "with", str(hitter_entry.first_name), str(hitter_entry.last_name)
 
         #Season stats
-        season_stats = BaseballReference.get_season_hitting_stats(hitter_entry.baseball_reference_id)
-        pregame_hitter_entry.season_ab = season_stats.ab
-        pregame_hitter_entry.season_r = season_stats.r
-        pregame_hitter_entry.season_h = season_stats.h
-        pregame_hitter_entry.season_hr = season_stats.hr
-        pregame_hitter_entry.season_rbi = season_stats.rbi
-        pregame_hitter_entry.season_sb = season_stats.sb
-        pregame_hitter_entry.season_cs = season_stats.cs
-        pregame_hitter_entry.season_bb = season_stats.bb
-        pregame_hitter_entry.season_so = season_stats.so
+        try:
+            season_stats = BaseballReference.get_season_hitting_stats(hitter_entry.baseball_reference_id)
+            pregame_hitter_entry.season_ab = int(season_stats["AB"])
+            pregame_hitter_entry.season_r = int(season_stats["R"])
+            pregame_hitter_entry.season_h = int(season_stats["H"])
+            pregame_hitter_entry.season_hr = int(season_stats["HR"])
+            pregame_hitter_entry.season_rbi = int(season_stats["RBI"])
+            pregame_hitter_entry.season_sb = int(season_stats["SB"])
+            pregame_hitter_entry.season_cs = int(season_stats["CS"])
+            pregame_hitter_entry.season_bb = int(season_stats["BB"])
+            pregame_hitter_entry.season_so = int(season_stats["SO"])
+        except BaseballReference.TableNotFound as e:
+            print str(e), "with", str(hitter_entry.first_name), str(hitter_entry.last_name)
 
         # Career versus this pitcher
         pitcher_entries = database_session.query(PitcherEntry).filter(PitcherEntry.rotowire_id == pregame_hitter_entry.pitcher_id)
@@ -428,14 +448,17 @@ class RotoWire(object):
             return pregame_hitter_entry
         else:
             pitcher_entry = pitcher_entries[0]
-            vs_pitcher_stats = BaseballReference.get_vs_pitcher_stats(pitcher_entry.baseball_reference_id,
-                                                                  pitcher_id)
-            pregame_hitter_entry.vs_ab = vs_pitcher_stats.ab
-            pregame_hitter_entry.vs_h = vs_pitcher_stats.h
-            pregame_hitter_entry.vs_hr = vs_pitcher_stats.hr
-            pregame_hitter_entry.vs_rbi = vs_pitcher_stats.rbi
-            pregame_hitter_entry.vs_bb = vs_pitcher_stats.bb
-            pregame_hitter_entry.vs_so = vs_pitcher_stats.so
+            try:
+                vs_pitcher_stats = BaseballReference.get_vs_pitcher_stats(hitter_entry.baseball_reference_id,
+                                                                          pitcher_entry.baseball_reference_id)
+                pregame_hitter_entry.vs_ab = int(vs_pitcher_stats["AB"])
+                pregame_hitter_entry.vs_h = int(vs_pitcher_stats["H"])
+                pregame_hitter_entry.vs_hr = int(vs_pitcher_stats["HR"])
+                pregame_hitter_entry.vs_rbi = int(vs_pitcher_stats["RBI"])
+                pregame_hitter_entry.vs_bb = int(vs_pitcher_stats["BB"])
+                pregame_hitter_entry.vs_so = int(vs_pitcher_stats["SO"])
+            except BaseballReference.TableNotFound as e:
+                print str(e), "with", str(hitter_entry.first_name), str(hitter_entry.last_name)
 
             return pregame_hitter_entry
 
@@ -458,17 +481,19 @@ class RotoWire(object):
         pitcher_entry = pitcher_entries[0]
 
         pitcher_career_soup = BaseballReference.get_pitcher_page_career_soup(pitcher_entry.baseball_reference_id)
-
-        career_stats = BaseballReference.get_career_pitching_stats(pitcher_entry.baseball_reference_id, pitcher_career_soup)
-        pregame_hitter_entry.career_bf = career_stats.batters_faced
-        pregame_hitter_entry.career_ip = career_stats.ip
-        pregame_hitter_entry.career_h = career_stats.h
-        pregame_hitter_entry.career_hr = career_stats.hr
-        pregame_hitter_entry.career_er = career_stats.er
-        pregame_hitter_entry.career_bb = career_stats.bb
-        pregame_hitter_entry.career_so = career_stats.so
-        pregame_hitter_entry.career_wins = career_stats.wins
-        pregame_hitter_entry.career_losses = career_stats.losses
+        try:
+            career_stats = BaseballReference.get_career_pitching_stats(pitcher_entry.baseball_reference_id, pitcher_career_soup)
+            pregame_hitter_entry.career_bf = int(career_stats["BF"])
+            pregame_hitter_entry.career_ip = float(career_stats["IP"])
+            pregame_hitter_entry.career_h = int(career_stats["H"])
+            pregame_hitter_entry.career_hr = int(career_stats["HR"])
+            pregame_hitter_entry.career_er = int(career_stats["ER"])
+            pregame_hitter_entry.career_bb = int(career_stats["BB"])
+            pregame_hitter_entry.career_so = int(career_stats["SO"])
+            pregame_hitter_entry.career_wins = int(career_stats["W"])
+            pregame_hitter_entry.career_losses = int(career_stats["L"])
+        except BaseballReference.TableNotFound as e:
+                print str(e), "with", str(pitcher_entry.first_name), str(pitcher_entry.last_name)
 
         opposing_lineup = database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.game_id == game_id,
                                                                                 PregameHitterGameEntry.team != team)
@@ -483,28 +508,34 @@ class RotoWire(object):
             pregame_hitter_entry.vs_er += hitter.vs_rbi
 
         # Recent stats
-        recent_stats = BaseballReference.get_recent_pitcher_stats(pitcher_entry.baseball_reference_id, pitcher_career_soup)
-        pregame_hitter_entry.recent_bf = recent_stats.batters_faced
-        pregame_hitter_entry.recent_ip = recent_stats.ip
-        pregame_hitter_entry.recent_h = recent_stats.h
-        pregame_hitter_entry.recent_hr = recent_stats.hr
-        pregame_hitter_entry.recent_er = recent_stats.er
-        pregame_hitter_entry.recent_bb = recent_stats.bb
-        pregame_hitter_entry.recent_so = recent_stats.so
-        pregame_hitter_entry.recent_wins = recent_stats.wins
-        pregame_hitter_entry.recent_losses = recent_stats.losses
+        try:
+            recent_stats = BaseballReference.get_recent_pitcher_stats(pitcher_entry.baseball_reference_id, pitcher_career_soup)
+            pregame_hitter_entry.recent_bf = int(recent_stats["BF"])
+            pregame_hitter_entry.recent_ip = float(recent_stats["IP"])
+            pregame_hitter_entry.recent_h = int(recent_stats["H"])
+            pregame_hitter_entry.recent_hr = int(recent_stats["HR"])
+            pregame_hitter_entry.recent_er = int(recent_stats["ER"])
+            pregame_hitter_entry.recent_bb = int(recent_stats["BB"])
+            pregame_hitter_entry.recent_so = int(recent_stats["SO"])
+            pregame_hitter_entry.recent_wins = int(recent_stats["W"])
+            pregame_hitter_entry.recent_losses = int(recent_stats["L"])
+        except BaseballReference.TableNotFound as e:
+                print str(e), "with", str(pitcher_entry.first_name), str(pitcher_entry.last_name)
 
         #Season stats
-        season_stats = BaseballReference.get_season_pitcher_stats(pitcher_entry.baseball_reference_id)
-        pregame_hitter_entry.recent_bf = season_stats.batters_faced
-        pregame_hitter_entry.recent_ip = season_stats.ip
-        pregame_hitter_entry.recent_h = season_stats.h
-        pregame_hitter_entry.recent_hr = season_stats.hr
-        pregame_hitter_entry.recent_er = season_stats.er
-        pregame_hitter_entry.recent_bb = season_stats.bb
-        pregame_hitter_entry.recent_so = season_stats.so
-        pregame_hitter_entry.recent_wins = season_stats.wins
-        pregame_hitter_entry.recent_losses = season_stats.losses
+        try:
+            season_stats = BaseballReference.get_season_pitcher_stats(pitcher_entry.baseball_reference_id)
+            pregame_hitter_entry.recent_bf = int(season_stats["BF"])
+            pregame_hitter_entry.recent_ip = float(season_stats["IP"])
+            pregame_hitter_entry.recent_h = int(season_stats["H"])
+            pregame_hitter_entry.recent_hr = int(season_stats["HR"])
+            pregame_hitter_entry.recent_er = int(season_stats["ER"])
+            pregame_hitter_entry.recent_bb = int(season_stats["BB"])
+            pregame_hitter_entry.recent_so = int(season_stats["SO"])
+            pregame_hitter_entry.recent_wins = int(season_stats["W"])
+            pregame_hitter_entry.recent_losses = int(season_stats["L"])
+        except BaseballReference.TableNotFound as e:
+                print str(e), "with", str(pitcher_entry.first_name), str(pitcher_entry.last_name)
 
         return pregame_hitter_entry
 
@@ -524,6 +555,36 @@ class RotoWire(object):
     @staticmethod
     def get_draftkings_link(daily_lineup_soup):
         return daily_lineup_soup.find("div", {"class": RotoWire.DRAFTKINGS_LINK_LABEL}).find("a").get("href")
+
+    @staticmethod
+    #TODO: table_name = tablesorter, table_row_label = the date, table_column_label = date
+    def get_table_row_dict(soup, table_name, table_row_label, table_column_label):
+        results_table = soup.find("table", {"id": table_name})
+        if results_table is None:
+            raise BaseballReference.TableNotFound(table_name)
+
+        table_header_list = results_table.find("thead").findAll("th")
+        table_header_list = [x.text for x in table_header_list]
+        stat_rows = results_table.find("tbody").findAll("tr")
+
+        for stat_row in stat_rows:
+            # Create a dictionary of the stat attributes
+            stat_dict = dict()
+            stat_entries = stat_row.findAll("td")
+            for i in range(0, len(table_header_list)):
+                if stat_entries[i].text == "":
+                    stat_dict[table_header_list[i]] = 0
+                else:
+                    stat_dict[table_header_list[i]] = stat_entries[i].text
+            try:
+                if stat_dict[table_column_label] == table_row_label:
+                    return stat_dict
+            # We have reached the end of the year-by-year stats, just end
+            except ValueError:
+                break
+
+        #TODO: add a TableRowNotFound exception
+        raise BaseballReference.TableNotFound(table_name)
 
     # Two-way dictionary
     team_dict = bidict.bidict(ARI="Arizona Diamondbacks",

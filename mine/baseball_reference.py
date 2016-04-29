@@ -1,30 +1,11 @@
 
 from beautiful_soup_helper import BeautifulSoupHelper
 import bisect
-from sortedcontainers import SortedList, SortedListWithKey
-from mlbscrape_python.hitter import Hitter
-from datetime import date
+from datetime import date, timedelta
 import bidict
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
-
-class PlayerSortedList(SortedListWithKey):
-    def find_from_pitchfx(self, first_name, last_name, team):
-        index = self.bisect_left(BaseballReference.PlayerStruct(first_name, last_name, None, None))
-        if self[index].first_name != first_name or self[index].last_name != last_name:
-            print "The player %s %s from team %s could not be identified in the Baseball Reference list." % (first_name,
-                                                                                                             last_name,
-                                                                                                             team)
-            return None
-        while self[index].team != BaseballReference.pitchfx_team_to_team[team.upper()]:
-            index += 1
-            if index >= len(self) or self[index].first_name != first_name or self[index].last_name != last_name:
-                print "The player %s %s from team %s could not be identified in the Baseball Reference list." % \
-                      (first_name, last_name, team)
-                return None
-
-        return self[index]
 
 
 class BaseballReference(object):
@@ -82,16 +63,6 @@ class BaseballReference(object):
         pitch_fx_id = boxscore_soup.find("pitching", {"team_flag": team_string}).find("pitcher").get("id")
         return players_soup.find("player", {"id": pitch_fx_id}).get("rl")
 
-    @staticmethod
-    def get_id_from_url(url):
-        """ Extract the unique Baseball Reference ID for this player
-        Note: the typical relative URL is "/players/[last name letter]/[player ID].shtml"
-        :param url: relative URL to the player's Baseball Reference page from the base URL
-        :return: string representation of the Baseball Reference ID
-        """
-        end_url = url.split("/")
-        end_url = end_url[len(end_url)-1]
-        return end_url.split(".")[0]
 
     class HandEnum:
         LHP = 1
@@ -211,7 +182,7 @@ class BaseballReference(object):
                 if stat_entries[i].text == "":
                     stat_dict[table_header_list[i]] = 0
                 else:
-                    stat_dict[table_header_list[i]] = stat_entries[i].text
+                    stat_dict[table_header_list[i]] = stat_entries[i].text.replace(u"\xa0", " ")
             try:
                 if stat_dict[table_column_label] == table_row_label:
                     return stat_dict
@@ -315,6 +286,27 @@ class BaseballReference(object):
 
         return BaseballReference.get_table_row_dict(soup, "total_extra", "Last 14 days", "Split")
 
+    @staticmethod
+    def get_yesterdays_hitting_game_log(baseball_reference_id, soup=None):
+        yesterdays_date = date.today() - timedelta(days=1)
+        if soup is None:
+            soup = BeautifulSoupHelper.get_soup_from_url(BaseballReference.BASE_URL + "/players/gl.cgi?id=" +
+                                                         str(baseball_reference_id) + "&t=b&year=" + str(yesterdays_date.year))
+        return BaseballReference.get_table_row_dict(soup, "batting_gamelogs",
+                                                    BaseballReference.date_abbreviations[yesterdays_date.month] + " " + str(yesterdays_date.day),
+                                                    "Date")
+
+    @staticmethod
+    def get_pitching_game_log(baseball_reference_id, soup=None, game_date=None):
+        if game_date is None:
+            game_date = date.today() - timedelta(days=1)
+        if soup is None:
+            soup = BeautifulSoupHelper.get_soup_from_url(BaseballReference.BASE_URL + "/players/gl.cgi?id=" +
+                                                         str(baseball_reference_id) + "&t=p&year=" + str(game_date.year))
+        return BaseballReference.get_table_row_dict(soup, "pitching_gamelogs",
+                                                    BaseballReference.date_abbreviations[game_date.month] + " " + str(game_date.day),
+                                                    "Date")
+
     # Two-way dictionary
     team_dict = bidict.bidict(ARI="Arizona Diamondbacks",
                               ATL="Atlanta Braves",
@@ -346,3 +338,16 @@ class BaseballReference(object):
                               TEX="Texas Rangers",
                               TOR="Toronto Blue Jays",
                               WSN="Washington Nationals")
+
+    date_abbreviations = {1: "Jan",
+                          2: "Feb",
+                          3: "Mar",
+                          4: "Apr",
+                          5: "May",
+                          6: "Jun",
+                          7: "Jul",
+                          8: "Aug",
+                          9: "Sep",
+                          10: "Oct",
+                          11: "Nov",
+                          12: "Dec"}

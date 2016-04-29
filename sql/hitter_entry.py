@@ -29,7 +29,7 @@ class HitterEntry(Base):
         :return: string representation identifying the Hitter entry
         """
         return "<HitterEntry(name='%s %s')>" % (
-                                self.FirstName, self.LastName)
+                                self.first_name, self.last_name)
 
 
 

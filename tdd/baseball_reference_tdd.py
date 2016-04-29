@@ -173,6 +173,13 @@ class GetPitchingStats(unittest.TestCase):
         self.assertEqual(int(season_stats["HR"]), 1)
         self.assertEqual(int(season_stats["BB"]), 8)
         self.assertEqual(int(season_stats["SO"]), 10)
+
+    def get_yesterdays_game_typical_test(self):
+        HTML_LOCATION = "game_log_steven_wright.html"
+        ID = "wrighst01"
+        soup = BeautifulSoupHelper.get_soup_from_url(HTML_LOCATION)
+        game_stats = BaseballReference.get_pitching_game_log(ID, soup)
+        self.assertEqual(float(game_stats["IP"]), 7.0)
 """
     def vs_pitcher_typical_test(self):
         HTML_LOCATION = "stats_pedroia_vs_sabathia.html"
@@ -202,5 +209,6 @@ def suite():
     test_suite.addTest(GetPitchingStats('career_typical_test'))
     test_suite.addTest(GetPitchingStats('recent_typical_test'))
     test_suite.addTest(GetPitchingStats('season_typical_test'))
+    test_suite.addTest(GetPitchingStats('get_yesterdays_game_typical_test'))
     #test_suite = unittest.TestLoader().loadTestsFromTestCase(GetHitterIdTest)
     return test_suite

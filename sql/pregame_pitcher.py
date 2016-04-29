@@ -5,15 +5,18 @@ from mlb_database import Base
 
 # Baseball player class
 class PregamePitcherGameEntry(Base):
-    __tablename__ = 'pitcher_game_entries'
+    __tablename__ = 'pregame_pitcher_entries'
 
     rotowire_id = Column(String, primary_key=True)
-    game_id = Column(String, primary_key=True)
     team = Column(String)
+    game_date = Column(String, primary_key=True)
+    opposing_team = Column(String)
+    predicted_draftkings_points = Column(Float)
+    draftkings_salary = Column(Integer)
     
     # Season stats
     season_bf = Column(Integer)
-    season_ip = Column(Integer)
+    season_ip = Column(Float)
     season_so = Column(Integer)
     season_wins = Column(Integer)
     season_losses = Column(Integer)
@@ -24,7 +27,7 @@ class PregamePitcherGameEntry(Base):
 
     # Career stats
     career_bf = Column(Integer)
-    career_ip = Column(Integer)
+    career_ip = Column(Float)
     career_so = Column(Integer)
     career_wins = Column(Integer)
     career_losses = Column(Integer)
@@ -43,7 +46,7 @@ class PregamePitcherGameEntry(Base):
     
     # Recent (last 14 days) stats
     recent_bf = Column(Integer)
-    recent_ip = Column(Integer)
+    recent_ip = Column(Float)
     recent_so = Column(Integer)
     recent_er = Column(Integer)
     recent_h = Column(Integer)
@@ -55,6 +58,9 @@ class PregamePitcherGameEntry(Base):
         Copy the Pitcher object into the PitcherGameEntry fields
         :param pitcher: Pitcher object
         """
+
+        self.predicted_draftkings_points = 0
+        self.draftkings_salary = 0
 
         # Season stats
         self.season_bf = 0
@@ -99,8 +105,7 @@ class PregamePitcherGameEntry(Base):
         """
         :return: string representation identifying the Pitcher entry
         """
-        return "<Pitcher game entry(name='%s %s')>" % (
-                                self.first_name, self.last_name)
+        return "<Pitcher game entry(name='%s')>" % self.rotowire_id
 
 
 

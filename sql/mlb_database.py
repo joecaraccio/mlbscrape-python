@@ -17,7 +17,7 @@ class MlbDatabase(object):
         Create/open a local database.
         """
         # Create/open a local database
-        engine = create_engine('sqlite:///mlb.db', echo=False)
+        engine = create_engine('sqlite:///mlb_stats.db', echo=False)
         Base.metadata.create_all(engine)
         self.sessionMaker = sessionmaker(bind=engine)
 

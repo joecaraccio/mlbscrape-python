@@ -1,14 +1,15 @@
-from datetime import date
-
+from datetime import date, timedelta
 from baseball_reference import BaseballReference
 from beautiful_soup_helper import BeautifulSoupHelper
-
-from sql.hitter_entry import HitterEntry
-from sql.pregame_hitter import PregameHitterGameEntry
-from sql.pregame_pitcher import PregamePitcherGameEntry
-from sql.pitcher_entry import PitcherEntry
+from mlbscrape_python.sql.hitter_entry import HitterEntry
+from mlbscrape_python.sql.pregame_hitter import PregameHitterGameEntry
+from mlbscrape_python.sql.pregame_pitcher import PregamePitcherGameEntry
+from mlbscrape_python.sql.pitcher_entry import PitcherEntry
 from sqlalchemy.exc import IntegrityError
 import bidict
+from mlbscrape_python.sql.postgame_hitter import PostgameHitterGameEntry
+from mlbscrape_python.sql.postgame_pitcher import PostgamePitcherGameEntry
+from mlbscrape_python.mine.draft_kings import Draftkings
 
 
 class RotoWire(object):
@@ -108,9 +109,14 @@ class RotoWire(object):
             for home_player in game_main_soup.findAll("div", {"class": RotoWire.HOME_TEAM_PLAYER_LABEL}):
                 home_team_lineup.append(RotoWire.get_hitter(home_player, home_team_abbreviation))
 
-            pitchers = game_node.find("div", RotoWire.PITCHERS_REGION_LABEL).findAll("div")
-            away_team_pitcher = RotoWire.get_pitcher(pitchers[0], away_team_abbreviation)
-            home_team_pitcher = RotoWire.get_pitcher(pitchers[1], home_team_abbreviation)
+            try:
+                pitchers = game_node.find("div", RotoWire.PITCHERS_REGION_LABEL).findAll("div")
+                away_team_pitcher = RotoWire.get_pitcher(pitchers[0], away_team_abbreviation)
+                home_team_pitcher = RotoWire.get_pitcher(pitchers[1], home_team_abbreviation)
+            # No pitchers present on page
+            except AttributeError:
+                print "Game between %s and %s is not valid." % (away_team_abbreviation, home_team_abbreviation)
+                continue
 
             current_game = RotoWire.Game(away_team_lineup, away_team_pitcher, home_team_lineup, home_team_pitcher)
             if current_game.is_valid():
@@ -268,38 +274,42 @@ class RotoWire(object):
                 print "Mining %s." % current_hitter.name
                 try:
                     pregame_hitter_entry = RotoWire.get_hitter_stats(current_hitter.rotowire_id,
-                                                                 game.home_pitcher.rotowire_id,
-                                                                 current_hitter.team,
-                                                                 pitcher_hand,
-                                                                 database_session)
-                    pregame_hitter_entry.game_id = RotoWire.get_game_id(game.away_lineup[0].team, game.home_lineup[0].team)
+                                                                     game.home_pitcher.rotowire_id,
+                                                                     current_hitter.team,
+                                                                     pitcher_hand,
+                                                                     database_session)
+                    pregame_hitter_entry.game_date = date.today()
+                    pregame_hitter_entry.opposing_team = game.home_pitcher.team
                     RotoWire.predict_draftkings_points(pregame_hitter_entry)
                     database_session.add(pregame_hitter_entry)
                     database_session.commit()
                 except RotoWire.HitterNotFound as e:
                     print e
                 except IntegrityError:
-                    print "Attempt to duplicate hitter entry: %s %s" % (current_hitter.name,
-                                                                        pregame_hitter_entry.game_id)
+                    print "Attempt to duplicate hitter entry: %s %s %s" % (current_hitter.name,
+                                                                           pregame_hitter_entry.team,
+                                                                           pregame_hitter_entry.opposing_team)
                     database_session.rollback()
             for current_hitter in game.home_lineup:
                 pitcher_hand = game.away_pitcher.hand
                 print "Mining %s." % current_hitter.name
                 try:
                     pregame_hitter_entry = RotoWire.get_hitter_stats(current_hitter.rotowire_id,
-                                                                 game.away_pitcher.rotowire_id,
-                                                                 current_hitter.team,
-                                                                 pitcher_hand,
-                                                                 database_session)
-                    pregame_hitter_entry.game_id = RotoWire.get_game_id(game.away_lineup[0].team, game.home_lineup[0].team)
+                                                                     game.away_pitcher.rotowire_id,
+                                                                     current_hitter.team,
+                                                                     pitcher_hand,
+                                                                     database_session)
+                    pregame_hitter_entry.game_date = date.today()
+                    pregame_hitter_entry.opposing_team = game.away_pitcher.team
                     RotoWire.predict_draftkings_points(pregame_hitter_entry)
                     database_session.add(pregame_hitter_entry)
                     database_session.commit()
                 except RotoWire.HitterNotFound as e:
                     print e
                 except IntegrityError:
-                    print "Attempt to duplicate hitter entry: %s %s" % (current_hitter.name,
-                                                                        pregame_hitter_entry.game_id)
+                    print "Attempt to duplicate hitter entry: %s %s %s" % (current_hitter.name,
+                                                                           pregame_hitter_entry.team,
+                                                                           pregame_hitter_entry.opposing_team)
                     database_session.rollback()
 
     @staticmethod
@@ -311,38 +321,38 @@ class RotoWire(object):
         for game in games:
             current_pitcher = game.away_pitcher
             print "Mining %s." % current_pitcher.name
-            game_id = RotoWire.get_game_id(game.away_pitcher.team, game.home_pitcher.team)
             try:
                 pregame_pitcher_entry = RotoWire.get_pitcher_stats(current_pitcher.rotowire_id,
                                                                    current_pitcher.team,
-                                                                   game_id,
+                                                                   game.home_pitcher.team,
                                                                    database_session)
 
                 RotoWire.predict_draftkings_points(pregame_pitcher_entry)
                 database_session.add(pregame_pitcher_entry)
                 database_session.commit()
             except IntegrityError:
-                print "Attempt to duplicate pitcher entry: %s %s" % (pregame_pitcher_entry.name,
-                                                                     pregame_pitcher_entry.game_id)
+                print "Attempt to duplicate pitcher entry: %s %s %s" % (pregame_pitcher_entry.name,
+                                                                        pregame_pitcher_entry.team,
+                                                                        pregame_pitcher_entry.opposing_team)
                 database_session.rollback()
             except RotoWire.PitcherNotFound as e:
                 print e
 
             current_pitcher = game.home_pitcher
             print "Mining %s." % current_pitcher.name
-            game_id = RotoWire.get_game_id(game.away_pitcher.team, game.home_pitcher.team)
             try:
                 pregame_pitcher_entry = RotoWire.get_pitcher_stats(current_pitcher.rotowire_id,
                                                                    current_pitcher.team,
-                                                                   game_id,
+                                                                   game.away_pitcher.team,
                                                                    database_session)
 
                 RotoWire.predict_draftkings_points(pregame_pitcher_entry)
                 database_session.add(pregame_pitcher_entry)
                 database_session.commit()
             except IntegrityError:
-                print "Attempt to duplicate pitcher entry: %s %s" % (pregame_pitcher_entry.name,
-                                                                     pregame_pitcher_entry.game_id)
+                print "Attempt to duplicate pitcher entry: %s %s %s" % (pregame_pitcher_entry.name,
+                                                                        pregame_pitcher_entry.team,
+                                                                        pregame_pitcher_entry.opposing_team)
                 database_session.rollback()
             except RotoWire.PitcherNotFound as e:
                 print e
@@ -463,7 +473,7 @@ class RotoWire(object):
             return pregame_hitter_entry
 
     @staticmethod
-    def get_pitcher_stats(pitcher_id, team, game_id, database_session):
+    def get_pitcher_stats(pitcher_id, team, opposing_team, database_session, game_date=None):
         """ Get the career, last 14 day, vs hand stats from the RotoWire player page, get t
         :param rotowire_id: the RotoWire unique ID of this player
         :param pitcher_hand: a str representation of the hand the pitcher throws with ("L" or "R")
@@ -472,7 +482,10 @@ class RotoWire(object):
         pregame_hitter_entry = PregamePitcherGameEntry()
         pregame_hitter_entry.rotowire_id = pitcher_id
         pregame_hitter_entry.team = team
-        pregame_hitter_entry.game_id = game_id
+        pregame_hitter_entry.opposing_team = opposing_team
+        if game_date is None:
+            game_date = date.today()
+        pregame_hitter_entry.game_date = game_date
 
         # Career stats
         pitcher_entries = database_session.query(PitcherEntry).filter(PitcherEntry.rotowire_id == pitcher_id)
@@ -495,8 +508,8 @@ class RotoWire(object):
         except BaseballReference.TableNotFound as e:
                 print str(e), "with", str(pitcher_entry.first_name), str(pitcher_entry.last_name)
 
-        opposing_lineup = database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.game_id == game_id,
-                                                                                PregameHitterGameEntry.team != team)
+        opposing_lineup = database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.game_date == game_date,
+                                                                                PregameHitterGameEntry.opposing_team == opposing_team)
         for hitter in opposing_lineup:
             pregame_hitter_entry.vs_h += hitter.vs_h
             pregame_hitter_entry.vs_bb += hitter.vs_bb
@@ -555,6 +568,58 @@ class RotoWire(object):
     @staticmethod
     def get_draftkings_link(daily_lineup_soup):
         return daily_lineup_soup.find("div", {"class": RotoWire.DRAFTKINGS_LINK_LABEL}).find("a").get("href")
+
+    @staticmethod
+    def mine_yesterdays_results(database_session):
+        # Query the database for all hitter game entries from yesterday
+        hitter_entries = database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.game_date == (date.today() - timedelta(days=1)))
+        for pregame_hitter_entry in hitter_entries:
+            hitter_entry = database_session.query(HitterEntry).filter(HitterEntry.rotowire_id == pregame_hitter_entry.rotowire_id)[0]
+            stat_row_dict = BaseballReference.get_yesterdays_hitting_game_log(hitter_entry.baseball_reference_id)
+            postgame_hitter_entry = PostgameHitterGameEntry()
+            postgame_hitter_entry.rotowire_id = hitter_entry.rotowire_id
+            postgame_hitter_entry.game_date = pregame_hitter_entry.game_date
+            postgame_hitter_entry.game_h = int(stat_row_dict["H"])
+            postgame_hitter_entry.game_bb = int(stat_row_dict["BB"])
+            postgame_hitter_entry.game_hbp = int(stat_row_dict["HBP"])
+            postgame_hitter_entry.game_r = int(stat_row_dict["R"])
+            postgame_hitter_entry.game_sb = int(stat_row_dict["SB"])
+            postgame_hitter_entry.game_hr = int(stat_row_dict["HR"])
+            postgame_hitter_entry.game_rbi = int(stat_row_dict["RBI"])
+            postgame_hitter_entry.game_2b = int(stat_row_dict["2B"])
+            postgame_hitter_entry.game_3b = int(stat_row_dict["3B"])
+            postgame_hitter_entry.game_1b = postgame_hitter_entry.game_h - postgame_hitter_entry.game_2b - \
+                                            postgame_hitter_entry.game_3b - postgame_hitter_entry.game_hr
+            postgame_hitter_entry.actual_draftkings_points = Draftkings.get_hitter_points(postgame_hitter_entry)
+            database_session.add(postgame_hitter_entry)
+            database_session.commit()
+
+        # Query the database for all hitter game entries from yesterday
+        pitcher_entries = database_session.query(PregamePitcherGameEntry).filter(PregamePitcherGameEntry.game_date == (date.today() - timedelta(days=1)))
+        for pregame_pitcher_entry in pitcher_entries:
+            pitcher_entry = database_session.query(PitcherEntry).filter(PitcherEntry.rotowire_id == pregame_pitcher_entry.rotowire_id)[0]
+            print "Mining yesterday for %s %s" % (pitcher_entry.first_name, pitcher_entry.last_name)
+            stat_row_dict = BaseballReference.get_pitching_game_log(pitcher_entry.baseball_reference_id)
+            postgame_pitcher_entry = PostgamePitcherGameEntry()
+            postgame_pitcher_entry.rotowire_id = pitcher_entry.rotowire_id
+            postgame_pitcher_entry.game_date = pregame_pitcher_entry.game_date
+            postgame_pitcher_entry.game_ip = float(stat_row_dict["IP"])
+            postgame_pitcher_entry.game_so = int(stat_row_dict["SO"])
+            if str(stat_row_dict["Dec"])[0] == "W":
+                postgame_pitcher_entry.game_wins = 1
+            postgame_pitcher_entry.game_er = int(stat_row_dict["ER"])
+            postgame_pitcher_entry.game_h = int(stat_row_dict["H"])
+            postgame_pitcher_entry.game_bb = int(stat_row_dict["BB"])
+            postgame_pitcher_entry.game_hbp = int(stat_row_dict["HBP"])
+            if stat_row_dict["Inngs"] == "CG":
+                postgame_pitcher_entry.game_cg = 1
+            if stat_row_dict["Inngs"] == "SHO":
+                postgame_pitcher_entry.game_cgso = 1
+            if postgame_pitcher_entry.game_cg == 1 and postgame_pitcher_entry.game_h == 0:
+                postgame_pitcher_entry.game_no_hitter = 1
+            postgame_pitcher_entry.actual_draftkings_points = Draftkings.get_pitcher_points(postgame_pitcher_entry)
+            database_session.add(postgame_pitcher_entry)
+            database_session.commit()
 
     @staticmethod
     #TODO: table_name = tablesorter, table_row_label = the date, table_column_label = date

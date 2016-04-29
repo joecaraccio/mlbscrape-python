@@ -11,9 +11,12 @@ class PregameHitterGameEntry(Base):
 
     rotowire_id = Column(String, primary_key=True)
     pitcher_id = Column(String)
-    game_id = Column(String, primary_key=True)
+    game_date = Column(String, primary_key=True)
     team = Column(String)
+    opposing_team = Column(String)
     #batting_order = Column(Integer)
+    predicted_draftkings_points = Column(Float)
+    draftkings_salary = Column(Integer)
 
     # Season stats
     season_ab = Column(Integer)
@@ -71,6 +74,9 @@ class PregameHitterGameEntry(Base):
         """ Constructor
         :param hitter: Hitter object to copy the fields from
         """
+
+        self.predicted_draftkings_points = 0
+        self.draftkings_salary = 0
 
         # Season stats
         self.season_ab = 0

@@ -2,7 +2,7 @@
 import unittest
 from mlbscrape_python.mine.baseball_reference import BaseballReference
 from mlbscrape_python.mine.beautiful_soup_helper import BeautifulSoupHelper
-
+from datetime import date, timedelta
 
 class GetHitterIdTest(unittest.TestCase):
     """ Test case for testing the get_hitter_id function
@@ -178,7 +178,8 @@ class GetPitchingStats(unittest.TestCase):
         HTML_LOCATION = "game_log_steven_wright.html"
         ID = "wrighst01"
         soup = BeautifulSoupHelper.get_soup_from_url(HTML_LOCATION)
-        game_stats = BaseballReference.get_pitching_game_log(ID, soup)
+        game_date = date(day=27, month=4, year=2016)
+        game_stats = BaseballReference.get_pitching_game_log(ID, soup, game_date)
         self.assertEqual(float(game_stats["IP"]), 7.0)
 """
     def vs_pitcher_typical_test(self):

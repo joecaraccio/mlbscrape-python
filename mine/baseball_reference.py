@@ -178,6 +178,8 @@ class BaseballReference(object):
             # Create a dictionary of the stat attributes
             stat_dict = dict()
             stat_entries = stat_row.findAll("td")
+            if len(stat_entries) != len(table_header_list):
+                continue
             for i in range(0, len(table_header_list)):
                 if stat_entries[i].text == "":
                     stat_dict[table_header_list[i]] = 0

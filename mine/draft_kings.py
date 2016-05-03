@@ -50,6 +50,7 @@ class Draftkings(object):
         with open('players.csv') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
+                print (row["Name"] + row["teamAbbrev"]).lower()
                 csv_dict[(row["Name"] + row["teamAbbrev"]).lower()] = row
 
         return csv_dict
@@ -80,7 +81,7 @@ class Draftkings(object):
             # Lookup the name in the dictionary
             pitcher_entry = database_session.query(PitcherEntry).filter(PitcherEntry.rotowire_id == pregame_entry.rotowire_id)[0]
             try:
-                csv_entry = csv_dict[pitcher_entry.first_name + " " + pitcher_entry.last_name + pitcher_entry.team]
+                csv_entry = csv_dict[(pitcher_entry.first_name + " " + pitcher_entry.last_name + pitcher_entry.team).lower()]
                 pregame_entry.draftkings_salary = int(csv_entry["Salary"])
                 database_session.commit()
             except KeyError:

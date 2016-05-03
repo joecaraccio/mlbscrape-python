@@ -19,6 +19,7 @@ class PregameHitterGameEntry(Base):
     draftkings_salary = Column(Integer)
 
     # Season stats
+    season_pa = Column(Integer)
     season_ab = Column(Integer)
     season_h = Column(Integer)
     season_bb = Column(Integer)
@@ -30,6 +31,7 @@ class PregameHitterGameEntry(Base):
     season_rbi = Column(Integer)
 
     # Career stats
+    career_pa = Column(Integer)
     career_ab = Column(Integer)
     career_h = Column(Integer)
     career_bb = Column(Integer)
@@ -41,6 +43,7 @@ class PregameHitterGameEntry(Base):
     career_rbi = Column(Integer)
 
     # Versus the opposing pitcher
+    vs_pa = Column(Integer)
     vs_ab = Column(Integer)
     vs_h = Column(Integer)
     vs_bb = Column(Integer)
@@ -49,6 +52,7 @@ class PregameHitterGameEntry(Base):
     vs_rbi = Column(Integer)
 
     # Versus the hand of the opposing pitcher
+    vs_hand_pa = Column(Integer)
     vs_hand_ab = Column(Integer)
     vs_hand_h = Column(Integer)
     vs_hand_bb = Column(Integer)
@@ -60,6 +64,7 @@ class PregameHitterGameEntry(Base):
     vs_hand_rbi = Column(Integer)
 
     # Recent stats
+    recent_pa = Column(Integer)
     recent_ab = Column(Integer)
     recent_h = Column(Integer)
     recent_bb = Column(Integer)
@@ -79,6 +84,7 @@ class PregameHitterGameEntry(Base):
         self.draftkings_salary = 0
 
         # Season stats
+        self.season_pa = 0
         self.season_ab = 0
         self.season_h = 0
         self.season_bb = 0
@@ -90,6 +96,7 @@ class PregameHitterGameEntry(Base):
         self.season_rbi = 0
 
         # Career stats
+        self.career_pa = 0
         self.career_ab = 0
         self.career_h = 0
         self.career_bb = 0
@@ -101,6 +108,7 @@ class PregameHitterGameEntry(Base):
         self.career_rbi = 0
 
         # Versus stats
+        self.vs_pa = 0
         self.vs_ab = 0
         self.vs_h = 0
         self.vs_bb = 0
@@ -108,6 +116,7 @@ class PregameHitterGameEntry(Base):
         self.vs_hr = 0
         self.vs_rbi = 0
 
+        self.vs_hand_pa = 0
         self.vs_hand_ab = 0
         self.vs_hand_h = 0
         self.vs_hand_bb = 0
@@ -119,6 +128,7 @@ class PregameHitterGameEntry(Base):
         self.vs_hand_rbi = 0
 
         # Month stats
+        self.recent_pa = 0
         self.recent_ab = 0
         self.recent_h = 0
         self.recent_bb = 0

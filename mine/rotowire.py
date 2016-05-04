@@ -407,8 +407,9 @@ class RotoWire(object):
             pregame_hitter_entry.career_bb = int(career_stats["BB"])
             pregame_hitter_entry.career_so = int(career_stats["SO"])
         #TODO: add ColumnNotFound exception to BaseballReference
-        except BaseballReference.TableNotFound as e:
+        except (BaseballReference.TableNotFound, BaseballReference.TableRowNotFound) as e:
             print str(e), "with", str(hitter_entry.first_name), str(hitter_entry.last_name)
+
         # Vs hand of the opposing pitcher
         if pitcher_hand == "L":
             pitcher_hand_lr = BaseballReference.HandEnum.LHP
@@ -429,7 +430,7 @@ class RotoWire(object):
             pregame_hitter_entry.vs_hand_cs = int(vs_hand_stats["CS"])
             pregame_hitter_entry.vs_hand_bb = int(vs_hand_stats["BB"])
             pregame_hitter_entry.vs_hand_so = int(vs_hand_stats["SO"])
-        except BaseballReference.TableNotFound as e:
+        except (BaseballReference.TableNotFound, BaseballReference.TableRowNotFound) as e:
             print str(e), "with", str(hitter_entry.first_name), str(hitter_entry.last_name)
 
         # Recent stats
@@ -445,7 +446,7 @@ class RotoWire(object):
             pregame_hitter_entry.recent_cs = int(recent_stats["CS"])
             pregame_hitter_entry.recent_bb = int(recent_stats["BB"])
             pregame_hitter_entry.recent_so = int(recent_stats["SO"])
-        except BaseballReference.TableNotFound as e:
+        except (BaseballReference.TableNotFound, BaseballReference.TableRowNotFound) as e:
             print str(e), "with", str(hitter_entry.first_name), str(hitter_entry.last_name)
 
         #Season stats
@@ -461,7 +462,7 @@ class RotoWire(object):
             pregame_hitter_entry.season_cs = int(season_stats["CS"])
             pregame_hitter_entry.season_bb = int(season_stats["BB"])
             pregame_hitter_entry.season_so = int(season_stats["SO"])
-        except BaseballReference.TableNotFound as e:
+        except (BaseballReference.TableNotFound, BaseballReference.TableRowNotFound) as e:
             print str(e), "with", str(hitter_entry.first_name), str(hitter_entry.last_name)
 
         # Career versus this pitcher
@@ -481,7 +482,7 @@ class RotoWire(object):
                 pregame_hitter_entry.vs_rbi = int(vs_pitcher_stats["RBI"])
                 pregame_hitter_entry.vs_bb = int(vs_pitcher_stats["BB"])
                 pregame_hitter_entry.vs_so = int(vs_pitcher_stats["SO"])
-            except BaseballReference.TableNotFound as e:
+            except (BaseballReference.TableNotFound, BaseballReference.TableRowNotFound) as e:
                 print str(e), "with", str(hitter_entry.first_name), str(hitter_entry.last_name)
 
             return pregame_hitter_entry
@@ -519,8 +520,8 @@ class RotoWire(object):
             pregame_pitcher_entry.career_so = int(career_stats["SO"])
             pregame_pitcher_entry.career_wins = int(career_stats["W"])
             pregame_pitcher_entry.career_losses = int(career_stats["L"])
-        except BaseballReference.TableNotFound as e:
-                print str(e), "with", str(pitcher_entry.first_name), str(pitcher_entry.last_name)
+        except (BaseballReference.TableNotFound, BaseballReference.TableRowNotFound) as e:
+            print str(e), "with", str(pitcher_entry.first_name), str(pitcher_entry.last_name)
 
         opposing_lineup = database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.game_date == game_date,
                                                                                 PregameHitterGameEntry.opposing_team == opposing_team)
@@ -545,8 +546,8 @@ class RotoWire(object):
             pregame_pitcher_entry.recent_so = int(recent_stats["SO"])
             pregame_pitcher_entry.recent_wins = int(recent_stats["W"])
             pregame_pitcher_entry.recent_losses = int(recent_stats["L"])
-        except BaseballReference.TableNotFound as e:
-                print str(e), "with", str(pitcher_entry.first_name), str(pitcher_entry.last_name)
+        except (BaseballReference.TableNotFound, BaseballReference.TableRowNotFound) as e:
+            print str(e), "with", str(pitcher_entry.first_name), str(pitcher_entry.last_name)
 
         #Season stats
         try:
@@ -560,8 +561,8 @@ class RotoWire(object):
             pregame_pitcher_entry.season_so = int(season_stats["SO"])
             pregame_pitcher_entry.season_wins = int(season_stats["W"])
             pregame_pitcher_entry.season_losses = int(season_stats["L"])
-        except BaseballReference.TableNotFound as e:
-                print str(e), "with", str(pitcher_entry.first_name), str(pitcher_entry.last_name)
+        except (BaseballReference.TableNotFound, BaseballReference.TableRowNotFound) as e:
+            print str(e), "with", str(pitcher_entry.first_name), str(pitcher_entry.last_name)
 
         return pregame_pitcher_entry
 

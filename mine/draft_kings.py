@@ -121,3 +121,11 @@ class Draftkings(object):
         points += 5*postgame_pitcher.game_no_hitter
 
         return points
+
+    """
+    @staticmethod
+    def get_optimal_lineup(database_session):
+         Get the optimal lineup of the players to choose for tonight
+        :param database_session: SQLAlchemy database session
+        :return:
+    """

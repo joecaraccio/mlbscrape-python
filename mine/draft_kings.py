@@ -43,14 +43,16 @@ class Draftkings(object):
         urlretrieve(csv_url, "players.csv")
 
     @staticmethod
-    def get_csv_dict():
+    def get_csv_dict(filename=None):
         """ Create a dictionary of dictionaries indexed by a concatentation of name and Draftkings team abbreviation
         """
+        if filename is None:
+            filename = "players.csv"
+
         csv_dict = dict()
-        with open('players.csv') as csvfile:
+        with open(filename) as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
-                print (row["Name"] + row["teamAbbrev"]).lower()
                 csv_dict[(row["Name"] + row["teamAbbrev"]).lower()] = row
 
         return csv_dict

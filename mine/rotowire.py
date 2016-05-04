@@ -6,6 +6,7 @@ from mlbscrape_python.sql.pregame_hitter import PregameHitterGameEntry
 from mlbscrape_python.sql.pregame_pitcher import PregamePitcherGameEntry
 from mlbscrape_python.sql.pitcher_entry import PitcherEntry
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm.exc import NoResultFound
 import bidict
 from mlbscrape_python.sql.postgame_hitter import PostgameHitterGameEntry
 from mlbscrape_python.sql.postgame_pitcher import PostgamePitcherGameEntry
@@ -72,21 +73,13 @@ class RotoWire(object):
         """ Mine the hitter/pitcher stats and predict the outcomes and commit to the database session
         :param database-_session: SQLAlchemy database session
         """
-        games = RotoWire.get_game_lineups()
+        games = RotoWire.get_game_lineups(database_session)
         RotoWire.update_ids(games, database_session)
         RotoWire.get_pregame_hitting_stats(games, database_session)
         RotoWire.get_pregame_pitching_stats(games, database_session)
 
     @staticmethod
-    def mine_yesterdays_stats(database_session):
-        """ Lookup the pregame entries for yesterday and commit the results of the game to the database
-        :param database_session: SQLAlchemy database session
-        """
-        #TODO: implement this function
-        return
-
-    @staticmethod
-    def get_game_lineups():
+    def get_game_lineups(database_session):
         """ Mine the RotoWire daily lineups page and get the players' name, team, and RotoWire ID
         Note: longer names are abbreviated by RotoWire and need to be resolved by another source
         :return: list of Game objects representing the lineups for the day
@@ -105,14 +98,14 @@ class RotoWire(object):
             game_main_soup = game_node.find("div", {"class": RotoWire.LINEUPS_CLASS_LABEL})
 
             for away_player in game_main_soup.findAll("div", {"class": RotoWire.AWAY_TEAM_PLAYER_LABEL}):
-                away_team_lineup.append(RotoWire.get_hitter(away_player, away_team_abbreviation))
+                away_team_lineup.append(RotoWire.get_hitter(away_player, away_team_abbreviation, database_session))
             for home_player in game_main_soup.findAll("div", {"class": RotoWire.HOME_TEAM_PLAYER_LABEL}):
-                home_team_lineup.append(RotoWire.get_hitter(home_player, home_team_abbreviation))
+                home_team_lineup.append(RotoWire.get_hitter(home_player, home_team_abbreviation, database_session))
 
             try:
                 pitchers = game_node.find("div", RotoWire.PITCHERS_REGION_LABEL).findAll("div")
-                away_team_pitcher = RotoWire.get_pitcher(pitchers[0], away_team_abbreviation)
-                home_team_pitcher = RotoWire.get_pitcher(pitchers[1], home_team_abbreviation)
+                away_team_pitcher = RotoWire.get_pitcher(pitchers[0], away_team_abbreviation, database_session)
+                home_team_pitcher = RotoWire.get_pitcher(pitchers[1], home_team_abbreviation, database_session)
             # No pitchers present on page
             except AttributeError:
                 print "Game between %s and %s is not valid." % (away_team_abbreviation, home_team_abbreviation)
@@ -135,24 +128,38 @@ class RotoWire(object):
         return soup.find("a").get("href").split("id=")[1]
 
     @staticmethod
-    def get_hitter(soup, team):
+    def get_hitter(soup, team, database_session=None):
         """ Get the hitter info from a BeautifulSoup node
         """
         rotowire_id = RotoWire.get_id(soup)
-        #TODO: this should look up if the player is in the database before trying to resolve the name
-        name = RotoWire.get_name_from_id(rotowire_id)
-        hand = RotoWire.get_hand(soup)
+        if database_session is None:
+            name = RotoWire.get_name_from_id(rotowire_id)
+        else:
+            try:
+                hitter_entry = database_session.query(HitterEntry).filter(HitterEntry.rotowire_id == rotowire_id).one()
+                name = "%s %s" % (hitter_entry.first_name, hitter_entry.last_name)
+                hand = hitter_entry.batting_hand
+            except NoResultFound:
+                name = RotoWire.get_name_from_id(rotowire_id)
+                hand = RotoWire.get_hand(soup)
         position = soup.find("div", {"class": RotoWire.POSITION_CLASS_LABEL}).text
         return RotoWire.PlayerStruct(name, team, rotowire_id, position, hand)
 
     @staticmethod
-    def get_pitcher(soup, team):
+    def get_pitcher(soup, team, database_session=None):
         """ Get the hitter info from a BeautifulSoup node
         """
         rotowire_id = RotoWire.get_id(soup)
-        hand = RotoWire.get_hand(soup)
-        #TODO: this should look up if the player is in the database before trying to resolve the name
-        name = RotoWire.get_name_from_id(rotowire_id)
+        if database_session is None:
+            name = RotoWire.get_name_from_id(rotowire_id)
+        else:
+            try:
+                pitcher_entry = database_session.query(PitcherEntry).filter(PitcherEntry.rotowire_id == rotowire_id).one()
+                name = "%s %s" % (pitcher_entry.first_name, pitcher_entry.last_name)
+                hand = pitcher_entry.pitching_hand
+            except NoResultFound:
+                name = RotoWire.get_name_from_id(rotowire_id)
+                hand = RotoWire.get_hand(soup)
         return RotoWire.PlayerStruct(name, team, rotowire_id, "P", hand)
 
     @staticmethod
@@ -581,7 +588,17 @@ class RotoWire(object):
         hitter_entries = database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.game_date == (date.today() - timedelta(days=1)))
         for pregame_hitter_entry in hitter_entries:
             hitter_entry = database_session.query(HitterEntry).filter(HitterEntry.rotowire_id == pregame_hitter_entry.rotowire_id)[0]
-            stat_row_dict = BaseballReference.get_yesterdays_hitting_game_log(hitter_entry.baseball_reference_id)
+            try:
+                stat_row_dict = BaseballReference.get_yesterdays_hitting_game_log(hitter_entry.baseball_reference_id)
+            except BaseballReference.TableRowNotFound:
+                print "Player %s %s did not play yesterday. Deleting pregame entry %s %s" % (hitter_entry.first_name,
+                                                                                             hitter_entry.last_name,
+                                                                                             pregame_hitter_entry.game_date,
+                                                                                             pregame_hitter_entry.opposing_team)
+                database_session.delete(pregame_hitter_entry)
+                database_session.commit()
+                continue
+
             postgame_hitter_entry = PostgameHitterGameEntry()
             postgame_hitter_entry.rotowire_id = hitter_entry.rotowire_id
             postgame_hitter_entry.game_date = pregame_hitter_entry.game_date
@@ -612,7 +629,17 @@ class RotoWire(object):
         for pregame_pitcher_entry in pitcher_entries:
             pitcher_entry = database_session.query(PitcherEntry).filter(PitcherEntry.rotowire_id == pregame_pitcher_entry.rotowire_id)[0]
             print "Mining yesterday for %s %s" % (pitcher_entry.first_name, pitcher_entry.last_name)
-            stat_row_dict = BaseballReference.get_pitching_game_log(pitcher_entry.baseball_reference_id)
+            try:
+                stat_row_dict = BaseballReference.get_pitching_game_log(pitcher_entry.baseball_reference_id)
+            except BaseballReference.TableRowNotFound:
+                print "Player %s %s did not play yesterday. Deleting pregame entry %s %s" % (pitcher_entry.first_name,
+                                                                                             pitcher_entry.last_name,
+                                                                                             pregame_pitcher_entry.game_date,
+                                                                                             pregame_pitcher_entry.opposing_team)
+                database_session.delete(pregame_hitter_entry)
+                database_session.commit()
+                continue
+
             postgame_pitcher_entry = PostgamePitcherGameEntry()
             postgame_pitcher_entry.rotowire_id = pitcher_entry.rotowire_id
             postgame_pitcher_entry.game_date = pregame_pitcher_entry.game_date

@@ -36,20 +36,21 @@ class BeautifulSoupHelper(object):
         if xml.code == 404:
             print "Attempt to access invalid URL: " + xml.url
             raise Http404Exception(url)
-        return BeautifulSoup(xml)
+        return BeautifulSoup(xml, "lxml")
 
     @staticmethod
     def get_soup_from_url(url):
-        try:
-            for i in range(5):
+        for i in range(5):
+            try:
                 soup = BeautifulSoupHelper.url_to_soup(url)
-                if soup is not None:
-                    return soup
-                else:
-                    print "Trying to obtain soup again..."
-        except Http404Exception:
-            return None
+            except IOError:
+                print "Socket error. Trying to obtain soup again."
+                continue
+            except Http404Exception:
+                return None
+
+            return soup
 
         print "Exhausted all attempts to get the soup. Check your internet connection."
-        return None
+        assert 0
 

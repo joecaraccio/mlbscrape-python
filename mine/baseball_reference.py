@@ -18,37 +18,6 @@ class BaseballReference(object):
 
         return int(date_object.split("_")[1])
 
-    class PlayerStruct(object):
-        def __init__(self, first_name, last_name, reference_id, team):
-            self.first_name = first_name
-            self.last_name = last_name
-            self.baseball_reference_id = reference_id
-            self.team = team
-
-    class BatterStatStruct(object):
-        def __init__(self):
-            self.ab = 0
-            self.h = 0
-            self.bb = 0
-            self.so = 0
-            self.hr = 0
-            self.rbi = 0
-            self.r = 0
-            self.sb = 0
-            self.cs = 0
-
-    class PitcherStatStruct(object):
-        def __init__(self):
-            self.batters_faced = 0
-            self.ip = 0
-            self.so = 0
-            self.wins = 0
-            self.losses = 0
-            self.er = 0
-            self.h = 0
-            self.bb = 0
-            self.hr = 0
-
     @staticmethod
     def get_pitcher_id(boxscore_soup, players_soup, team_string, pitchers_set):
         full_name = boxscore_soup.find("pitching", {"team_flag": team_string}).find("pitcher").get("name_display_first_last")
@@ -64,7 +33,7 @@ class BaseballReference(object):
         return players_soup.find("player", {"id": pitch_fx_id}).get("rl")
 
 
-    class HandEnum:
+    class HandEnum():
         LHP = 1
         RHP = 2
 
@@ -164,6 +133,12 @@ class BaseballReference(object):
             super(BaseballReference.TableNotFound, self).__init__("Table '%s' not found in the Baseball Reference page" %
                                                                   table_name)
 
+    class TableRowNotFound(Exception):
+        def __init__(self, table_name, table_row, table_column):
+            super(BaseballReference.TableRowNotFound, self).__init__("Table row '%s' not found in the column '%s' in the"
+                                                                     "table %s in the Baseball Reference page" %
+                                                                     (table_row, table_column, table_name))
+
     @staticmethod
     def get_table_row_dict(soup, table_name, table_row_label, table_column_label):
         results_table = soup.find("table", {"id": table_name})
@@ -178,6 +153,7 @@ class BaseballReference(object):
             # Create a dictionary of the stat attributes
             stat_dict = dict()
             stat_entries = stat_row.findAll("td")
+            # The dictionary does not have valid entries, move on to the next row
             if len(stat_entries) != len(table_header_list):
                 continue
             for i in range(0, len(table_header_list)):
@@ -192,8 +168,7 @@ class BaseballReference(object):
             except ValueError:
                 break
 
-        #TODO: add a TableRowNotFound exception
-        raise BaseballReference.TableNotFound(table_name)
+        raise BaseballReference.TableRowNotFound(table_row_label, table_column_label, table_name)
 
     @staticmethod
     def get_career_hitting_stats(baseball_reference_id, soup=None):

@@ -134,7 +134,7 @@ class BaseballReference(object):
                                                                   table_name)
 
     class TableRowNotFound(Exception):
-        def __init__(self, table_name, table_row, table_column):
+        def __init__(self, table_row, table_column, table_name):
             super(BaseballReference.TableRowNotFound, self).__init__("Table row '%s' not found in the column '%s' in the"
                                                                      "table %s in the Baseball Reference page" %
                                                                      (table_row, table_column, table_name))

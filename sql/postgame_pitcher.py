@@ -30,7 +30,6 @@ class PostgamePitcherGameEntry(Base):
         """
 
         self.actual_draftkings_points = 0
-        self.draftkings_salary = 0
 
         # Season stats
         self.game_ip = 0

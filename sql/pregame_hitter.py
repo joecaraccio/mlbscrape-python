@@ -4,20 +4,24 @@ from sqlalchemy import Column, Integer, String, Float
 from datetime import date
 
 
-class PregameHitterGameEntry(Base):
-    """ Class for SQL entry for a single game played by a hitter
-    """
-    __tablename__ = 'pregame_hitter_entries'
-
+class InfoVars(object):
     rotowire_id = Column(String, primary_key=True)
     pitcher_id = Column(String)
     game_date = Column(String, primary_key=True)
     team = Column(String)
     opposing_team = Column(String)
-    #batting_order = Column(Integer)
     predicted_draftkings_points = Column(Float)
     draftkings_salary = Column(Integer)
+    primary_position = Column(String)
+    secondary_position = Column(String)
 
+    def __init__(self):
+        super(InfoVars, self).__init__()
+        self.predicted_draftkings_points = 0
+        self.draftkings_salary = 0
+
+
+class DataVars(object):
     # Season stats
     season_pa = Column(Integer)
     season_ab = Column(Integer)
@@ -79,10 +83,7 @@ class PregameHitterGameEntry(Base):
         """ Constructor
         :param hitter: Hitter object to copy the fields from
         """
-
-        self.predicted_draftkings_points = 0
-        self.draftkings_salary = 0
-
+        super(DataVars, self).__init__()
         # Season stats
         self.season_pa = 0
         self.season_ab = 0
@@ -139,11 +140,33 @@ class PregameHitterGameEntry(Base):
         self.recent_hr = 0
         self.recent_rbi = 0
 
+
+class PregameHitterGameEntry(InfoVars, DataVars, Base):
+    """ Class for SQL entry for a single game played by a hitter
+    """
+    __tablename__ = 'pregame_hitter_entries'
+
+    def __init__(self):
+        super(PregameHitterGameEntry, self).__init__()
+
     def __repr__(self):
         """
         :return: string representation identifying the Hitter entry
         """
         return "<Hitter PreGame Entry(id='%s')>" % self.rotowire_id
+
+    def to_vector(self):
+        """ Convert the entry to a vector
+        :return: a list representation of the entry
+        """
+        vector = list()
+        for variable in vars(self):
+            if variable in vars(DataVars):
+                vector.append(self.__dict__[variable])
+
+        print vector
+
+        return vector
 
 
 

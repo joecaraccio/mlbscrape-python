@@ -86,6 +86,7 @@ class RotoWire(object):
         """
         #TODO: add feature to look if the lineup is pending
         #TODO: add feature to look if it's going to rain
+        #TODO: add feature to check the starting time of the game so we can ignore games that have already occurred
         lineup_soup = BeautifulSoupHelper.get_soup_from_url(RotoWire.DAILY_LINEUPS_URL)
         header_nodes = lineup_soup.findAll("div", {"class": RotoWire.TEAM_REGION_LABEL})
         games = list()
@@ -637,7 +638,7 @@ class RotoWire(object):
                                                                                              pitcher_entry.last_name,
                                                                                              pregame_pitcher_entry.game_date,
                                                                                              pregame_pitcher_entry.opposing_team)
-                database_session.delete(pregame_hitter_entry)
+                database_session.delete(pregame_pitcher_entry)
                 database_session.commit()
                 continue
 
@@ -667,8 +668,8 @@ class RotoWire(object):
                 database_session.rollback()
                 print "Attempt to duplicate pitcher postgame results: %s %s %s %s" % (pitcher_entry.first_name,
                                                                                       pitcher_entry.last_name,
-                                                                                      pitcher_entry.team,
-                                                                                      pitcher_entry.game_date)
+                                                                                      pregame_pitcher_entry.opposing_team,
+                                                                                      postgame_pitcher_entry.game_date)
 
     @staticmethod
     def get_table_row_dict(soup, table_name, table_row_label, table_column_label):

@@ -15,14 +15,16 @@ from mlbscrape_python.sql.pitcher_entry import PitcherEntry
 from sqlalchemy import or_
 import heapq
 
-# Class to interact with Draftkings and obtain the available players and salaries
-class Draftkings(object):
 
-    ROTOWIRE_DAILY_LINEUPS_URL = "http://www.rotowire.com/baseball/daily_lineups.htm"
-    ROTOWIRE_LINK_TEXT = "See daily player values on DraftKings"
-    CONTEST_SALARY = 50000
+class OptimalLineupDict(dict):
+
+    # The maximum number of pitchers and outfielders allowed in a lineup
+    MAX_PITCHERS = 2
+    MAX_OUTFIELDERS = 3
 
     class FieldingPositions:
+        """ A string enum for fielding positions in lineups
+        """
         CATCHER = "C"
         FIRST_BASE = "1B"
         SECOND_BASE = "2B"
@@ -31,8 +33,124 @@ class Draftkings(object):
         OUTFIELDER = "OF"
 
     class PitchingPositions:
+        """ A string enum for pitching positions in lineups
+        """
         STARTING_PITCHER = "SP"
         RELIEF_PITCHER = "RP"
+
+    def __init__(self):
+        """ Constructor used to initialize the total salary and the heaps
+        """
+        super(OptimalLineupDict, self).__init__()
+        self._total_salary = 0
+        self[OptimalLineupDict.FieldingPositions.OUTFIELDER] = list()
+        self[OptimalLineupDict.PitchingPositions.STARTING_PITCHER] = list()
+
+    def get_total_salary(self):
+        """ Get the current salary of this lineup
+        :return: int the current salary for this team
+        """
+        return self._total_salary
+
+    #TODO: move this to the base player sql class
+    @staticmethod
+    def points_per_dollar(sql_player):
+        """ Calculate the predicted points per dollar for this player.
+        Return 0 if the Draftkings salary is equal to zero
+        :param sql_player: a SQLAlchemy player object
+        :return: float representing the predicted points per dollar
+        """
+        if float(sql_player.draftkings_salary) == 0.0:
+            return 0.0
+
+        return float(sql_player.predicted_draftkings_points) / float(sql_player.draftkings_salary)
+
+    def _add_pitcher(self, sql_player):
+        """ Add the pitcher object to the pitcher heap if:
+        1. There are empty spots on the pitcher heap
+        2. The points per dollar metric for the candidate is less than the least valuable pitcher
+        :param sql_player: a SQLAlchemy object with the first_name and last_name attribute
+        """
+        pitcher_heap = self[OptimalLineupDict.PitchingPositions.STARTING_PITCHER]
+        # Empty pitcher spots, just add the player
+        if len(pitcher_heap) < OptimalLineupDict.MAX_PITCHERS:
+            heapq.heappush(pitcher_heap, [self.points_per_dollar(sql_player), sql_player])
+            self._total_salary += sql_player.draftkings_salary
+        else:
+            worst_pitcher = heapq.nsmallest(pitcher_heap, 1)[1]
+            if self.points_per_dollar(worst_pitcher) < self.points_per_dollar(sql_player):
+                heapq.heappushpop(pitcher_heap, [self.points_per_dollar(sql_player), sql_player])
+                self._total_salary -= worst_pitcher.draftkings_salary
+                self._total_salary += sql_player.draftkings_salary
+            else:
+                return False
+
+        return True
+
+    def _add_outfielder(self, sql_player):
+        """ Add the outfielder object to the outfielder heap if:
+        1. There are empty spots on the outfielder heap
+        2. The points per dollar metric for the candidate is less than the least valuable outfielder
+        :param sql_player: a SQLAlchemy object with the first_name and last_name attribute
+        :return Boolean: True if the player was added, False otherwise
+        """
+        outfielder_heap = self[OptimalLineupDict.FieldingPositions.OUTFIELDER]
+        # Empty outfielder spots, just add the player
+        if len(outfielder_heap) < OptimalLineupDict.MAX_OUTFIELDERS:
+            heapq.heappush(outfielder_heap, [self.points_per_dollar(sql_player), sql_player])
+            self._total_salary += sql_player.draftkings_salary
+        else:
+            worst_outfielder = heapq.nsmallest(outfielder_heap, 1)[1]
+            if self.points_per_dollar(worst_outfielder) < self.points_per_dollar(sql_player):
+                heapq.heappushpop(outfielder_heap, [self.points_per_dollar(sql_player), sql_player])
+                self._total_salary -= worst_outfielder.draftkings_salary
+                self._total_salary += sql_player.draftkings_salary
+            else:
+                return False
+
+        return True
+
+    def add(self, sql_player):
+        """Add a player to the optimal lineup dictionary based on his positions
+        :param sql_player: a SQLAlchemy object with the first_name and last_name attribute
+        """
+        if self._add_player(sql_player, sql_player.primary_position) is not True:
+            if sql_player.primary_position != sql_player.secondary_position:
+                self._add_player(sql_player, sql_player.secondary_position)
+
+    def _add_player(self, sql_player, position):
+        """ Add a player to the optimal lineup dictionary based on his primary position
+        :param sql_player: a SQLAlchemy player object
+        :return: True if the player was added to the dictionary, False otherwise
+        """
+        if position == OptimalLineupDict.FieldingPositions.OUTFIELDER:
+            if self._add_outfielder(sql_player) is True:
+                return True
+        elif position == OptimalLineupDict.PitchingPositions.STARTING_PITCHER:
+            if self._add_pitcher(sql_player) is True:
+                return True
+        else:
+            try:
+                worst_player = self[position]
+                if self.points_per_dollar(worst_player) < self.points_per_dollar(sql_player):
+                    self[position] = sql_player
+                    self._total_salary -= worst_player.draftkings_salary
+                    self._total_salary += sql_player.draftkings_salary
+                    return True
+            except KeyError:
+                self[position] = sql_player
+                self._total_salary += sql_player.draftkings_salary
+                return True
+
+        return False
+
+
+# Class to interact with Draftkings and obtain the available players and salaries
+class Draftkings(object):
+
+    ROTOWIRE_DAILY_LINEUPS_URL = "http://www.rotowire.com/baseball/daily_lineups.htm"
+    ROTOWIRE_LINK_TEXT = "See daily player values on DraftKings"
+    CONTEST_SALARY = 50000
 
     class NameNotFound(Exception):
         def __init__(self, name):

@@ -4,9 +4,10 @@ import baseball_reference_tdd
 import draftkings_tdd
 
 # Baseball reference
-test_suite = baseball_reference_tdd.suite()
-test_runner = unittest.TextTestRunner().run(test_suite)
+baseball_reference_suite = baseball_reference_tdd.suite()
 
 # Draftkings
-test_suite = draftkings_tdd.suite()
-test_runner = unittest.TextTestRunner().run(test_suite)
+draftkings_suite = draftkings_tdd.suite()
+
+# Run the suite
+test_runner = unittest.TextTestRunner().run(unittest.TestSuite([baseball_reference_suite, draftkings_suite]))

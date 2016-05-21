@@ -12,16 +12,6 @@ import csv
 class NetworkTrainer(object):
 
     @staticmethod
-    def get_batting_order_offset(order_number, offset_value):
-        batting_position = order_number + offset_value
-        if order_number > 9:
-            return 1
-        elif order_number < 1:
-            return 9
-        else:
-            return batting_position
-
-    @staticmethod
     def get_train_eval_data(db_query, training_pct):
         """ Get the training data and evaluation data from a SQLAlchemy query
         :param db_query: a SQLAlchemy Query object
@@ -45,26 +35,43 @@ class NetworkTrainer(object):
         """
         assert 0
 
+    def get_prediction(self, input_data):
+        """ Pure virtual method for generating the output given inputs
+        :param input_data: the input data needed to generate output in this network
+        :return: the output prediction
+        """
+        assert 0
+
 
 class HitterNetworkTrainer(NetworkTrainer):
 
-    TRAINING_ITERATIONS = 300
-    SIZE_TRAINING_BATCH = 100
+    TRAINING_ITERATIONS = 1000
+    SIZE_TRAINING_BATCH = 250
 
     def __init__(self, database_session):
         self._database_session = database_session
+
+    @staticmethod
+    def get_batting_order_offset(order_number, offset_value):
+        batting_position = order_number + offset_value
+        if order_number > 9:
+            return 1
+        elif order_number < 1:
+            return 9
+        else:
+            return batting_position
 
     def get_stochastic_batch(self, input_query, num_samples):
         player_samples = random.sample([itm for itm in input_query], num_samples)
         x = list()
         y = list()
         for item in player_samples:
-            input_vector = item.to_vector()
+            input_vector = item.to_input_vector()
             try:
                 postgame_entry = self._database_session.query(PostgameHitterGameEntry).filter(PostgameHitterGameEntry.rotowire_id == item.rotowire_id,
                                                                                               PostgameHitterGameEntry.game_date == item.game_date).one()
             except NoResultFound:
-                print "Ignoring hitter %s since his postgame stats were not found." % item.rotowire_id
+                #print "Ignoring hitter %s since his postgame stats were not found." % item.rotowire_id
                 continue
 
             x.append(input_vector)
@@ -98,9 +105,9 @@ class HitterNetworkTrainer(NetworkTrainer):
 
         # Perform the actual training of the net
         # Stochastic training with 100 instances run 1000 times
-        for i in range(HitterNetworkTrainer.SIZE_TRAINING_BATCH):
+        for i in range(HitterNetworkTrainer.TRAINING_ITERATIONS):
             batch_xs, batch_ys = self.get_stochastic_batch(mlb_training_data, HitterNetworkTrainer.SIZE_TRAINING_BATCH)
-            assert len(batch_ys) == HitterNetworkTrainer.SIZE_TRAINING_BATCH
+            #assert len(batch_ys) == HitterNetworkTrainer.SIZE_TRAINING_BATCH
             batch_xs = np.array(batch_xs, dtype=float)
             batch_ys = np.array(batch_ys, dtype=float)
             sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys})
@@ -112,24 +119,38 @@ class HitterNetworkTrainer(NetworkTrainer):
             for weight in w.eval(sess):
                 spamwriter.writerow(weight)
 
-        """
-        w.eval(sess)
-
         test_data_input = list()
         test_data_output = list()
         for data in mlb_evaluation_data:
+            test_data_input.append(data.to_input_vector())
             try:
-                inputVector = data.to_vector()
-                previous_hitter = databaseSession.query(HitterGameEntry).filter(HitterGameEntry.team == data.team,
-                                                                           HitterGameEntry.game_id == data.game_id,
-                                                                           HitterGameEntry.batting_order == str(get_batting_order_offset(int(data.batting_order), -1 )))
-            except:
-                print "Could not find the hitters in the database. Omitting these hitters."
+                postgame_entry = self._database_session.query(PostgameHitterGameEntry).filter(PostgameHitterGameEntry.rotowire_id == data.rotowire_id,
+                                                                                              PostgameHitterGameEntry.game_date == data.game_date).one()
+                test_data_output.append([postgame_entry.actual_draftkings_points])
+            except NoResultFound:
+                print "Ignoring hitter %s since his postgame stats were not found." % data.rotowire_id
                 continue
-            test_data_input = np.array(test_data_input, dtype=float)
-            print "Input data shape: " + str(test_data_input.shape)
-            test_data_output = np.array(test_data_output, dtype=float)
-            print "Output data shape: " + str(test_data_output.shape)
-            difference_prediction = tf.reduce_mean(tf.sqrt(tf.square(y-y_)))
-            print (sess.run(difference_prediction, feed_dict={x: test_data_input, y_: test_data_output}))
-        """
+
+        test_data_input = np.array(test_data_input, dtype=float)
+        print "Input data shape: " + str(test_data_input.shape)
+        test_data_output = np.array(test_data_output, dtype=float)
+        print "Output data shape: " + str(test_data_output.shape)
+        difference_prediction = tf.reduce_mean(tf.sqrt(tf.square(y-y_)))
+        print (sess.run(difference_prediction, feed_dict={x: test_data_input, y_: test_data_output}))
+
+    @staticmethod
+    def get_prediction(input_data):
+        # Load the weights from the file, evaluate the output using numpy
+        # Save the weights to a file
+        model_weights = list()
+        weights_file = open('hitter_weights.csv', 'rb')
+        spamreader = csv.reader(weights_file, delimiter=',')
+        for weight in spamreader:
+            model_weights.append(weight[0])
+        weights_file.close()
+        if len(input_data) != len(model_weights):
+            return 0
+
+        model_weight_array = np.array(model_weights, dtype=float)
+        input_data_array = np.array(input_data, dtype=float)
+        return np.matmul(model_weight_array, input_data_array)

@@ -2,6 +2,8 @@
 from mlb_database import Base
 from sqlalchemy import Column, Integer, String, Float
 from datetime import date
+from sqlalchemy import or_
+import time
 
 
 class InfoVars(object):
@@ -140,6 +142,19 @@ class DataVars(object):
         self.recent_hr = 0
         self.recent_rbi = 0
 
+    def to_input_vector(self):
+        return [self.season_pa, self.season_ab, self.season_h, self.season_bb, self.season_so, self.season_r, self.season_sb,
+                self.season_cs, self.season_hr, self.season_rbi,
+                self.career_pa, self.career_ab, self.career_h, self.career_bb, self.career_so, self.career_r, self.career_sb,
+                self.career_cs, self.career_hr, self.career_rbi,
+                self.vs_pa, self.vs_ab, self.vs_h, self.vs_bb, self.vs_so, self.vs_hr, self.vs_rbi,
+                self.vs_hand_pa, self.vs_hand_ab, self.vs_hand_h, self.vs_hand_bb, self.vs_hand_so, self.vs_hand_r,
+                self.vs_hand_sb, self.vs_hand_cs, self.vs_hand_hr, self.vs_hand_rbi,
+                self.recent_pa, self.recent_ab, self.recent_h, self.recent_bb, self.recent_so, self.recent_r,
+                self.recent_sb, self.recent_cs, self.recent_hr, self.recent_rbi]
+
+        return data_vars
+
 
 class PregameHitterGameEntry(InfoVars, DataVars, Base):
     """ Class for SQL entry for a single game played by a hitter
@@ -155,20 +170,19 @@ class PregameHitterGameEntry(InfoVars, DataVars, Base):
         """
         return "<Hitter PreGame Entry(id='%s')>" % self.rotowire_id
 
-    def to_vector(self):
-        """ Convert the entry to a vector
-        :return: a list representation of the entry
-        """
-        vector = list()
-        for variable in vars(self):
-            if variable in vars(DataVars):
-                vector.append(self.__dict__[variable])
+    @staticmethod
+    def get_all_daily_entries(database_session, game_date=None):
+        if game_date is None:
+            game_date = date.today()
+        return database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.game_date == game_date)
 
-        print vector
-
-        return vector
-
-
+    @staticmethod
+    def get_daily_entries_by_position(database_session, position, game_date=None):
+        if game_date is None:
+            game_date = date.today()
+        return database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.game_date == game_date,
+                                                                     or_(PregameHitterGameEntry.primary_position == position,
+                                                                     PregameHitterGameEntry.secondary_position == position))
 
 
 

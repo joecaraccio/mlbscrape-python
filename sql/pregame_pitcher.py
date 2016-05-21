@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, Float
-
+from datetime import date
 from mlb_database import Base
 
 
@@ -131,6 +131,12 @@ class PregamePitcherGameEntry(InfoVars, DataVars, Base):
                 vector.append(self.__dict__[variable])
 
         return vector
+
+    @staticmethod
+    def get_all_daily_entries(database_session, game_date=None):
+        if game_date is None:
+            game_date = date.today()
+        return database_session.query(PregamePitcherGameEntry).filter(PregamePitcherGameEntry.game_date == game_date)
 
 
 

@@ -6,7 +6,6 @@ from selenium.webdriver.common.by import By
 from urlparse import urljoin
 from urllib import urlretrieve
 import csv
-import time
 from datetime import date
 from mlbscrape_python.sql.pregame_hitter import PregameHitterGameEntry
 from mlbscrape_python.sql.pregame_pitcher import PregamePitcherGameEntry
@@ -14,8 +13,7 @@ from mlbscrape_python.sql.hitter_entry import HitterEntry
 from mlbscrape_python.sql.pitcher_entry import PitcherEntry
 from sqlalchemy import desc, or_
 import heapq
-from mlbscrape_python.learn.train_network import HitterNetworkTrainer
-from random import randint
+from mlbscrape_python.learn.train_network import HitterNetworkTrainer, PitcherNetworkTrainer
 
 
 class OptimalLineupDict(dict):
@@ -107,9 +105,12 @@ class OptimalLineupDict(dict):
         """Add a player to the optimal lineup dictionary based on his positions
         :param sql_player: a SQLAlchemy object with the first_name and last_name attribute
         """
-        if self._add_player(sql_player, sql_player.primary_position) is not True:
-            if sql_player.primary_position != sql_player.secondary_position:
-                self._add_player(sql_player, sql_player.secondary_position)
+        if type(sql_player) is PregamePitcherGameEntry:
+            self._add_pitcher(sql_player)
+        else:
+            if self._add_player(sql_player, sql_player.primary_position) is not True:
+                if sql_player.primary_position != sql_player.secondary_position:
+                    self._add_player(sql_player, sql_player.secondary_position)
 
     def _add_player(self, sql_player, position):
         """ Add a player to the optimal lineup dictionary based on his primary position
@@ -151,6 +152,12 @@ class OptimalLineupDict(dict):
                     ret_str += "%s: %s\n" % (fielding_position, self[fielding_position])
                 except KeyError:
                     ret_str += "%s: \n" % fielding_position
+
+        for pitcher in self["SP"]:
+            try:
+                ret_str += "%s: %s\n" % ("SP", pitcher[1])
+            except KeyError:
+                ret_str += "%s: \n" % "SP"
 
         ret_str += "Total salary: %s" % self._total_salary
 
@@ -287,7 +294,6 @@ class Draftkings(object):
         optimal_lineup = OptimalLineupDict()
         player_heap = list()
         current_salary = 0
-        #TODO: we need to set the lineup first before optimizing it
 
         # Look for the hitter entries
         for fielding_position in OptimalLineupDict.FieldingPositions:
@@ -304,14 +310,24 @@ class Draftkings(object):
 
         # Look for pitchers
         query_results = PregamePitcherGameEntry.get_all_daily_entries(database_session, date.today())
-        query_results = query_results.order_by(desc(PregamePitcherGameEntry.predicted_draftkings_points))
+        query_results = list(query_results.order_by(desc(PregamePitcherGameEntry.predicted_draftkings_points)))
+        for i in range(0, OptimalLineupDict.MAX_PITCHERS):
+            optimal_lineup.add(heapq.heappop(query_results))
+
         for pitcher in query_results:
             heapq.heappush(player_heap, (OptimalLineupDict.points_per_dollar(pitcher), pitcher))
+            player_heap.sort()
 
         # Replace players one by one who are "overpaid" based on predicted points per dollar
         while current_salary > Draftkings.CONTEST_SALARY and len(player_heap) > 0:
             next_player = heapq.heappop(player_heap)
             optimal_lineup.add(next_player)
+
+        # Print out all the remaining players in order of their value
+        print "Runner-up players"
+        for player in player_heap:
+            print player[1]
+        print " "
 
         return optimal_lineup
 
@@ -322,6 +338,12 @@ class Draftkings(object):
         daily_entries = PregameHitterGameEntry.get_all_daily_entries(database_session, day)
         for daily_entry in daily_entries:
             predicted_points = HitterNetworkTrainer.get_prediction(daily_entry.to_input_vector())
-            print predicted_points
             daily_entry.predicted_draftkings_points = predicted_points
             database_session.commit()
+
+        daily_entries = PregamePitcherGameEntry.get_all_daily_entries(database_session, day)
+        for daily_entry in daily_entries:
+            predicted_points = PitcherNetworkTrainer.get_prediction(daily_entry.to_input_vector())
+            daily_entry.predicted_draftkings_points = predicted_points
+            database_session.commit()
+

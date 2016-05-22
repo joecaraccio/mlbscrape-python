@@ -119,18 +119,21 @@ class PregamePitcherGameEntry(InfoVars, DataVars, Base):
         """
         :return: string representation identifying the Pitcher entry
         """
-        return "<Pitcher game entry(name='%s')>" % self.rotowire_id
+        return "<Pitcher PreGame Entry(id='%s', salary=%i, predicted_points=%f)>" % (self.rotowire_id,
+                                                                                     self.draftkings_salary,
+                                                                                     self.predicted_draftkings_points)
 
-    def to_vector(self):
+    def to_input_vector(self):
         """ Convert the entry to a vector
         :return: a list representation of the entry
         """
-        vector = list()
-        for variable in vars(self):
-            if variable in vars(DataVars):
-                vector.append(self.__dict__[variable])
-
-        return vector
+        return [self.season_bf, self.season_ip, self.season_so, self.season_wins, self.season_losses, self.season_er,
+                self.season_h, self.season_bb, self.season_hr,
+                self.career_bf, self.career_ip, self.career_so, self.career_wins, self.career_losses, self.career_er,
+                self.career_h, self.career_bb, self.career_hr,
+                self.vs_bf, self.vs_so, self.vs_er, self.vs_h, self.vs_bb, self.vs_hr,
+                self.recent_bf, self.recent_ip, self.recent_so, self.recent_er, self.recent_h, self.recent_bb,
+                self.recent_hr]
 
     @staticmethod
     def get_all_daily_entries(database_session, game_date=None):

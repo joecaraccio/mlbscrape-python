@@ -153,8 +153,6 @@ class DataVars(object):
                 self.recent_pa, self.recent_ab, self.recent_h, self.recent_bb, self.recent_so, self.recent_r,
                 self.recent_sb, self.recent_cs, self.recent_hr, self.recent_rbi]
 
-        return data_vars
-
 
 class PregameHitterGameEntry(InfoVars, DataVars, Base):
     """ Class for SQL entry for a single game played by a hitter
@@ -168,7 +166,9 @@ class PregameHitterGameEntry(InfoVars, DataVars, Base):
         """
         :return: string representation identifying the Hitter entry
         """
-        return "<Hitter PreGame Entry(id='%s')>" % self.rotowire_id
+        return "<Hitter PreGame Entry(id='%s', salary=%i, predicted_points=%f)>" % (self.rotowire_id,
+                                                                                    self.draftkings_salary,
+                                                                                    self.predicted_draftkings_points)
 
     @staticmethod
     def get_all_daily_entries(database_session, game_date=None):

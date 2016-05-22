@@ -4,8 +4,9 @@ import numpy as np
 import tensorflow as tf
 from mlbscrape_python.sql.pregame_hitter import PregameHitterGameEntry
 from mlbscrape_python.sql.postgame_hitter import PostgameHitterGameEntry
+from mlbscrape_python.sql.pregame_pitcher import PregamePitcherGameEntry
+from mlbscrape_python.sql.postgame_pitcher import PostgamePitcherGameEntry
 from sqlalchemy.orm.exc import NoResultFound
-from mlbscrape_python.sql.mlb_database import MlbDatabase
 import csv
 
 
@@ -107,7 +108,6 @@ class HitterNetworkTrainer(NetworkTrainer):
         # Stochastic training with 100 instances run 1000 times
         for i in range(HitterNetworkTrainer.TRAINING_ITERATIONS):
             batch_xs, batch_ys = self.get_stochastic_batch(mlb_training_data, HitterNetworkTrainer.SIZE_TRAINING_BATCH)
-            #assert len(batch_ys) == HitterNetworkTrainer.SIZE_TRAINING_BATCH
             batch_xs = np.array(batch_xs, dtype=float)
             batch_ys = np.array(batch_ys, dtype=float)
             sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys})
@@ -144,6 +144,106 @@ class HitterNetworkTrainer(NetworkTrainer):
         # Save the weights to a file
         model_weights = list()
         weights_file = open('hitter_weights.csv', 'rb')
+        spamreader = csv.reader(weights_file, delimiter=',')
+        for weight in spamreader:
+            model_weights.append(weight[0])
+        weights_file.close()
+        if len(input_data) != len(model_weights):
+            return 0
+
+        model_weight_array = np.array(model_weights, dtype=float)
+        input_data_array = np.array(input_data, dtype=float)
+        return np.matmul(model_weight_array, input_data_array)
+
+
+class PitcherNetworkTrainer(NetworkTrainer):
+
+    TRAINING_ITERATIONS = 1000
+    SIZE_TRAINING_BATCH = 100
+
+    def __init__(self, database_session):
+        self._database_session = database_session
+
+    def get_stochastic_batch(self, input_query, num_samples):
+        player_samples = random.sample([itm for itm in input_query], num_samples)
+        x = list()
+        y = list()
+        for item in player_samples:
+            input_vector = item.to_input_vector()
+            try:
+                postgame_entry = self._database_session.query(PostgamePitcherGameEntry).filter(PostgamePitcherGameEntry.rotowire_id == item.rotowire_id,
+                                                                                               PostgamePitcherGameEntry.game_date == item.game_date).one()
+            except NoResultFound:
+                continue
+
+            x.append(input_vector)
+            y.append([postgame_entry.actual_draftkings_points])
+
+        return x, y
+
+    def train_network(self):
+        """ Train the network using the database date and write the result to a CSV file for now
+        """
+        db_query = self._database_session.query(PregamePitcherGameEntry)
+        mlb_training_data, mlb_evaluation_data = self.get_train_eval_data(db_query, 0.8)
+
+        # y = x*w + b
+        x = tf.placeholder(tf.float32, [None, 31*1])
+        w = tf.Variable(tf.zeros([31*1, 1]))
+        b = tf.Variable(tf.zeros([1, 31*1]))
+        y = tf.reduce_sum(tf.matmul(x, w) + b, 1)
+
+        # Actual Draftkings points
+        y_ = tf.placeholder(tf.float32, [None, 1])
+
+        # Minimize the square error
+        square_error = tf.square(y_ - y)
+        train_step = tf.train.AdamOptimizer(0.0001).minimize(square_error)
+
+        # Initialize all TensorFlow variables
+        init = tf.initialize_all_variables()
+        sess = tf.Session()
+        sess.run(init)
+
+        # Perform the actual training of the net
+        # Stochastic training with 100 instances run 1000 times
+        for i in range(PitcherNetworkTrainer.TRAINING_ITERATIONS):
+            batch_xs, batch_ys = self.get_stochastic_batch(mlb_training_data, PitcherNetworkTrainer.SIZE_TRAINING_BATCH)
+            batch_xs = np.array(batch_xs, dtype=float)
+            batch_ys = np.array(batch_ys, dtype=float)
+            sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys})
+            print "Training Iteration %i" % i
+
+        # Save the weights to a file
+        with open('pitcher_weights.csv', 'wb') as csvfile:
+            spamwriter = csv.writer(csvfile, delimiter=',')
+            for weight in w.eval(sess):
+                spamwriter.writerow(weight)
+
+        test_data_input = list()
+        test_data_output = list()
+        for data in mlb_evaluation_data:
+            test_data_input.append(data.to_input_vector())
+            try:
+                postgame_entry = self._database_session.query(PostgamePitcherGameEntry).filter(PostgamePitcherGameEntry.rotowire_id == data.rotowire_id,
+                                                                                               PostgamePitcherGameEntry.game_date == data.game_date).one()
+                test_data_output.append([postgame_entry.actual_draftkings_points])
+            except NoResultFound:
+                continue
+
+        test_data_input = np.array(test_data_input, dtype=float)
+        print "Input data shape: " + str(test_data_input.shape)
+        test_data_output = np.array(test_data_output, dtype=float)
+        print "Output data shape: " + str(test_data_output.shape)
+        difference_prediction = tf.reduce_mean(tf.sqrt(tf.square(y-y_)))
+        print (sess.run(difference_prediction, feed_dict={x: test_data_input, y_: test_data_output}))
+
+    @staticmethod
+    def get_prediction(input_data):
+        # Load the weights from the file, evaluate the output using numpy
+        # Save the weights to a file
+        model_weights = list()
+        weights_file = open('pitcher_weights.csv', 'rb')
         spamreader = csv.reader(weights_file, delimiter=',')
         for weight in spamreader:
             model_weights.append(weight[0])

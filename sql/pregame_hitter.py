@@ -1,15 +1,20 @@
 
 from mlb_database import Base
-from sqlalchemy import Column, Integer, String, Float
+from sqlalchemy import Column, Integer, String, Float, or_, ForeignKeyConstraint, ForeignKey, Boolean
+from hitter_entry import HitterEntry
 from datetime import date
-from sqlalchemy import or_
-import time
 
 
-class InfoVars(object):
-    rotowire_id = Column(String, primary_key=True)
+class PregameHitterGameEntry(Base):
+    """ Class for SQL entry for a single game played by a hitter
+    """
+    __tablename__ = 'pregame_hitter_entries'
+
+    rotowire_id = Column(String, ForeignKey('hitter_entries.rotowire_id'), primary_key=True)
     pitcher_id = Column(String)
     game_date = Column(String, primary_key=True)
+    #game = Column(Integer, ForeignKeyConstraint([GameEntry.game_date, GameEntry.game_time]), primary_key=True)
+    #is_home = Column(Boolean)
     team = Column(String)
     opposing_team = Column(String)
     predicted_draftkings_points = Column(Float)
@@ -17,14 +22,6 @@ class InfoVars(object):
     primary_position = Column(String)
     secondary_position = Column(String)
 
-    def __init__(self):
-        super(InfoVars, self).__init__()
-        self.predicted_draftkings_points = 0
-        self.draftkings_salary = 0
-
-
-class DataVars(object):
-    # Season stats
     season_pa = Column(Integer)
     season_ab = Column(Integer)
     season_h = Column(Integer)
@@ -82,11 +79,11 @@ class DataVars(object):
     recent_rbi = Column(Integer)
 
     def __init__(self):
-        """ Constructor
-        :param hitter: Hitter object to copy the fields from
-        """
-        super(DataVars, self).__init__()
-        # Season stats
+        super(PregameHitterGameEntry, self).__init__()
+
+        self.predicted_draftkings_points = 0
+        self.draftkings_salary = 0
+
         self.season_pa = 0
         self.season_ab = 0
         self.season_h = 0
@@ -153,22 +150,20 @@ class DataVars(object):
                 self.recent_pa, self.recent_ab, self.recent_h, self.recent_bb, self.recent_so, self.recent_r,
                 self.recent_sb, self.recent_cs, self.recent_hr, self.recent_rbi]
 
-
-class PregameHitterGameEntry(InfoVars, DataVars, Base):
-    """ Class for SQL entry for a single game played by a hitter
-    """
-    __tablename__ = 'pregame_hitter_entries'
-
-    def __init__(self):
-        super(PregameHitterGameEntry, self).__init__()
-
     def __repr__(self):
         """
         :return: string representation identifying the Hitter entry
         """
-        return "<Hitter PreGame Entry(id='%s', salary=%i, predicted_points=%f)>" % (self.rotowire_id,
-                                                                                    self.draftkings_salary,
-                                                                                    self.predicted_draftkings_points)
+        try:
+            point_factor = float(self.draftkings_salary) / self.predicted_draftkings_points
+        except ZeroDivisionError:
+            point_factor = 0
+        return "<Hitter PreGame Entry(name=%s %s, id='%s', salary=%i, $/point=%f)>" % \
+               (self.hitter_entries.first_name,
+                self.hitter_entries.last_name,
+                self.rotowire_id,
+                self.draftkings_salary,
+                point_factor)
 
     @staticmethod
     def get_all_daily_entries(database_session, game_date=None):
@@ -183,6 +178,7 @@ class PregameHitterGameEntry(InfoVars, DataVars, Base):
         return database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.game_date == game_date,
                                                                      or_(PregameHitterGameEntry.primary_position == position,
                                                                      PregameHitterGameEntry.secondary_position == position))
+
 
 
 

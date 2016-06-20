@@ -1,27 +1,26 @@
-from sqlalchemy import Column, Integer, String, Float
+from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKeyConstraint, ForeignKey
+from sqlalchemy.orm import relationship
+from pitcher_entry import PitcherEntry
 from datetime import date
 from mlb_database import Base
 
 
-class InfoVars(object):
-    """ Class for informational variables for a pitcher's pregame
-    """
-    rotowire_id = Column(String, primary_key=True)
+class PregamePitcherGameEntry(Base):
+
+    __tablename__ = 'pregame_pitcher_entries'
+
+    rotowire_id = Column(String, ForeignKey("pitcher_entries.rotowire_id"), primary_key=True)
     team = Column(String)
     game_date = Column(String, primary_key=True)
+    #game = Column(Integer, ForeignKeyConstraint([GameEntry.game_date, GameEntry.game_time]), primary_key=True)
+    #home_team = Column(String)
+    team = Column(String)
+    #away_team = Column(String)
     opposing_team = Column(String)
+    #is_home = Column(Boolean)
     predicted_draftkings_points = Column(Float)
     draftkings_salary = Column(Integer)
 
-    def __init__(self):
-        super(InfoVars, self).__init__()
-        self.predicted_draftkings_points = 0
-        self.draftkings_salary = 0
-
-
-class DataVars(object):
-    """ Class for data variables for a pitcher's pregame
-    """
     # Season stats
     season_bf = Column(Integer)
     season_ip = Column(Float)
@@ -62,7 +61,14 @@ class DataVars(object):
     recent_hr = Column(Integer)
 
     def __init__(self):
-        super(DataVars, self).__init__()
+        """ Constructor
+        Copy the Pitcher object into the PitcherGameEntry fields
+        :param pitcher: Pitcher object
+        """
+        super(PregamePitcherGameEntry, self).__init__()
+
+        self.predicted_draftkings_points = 0
+        self.draftkings_salary = 0
 
         # Season stats
         self.season_bf = 0
@@ -102,26 +108,17 @@ class DataVars(object):
         self.recent_h = 0
         self.recent_bb = 0
         self.recent_hr = 0
-
-
-class PregamePitcherGameEntry(InfoVars, DataVars, Base):
-
-    __tablename__ = 'pregame_pitcher_entries'
-    
-    def __init__(self):
-        """ Constructor
-        Copy the Pitcher object into the PitcherGameEntry fields
-        :param pitcher: Pitcher object
-        """
-        super(PregamePitcherGameEntry, self).__init__()
         
     def __repr__(self):
         """
         :return: string representation identifying the Pitcher entry
         """
-        return "<Pitcher PreGame Entry(id='%s', salary=%i, predicted_points=%f)>" % (self.rotowire_id,
-                                                                                     self.draftkings_salary,
-                                                                                     self.predicted_draftkings_points)
+        return "<Pitcher PreGame Entry(name=%s %s, id='%s', salary=%i, $/point=%f)>" %\
+               (self.pitcher_entries.first_name,
+                self.pitcher_entries.last_name,
+                self.rotowire_id,
+                self.draftkings_salary,
+                float(self.draftkings_salary) / self.predicted_draftkings_points)
 
     def to_input_vector(self):
         """ Convert the entry to a vector
@@ -140,6 +137,7 @@ class PregamePitcherGameEntry(InfoVars, DataVars, Base):
         if game_date is None:
             game_date = date.today()
         return database_session.query(PregamePitcherGameEntry).filter(PregamePitcherGameEntry.game_date == game_date)
+
 
 
 

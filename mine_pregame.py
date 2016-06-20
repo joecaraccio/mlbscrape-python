@@ -1,8 +1,11 @@
-from mlbscrape_python.sql.mlb_database import MlbDatabase
-from mlbscrape_python.mine.rotowire import RotoWire
-from mlbscrape_python.mine.draft_kings import Draftkings
-from datetime import date
+import os
+from sql.mlb_database import MlbDatabase
+from mine.rotowire import RotoWire
+from mine.draft_kings import Draftkings
+from datetime import date, timedelta
 from email_service import send_email
+
+os.chdir("/home/cameron/workspaces/MlbDatabase/mlb_scrape/Released/mlbscrape_python")
 
 mlbDatabase = MlbDatabase()
 databaseSession = mlbDatabase.open_session()

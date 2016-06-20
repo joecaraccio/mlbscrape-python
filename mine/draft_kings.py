@@ -7,13 +7,13 @@ from urlparse import urljoin
 from urllib import urlretrieve
 import csv
 from datetime import date
-from mlbscrape_python.sql.pregame_hitter import PregameHitterGameEntry
-from mlbscrape_python.sql.pregame_pitcher import PregamePitcherGameEntry
-from mlbscrape_python.sql.hitter_entry import HitterEntry
-from mlbscrape_python.sql.pitcher_entry import PitcherEntry
+from sql.pregame_hitter import PregameHitterGameEntry
+from sql.pregame_pitcher import PregamePitcherGameEntry
+from sql.hitter_entry import HitterEntry
+from sql.pitcher_entry import PitcherEntry
 from sqlalchemy import desc, or_
 import heapq
-from mlbscrape_python.learn.train_network import HitterNetworkTrainer, PitcherNetworkTrainer
+from learn.train_network import HitterNetworkTrainer, PitcherNetworkTrainer
 
 
 class OptimalLineupDict(dict):
@@ -52,6 +52,16 @@ class OptimalLineupDict(dict):
 
         return float(sql_player.predicted_draftkings_points) / float(sql_player.draftkings_salary)
 
+    #TODO: move this to the base player sql class
+    @staticmethod
+    def dollars_per_point(sql_player):
+        """ Calculate the predicted points per dollar for this player.
+        Return 0 if the Draftkings salary is equal to zero
+        :param sql_player: a SQLAlchemy player object
+        :return: float representing the predicted points per dollar
+        """
+        return float(sql_player.draftkings_salary) / float(sql_player.predicted_draftkings_points)
+
     def _add_pitcher(self, sql_player):
         """ Add the pitcher object to the pitcher heap if:
         1. There are empty spots on the pitcher heap
@@ -59,16 +69,18 @@ class OptimalLineupDict(dict):
         :param sql_player: a SQLAlchemy object with the first_name and last_name attribute
         """
         pitcher_heap = self["SP"]
+        try:
+            dollars_per_point = self.dollars_per_point(sql_player)
+        except ZeroDivisionError:
+            return False
         # Empty pitcher spots, just add the player
         if len(pitcher_heap) < OptimalLineupDict.MAX_PITCHERS:
-            heapq.heappush(pitcher_heap, (self.points_per_dollar(sql_player), sql_player))
-            pitcher_heap.sort()
+            heapq.heappush(pitcher_heap, (dollars_per_point, sql_player))
             self._total_salary += sql_player.draftkings_salary
         else:
-            worst_pitcher = heapq.nsmallest(pitcher_heap, 1)[0][1]
-            if self.points_per_dollar(worst_pitcher) < self.points_per_dollar(sql_player):
-                heapq.heappushpop(pitcher_heap, (self.points_per_dollar(sql_player), sql_player))
-                pitcher_heap.sort()
+            worst_pitcher = heapq.nlargest(pitcher_heap, 1)[0][1]
+            if self.dollars_per_point(worst_pitcher) > dollars_per_point:
+                heapq.heappushpop(pitcher_heap, (dollars_per_point, sql_player))
                 self._total_salary -= worst_pitcher.draftkings_salary
                 self._total_salary += sql_player.draftkings_salary
             else:
@@ -84,16 +96,19 @@ class OptimalLineupDict(dict):
         :return Boolean: True if the player was added, False otherwise
         """
         outfielder_heap = self["OF"]
+        try:
+            dollars_per_point = self.dollars_per_point(sql_player)
+        except ZeroDivisionError:
+            return False
+
         # Empty outfielder spots, just add the player
         if len(outfielder_heap) < OptimalLineupDict.MAX_OUTFIELDERS:
-            heapq.heappush(outfielder_heap, (self.points_per_dollar(sql_player), sql_player))
-            outfielder_heap.sort()
+            heapq.heappush(outfielder_heap, (dollars_per_point, sql_player))
             self._total_salary += sql_player.draftkings_salary
         else:
-            worst_outfielder = heapq.nsmallest(1, outfielder_heap)[0][1]
-            if self.points_per_dollar(worst_outfielder) < self.points_per_dollar(sql_player):
-                heapq.heappushpop(outfielder_heap, (self.points_per_dollar(sql_player), sql_player))
-                outfielder_heap.sort()
+            worst_outfielder = heapq.nlargest(1, outfielder_heap)[0][1]
+            if self.dollars_per_point(worst_outfielder) < dollars_per_point:
+                heapq.heappushpop(outfielder_heap, (dollars_per_point, sql_player))
                 self._total_salary -= worst_outfielder.draftkings_salary
                 self._total_salary += sql_player.draftkings_salary
             else:
@@ -126,7 +141,7 @@ class OptimalLineupDict(dict):
         else:
             try:
                 worst_player = self[position]
-                if self.points_per_dollar(worst_player) < self.points_per_dollar(sql_player):
+                if self.dollars_per_point(worst_player) < self.dollars_per_point(sql_player):
                     self[position] = sql_player
                     self._total_salary -= worst_player.draftkings_salary
                     self._total_salary += sql_player.draftkings_salary
@@ -135,6 +150,8 @@ class OptimalLineupDict(dict):
                 self[position] = sql_player
                 self._total_salary += sql_player.draftkings_salary
                 return True
+            except ZeroDivisionError:
+                return False
 
         return False
 
@@ -293,7 +310,6 @@ class Draftkings(object):
             day = date.today()
         optimal_lineup = OptimalLineupDict()
         player_heap = list()
-        current_salary = 0
 
         # Look for the hitter entries
         for fielding_position in OptimalLineupDict.FieldingPositions:
@@ -305,21 +321,29 @@ class Draftkings(object):
             else:
                 optimal_lineup.add(heapq.heappop(query_results))
             for player in query_results:
-                heapq.heappush(player_heap, (OptimalLineupDict.points_per_dollar(player), player))
-                player_heap.sort()
+                try:
+                    dollars_per_point = OptimalLineupDict.dollars_per_point(player)
+                    if dollars_per_point > 0:
+                        heapq.heappush(player_heap, (dollars_per_point, player))
+                except ZeroDivisionError:
+                    continue
 
         # Look for pitchers
-        query_results = PregamePitcherGameEntry.get_all_daily_entries(database_session, date.today())
+        query_results = PregamePitcherGameEntry.get_all_daily_entries(database_session, day)
         query_results = list(query_results.order_by(desc(PregamePitcherGameEntry.predicted_draftkings_points)))
         for i in range(0, OptimalLineupDict.MAX_PITCHERS):
             optimal_lineup.add(heapq.heappop(query_results))
 
         for pitcher in query_results:
-            heapq.heappush(player_heap, (OptimalLineupDict.points_per_dollar(pitcher), pitcher))
-            player_heap.sort()
+            try:
+                dollars_per_point = OptimalLineupDict.dollars_per_point(pitcher)
+                if dollars_per_point > 0:
+                    heapq.heappush(player_heap, (OptimalLineupDict.dollars_per_point(pitcher), pitcher))
+            except ZeroDivisionError:
+                continue
 
         # Replace players one by one who are "overpaid" based on predicted points per dollar
-        while current_salary > Draftkings.CONTEST_SALARY and len(player_heap) > 0:
+        while optimal_lineup.get_total_salary() > Draftkings.CONTEST_SALARY and len(player_heap) > 0:
             next_player = heapq.heappop(player_heap)
             optimal_lineup.add(next_player)
 
@@ -338,12 +362,16 @@ class Draftkings(object):
         daily_entries = PregameHitterGameEntry.get_all_daily_entries(database_session, day)
         for daily_entry in daily_entries:
             predicted_points = HitterNetworkTrainer.get_prediction(daily_entry.to_input_vector())
+            if predicted_points < 0:
+                predicted_points = 0
             daily_entry.predicted_draftkings_points = predicted_points
             database_session.commit()
 
         daily_entries = PregamePitcherGameEntry.get_all_daily_entries(database_session, day)
         for daily_entry in daily_entries:
             predicted_points = PitcherNetworkTrainer.get_prediction(daily_entry.to_input_vector())
+            if predicted_points < 0:
+                predicted_points = 0
             daily_entry.predicted_draftkings_points = predicted_points
             database_session.commit()
 

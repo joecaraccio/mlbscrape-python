@@ -1,5 +1,6 @@
 from mlb_database import Base
 from sqlalchemy import Column, Integer, String, Float
+from sqlalchemy.orm import relationship
 
 
 class HitterEntry(Base):
@@ -13,6 +14,8 @@ class HitterEntry(Base):
     last_name = Column(String)
     team = Column(String)
     batting_hand = Column(String)
+
+    game_entries = relationship("PregameHitterGameEntry", backref="hitter_entries")
     
     def __init__(self, first_name, last_name, rotowire_id):
         """ Constructor
@@ -30,6 +33,7 @@ class HitterEntry(Base):
         """
         return "<HitterEntry(name='%s %s')>" % (
                                 self.first_name, self.last_name)
+
 
 
 

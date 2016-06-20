@@ -1,16 +1,16 @@
 from datetime import date, timedelta
 from baseball_reference import BaseballReference
 from beautiful_soup_helper import BeautifulSoupHelper
-from mlbscrape_python.sql.hitter_entry import HitterEntry
-from mlbscrape_python.sql.pregame_hitter import PregameHitterGameEntry
-from mlbscrape_python.sql.pregame_pitcher import PregamePitcherGameEntry
-from mlbscrape_python.sql.pitcher_entry import PitcherEntry
+from sql.hitter_entry import HitterEntry
+from sql.pregame_hitter import PregameHitterGameEntry
+from sql.pregame_pitcher import PregamePitcherGameEntry
+from sql.pitcher_entry import PitcherEntry
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import NoResultFound
 import bidict
-from mlbscrape_python.sql.postgame_hitter import PostgameHitterGameEntry
-from mlbscrape_python.sql.postgame_pitcher import PostgamePitcherGameEntry
-from mlbscrape_python.mine.draft_kings import Draftkings
+from sql.postgame_hitter import PostgameHitterGameEntry
+from sql.postgame_pitcher import PostgamePitcherGameEntry
+from mine.draft_kings import Draftkings
 
 
 class RotoWire(object):

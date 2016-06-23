@@ -180,6 +180,14 @@ class OptimalLineupDict(dict):
 
         return ret_str
 
+    def is_valid(self):
+        if len(self["SP"]) == OptimalLineupDict.MAX_PITCHERS and len(self["OF"]) == OptimalLineupDict.MAX_OUTFIELDERS \
+        and self["1B"] is not None and self["2B"] is not None and self["3B"] is not None and self["SS"] is not None:
+            return True
+
+        return False
+
+
 # Class to interact with Draftkings and obtain the available players and salaries
 class Draftkings(object):
 
@@ -343,7 +351,9 @@ class Draftkings(object):
                 continue
 
         # Replace players one by one who are "overpaid" based on predicted points per dollar
-        while optimal_lineup.get_total_salary() > Draftkings.CONTEST_SALARY and len(player_heap) > 0:
+        while (optimal_lineup.get_total_salary() > Draftkings.CONTEST_SALARY and len(player_heap) > 0) or \
+                not optimal_lineup.is_valid():
+            # TODO: we should add the player back on the player heap when kicked out of lineup
             next_player = heapq.heappop(player_heap)
             optimal_lineup.add(next_player)
 

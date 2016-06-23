@@ -8,6 +8,12 @@ reload(sys)
 sys.setdefaultencoding('utf-8')
 
 
+class TeamInformation(object):
+    def __init__(self, team_abbreviation, hitter_factor, pitcher_factor):
+        self.team_abbreviation = team_abbreviation
+        self.hitter_factor = hitter_factor
+        self.pitcher_factor = pitcher_factor
+
 class BaseballReference(object):
     BASE_URL = "http://www.baseball-reference.com"
 
@@ -283,6 +289,34 @@ class BaseballReference(object):
         return BaseballReference.get_table_row_dict(soup, "pitching_gamelogs",
                                                     BaseballReference.date_abbreviations[game_date.month] + " " + str(game_date.day),
                                                     "Date")
+
+    @staticmethod
+    def get_team_info(team_name, year_of_interest=None, team_soup=None):
+        URL = "/about/parkadjust.shtml"
+        try:
+            team_abbreviation = BaseballReference.team_dict.inv[team_name]
+        except KeyError:
+            raise BaseballReference.InvalidTeamName(team_name)
+
+        if year_of_interest is None:
+            year_of_interest = date.today().year
+
+        if team_soup is None:
+            team_soup = BeautifulSoupHelper.get_soup_from_url(BaseballReference.BASE_URL + "/teams/" +
+                                                          team_abbreviation + "/" + year_of_interest + ".shtml")
+
+        sub_nodes = team_soup.find("a", {"href": URL}).parent.parent.findAll("strong")
+        for sub_node in sub_nodes:
+            for content in sub_node.contents:
+                if "multi-year:" in content:
+                    factor_string = sub_node.next_sibling.split(",")
+
+                    hitter_factor = int(factor_string[0].split("-")[1].strip().split(" ")[0])
+                    pitcher_factor = int(factor_string[1].split("-")[1].strip().split(" ")[0])
+
+                    return TeamInformation(team_abbreviation, hitter_factor, pitcher_factor)
+
+        return None
 
     # Two-way dictionary
     team_dict = bidict.bidict(ARI="Arizona Diamondbacks",

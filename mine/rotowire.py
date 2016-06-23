@@ -700,6 +700,61 @@ class RotoWire(object):
         #TODO: add a TableRowNotFound exception
         raise BaseballReference.TableNotFound(table_name)
 
+    @staticmethod
+    def get_wind_speed(soup):
+        """ Extract the wind speed from the Rotowire game soup
+        :param soup: Rotowire soup for the individual game
+        :return: an integer representation of the wind speed (negative for "In", positive for "Out", zero otherwise)
+        """
+        wind_text = soup.find("div", {"class": RotoWire.WIND_LABEL}).text
+        wind_words = wind_text.strip().split()
+        if wind_words[len(wind_words)-1] == "Out":
+            return int(wind_words[1])
+        elif wind_words[len(wind_words)-1] == "In":
+            return -1*int(wind_words[1])
+
+        return 0
+
+    @staticmethod
+    def get_ump_ks_per_game(soup):
+        """ Extract the strikeouts per 9 innings for the ump for a given game
+        :param soup: Rotowire soup for the individual game
+        :return: float representation of the strikeouts per game
+        """
+        span15s = soup.findAll("div", {"class": "span15"})
+        for span15 in span15s:
+            node = span15.find("b")
+            if node is not None:
+                if node.text.strip() == "Ump:":
+                    ump_text = span15.text
+                    ump_words = ump_text.strip().split()
+                    for i in range(0, len(ump_words)):
+                        if ump_words[i] == "K/9:":
+                            return float(ump_words[i+1])
+
+        #TODO: raise an exception here
+        assert 0
+
+    @staticmethod
+    def get_ump_runs_per_game(soup):
+        """ Extract the strikeouts per 9 innings for the ump for a given game
+        :param soup: Rotowire soup for the individual game
+        :return: float representation of the strikeouts per game
+        """
+        span15s = soup.findAll("div", {"class": "span15"})
+        for span15 in span15s:
+            node = span15.find("b")
+            if node is not None:
+                if node.text.strip() == "Ump:":
+                    ump_text = span15.text
+                    ump_words = ump_text.strip().split()
+                    for i in range(0, len(ump_words)):
+                        if ump_words[i] == "R/9:":
+                            return float(ump_words[i+1])
+
+        #TODO: raise an exception here
+        assert 0
+
     # Two-way dictionary
     team_dict = bidict.bidict(ARI="Arizona Diamondbacks",
                               ATL="Atlanta Braves",

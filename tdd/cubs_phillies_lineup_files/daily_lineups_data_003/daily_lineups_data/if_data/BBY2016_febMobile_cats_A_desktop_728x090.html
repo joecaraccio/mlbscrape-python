@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8"><script type="text/javascript">
+    
+      (function() {
+        var relegateNavigation = '';
+        var handleClickTagMessage = function(e) {
+          try {
+            var eventData = JSON.parse(e.data);
+          } catch (err) {
+            return;
+          }
+          if (eventData.isInitClickTag) {
+            if (eventData.clickTags) {
+              for (var i = 0; i < eventData.clickTags.length; i++) {
+                var clkTag = eventData.clickTags[i];
+                window[clkTag.name] = clkTag.url;
+              }
+            } else if (eventData.clickTag) {
+              window.clickTag = eventData.clickTag;
+            }
+            relegateNavigation = eventData.relegateNavigation;
+          }
+        };
+
+        if (open.call) {
+          window.open = function(open) {
+            return function(url, name, features) {
+              if (relegateNavigation === 'parent') {
+                var message = {'clickTag': url, 'isPostClickTag': true};
+                parent.postMessage(JSON.stringify(message), '*');
+              } else {
+                var args = [url, name];
+                if (features) {
+                  args.push(features);
+                }
+                open.apply(window, args);
+              }
+            };
+          }(window.open);
+        }
+
+        if (window.addEventListener) {
+          window.addEventListener(
+              'message', handleClickTagMessage, false);
+        } else {
+          window.attachEvent('onmessage', handleClickTagMessage);
+        }
+      })();
+    
+  </script>
+<meta charset="UTF-8">
+<title>BBY2016_febMobile_cats_A_desktop_728x090</title>
+
+
+<style>
+	html, body {
+	  margin: 0px;
+	  padding: 0px;
+	}
+	#banner {
+	    position: absolute;
+	  	top: 0;
+	  	left: 0;
+	    width: 728px;
+	    height: 90px;
+	    color: white;
+	    cursor: pointer;
+		box-sizing: border-box;
+	}
+	#legal {
+		position: absolute;
+		width: 60px;
+		height: 20px;
+		color: white;
+		cursor: pointer;
+		top: 230px;
+		left: 0px;
+	}
+</style>
+
+
+<script src="BBY2016_febMobile_cats_A_desktop_728x090_data/easeljs-0.js"></script>
+<script src="BBY2016_febMobile_cats_A_desktop_728x090_data/tweenjs-0.js"></script>
+<script src="BBY2016_febMobile_cats_A_desktop_728x090_data/movieclip-0.js"></script>
+<script src="BBY2016_febMobile_cats_A_desktop_728x090_data/preloadjs-0.js"></script>
+<script src="BBY2016_febMobile_cats_A_desktop_728x090_data/BBY2016_febMobile_cats_A_desktop_728x090.js"></script>
+
+<script>
+var canvas, stage, exportRoot;
+
+function init() {
+	canvas = document.getElementById("canvas");
+	images = images||{};
+	ss = ss||{};
+
+	var loader = new createjs.LoadQueue(false);
+	loader.addEventListener("fileload", handleFileLoad);
+	loader.addEventListener("complete", handleComplete);
+loader.loadFile({src:"./BBY2016_febMobile_cats_A_desktop_728x090_atlas_.json", type:"spritesheet", id:"BBY2016_febMobile_cats_A_desktop_728x090_atlas_"}, true);
+	loader.loadManifest(lib.properties.manifest);
+}
+
+function handleFileLoad(evt) {
+	if (evt.item.type == "image") { images[evt.item.id] = evt.result; }
+}
+
+function handleComplete(evt) {
+	var queue = evt.target;
+	ss["BBY2016_febMobile_cats_A_desktop_728x090_atlas_"] = queue.getResult("BBY2016_febMobile_cats_A_desktop_728x090_atlas_");
+	exportRoot = new lib.BBY2016_febMobile_cats_A_desktop_728x090();
+
+	stage = new createjs.Stage(canvas);
+	stage.addChild(exportRoot);
+	stage.update();
+
+	createjs.Ticker.setFPS(lib.properties.fps);
+	createjs.Ticker.addEventListener("tick", stage);
+}
+</script>
+</head>
+
+
+<body onload="init();" style="background-color:#FFFFFF">
+	<div id="banner">
+		<canvas id="canvas" width="728" height="90" style="background-color:#FFFFFF"></canvas>
+	<div id="legal"></div>
+	</div>
+	
+	
+	<script type="text/javascript">
+		document.getElementById("banner").addEventListener("mouseover",
+			function(){
+				document.rollOverFunction();
+	    	}
+		);
+		document.getElementById("banner").addEventListener("mouseout",
+			function(){
+				document.rollOutFunction();
+	    	}
+		);		
+		var clickTag = "";
+		document.getElementById("banner").addEventListener("click",
+			function(){
+				window.open(window.clickTag);
+			}
+		);
+		document.getElementById("legal").addEventListener("mouseover",
+        	function(){
+				 document.openLegal();
+     	});
+	 
+	  	document.getElementById("legal").addEventListener("mouseout",
+        	function(){
+				 document.closeLegal();
+     	});
+	</script>
+
+</body></html>

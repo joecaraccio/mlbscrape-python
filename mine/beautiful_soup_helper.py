@@ -28,14 +28,12 @@ class BeautifulSoupHelper(object):
         :param url: the absolute URL string
         :return the BeautifulSoup object returned, return None if the object was not successfully created
         """
-        try:
-            xml = urllib.urlopen(url)
-        except IOError:
-            print "Socket error."
-            return None
+        xml = urllib.urlopen(url)
+
         if xml.code == 404:
             print "Attempt to access invalid URL: " + xml.url
             raise Http404Exception(url)
+
         return BeautifulSoup(xml, "lxml")
 
     @staticmethod

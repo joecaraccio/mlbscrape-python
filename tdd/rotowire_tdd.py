@@ -1,6 +1,6 @@
 
 import unittest
-from mine.rotowire import RotoWire
+import mine.rotowire
 from mine.beautiful_soup_helper import BeautifulSoupHelper
 from datetime import date, timedelta
 
@@ -14,7 +14,7 @@ class GetWindSpeedTest(unittest.TestCase):
 
     def test_typical_zero(self):
         soup = BeautifulSoupHelper.get_soup_from_url(GetWindSpeedTest.HTML_LOCATION_ZERO)
-        wind_speed = RotoWire.get_wind_speed(soup)
+        wind_speed = get_wind_speed(soup)
         self.assertEqual(wind_speed, 0)
 
     def test_typical_positive(self):

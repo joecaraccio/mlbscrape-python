@@ -202,7 +202,7 @@ class Draftkings(object):
 
     @staticmethod
     def save_daily_csv():
-        browser = webdriver.Firefox()
+        browser = webdriver.Chrome()
         browser.get(Draftkings.ROTOWIRE_DAILY_LINEUPS_URL)
         draftkings_button = browser.find_element_by_link_text(Draftkings.ROTOWIRE_LINK_TEXT)
         draftkings_button.click()

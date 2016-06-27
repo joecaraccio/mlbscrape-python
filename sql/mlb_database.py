@@ -26,3 +26,5 @@ class MlbDatabase(object):
         :return: a Session instance
         """
         return self.sessionMaker()
+
+mlb_database = MlbDatabase()

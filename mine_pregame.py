@@ -1,16 +1,16 @@
 import os
-from sql.mlb_database import MlbDatabase
-from mine.rotowire import RotoWire
+from sql.mlb_database import mlb_database
+from mine.rotowire import mine_pregame_stats
 from mine.draft_kings import Draftkings
 from datetime import date, timedelta
 from email_service import send_email
+import cProfile
 
 os.chdir("/home/cameron/workspaces/MlbDatabase/mlb_scrape/Released/mlbscrape_python")
 
-mlbDatabase = MlbDatabase()
-databaseSession = mlbDatabase.open_session()
+databaseSession = mlb_database.open_session()
 
-RotoWire.mine_pregame_stats(databaseSession)
+cProfile.run('mine_pregame_stats(mlb_database)')
 Draftkings.save_daily_csv()
 csv_dict = Draftkings.get_csv_dict()
 Draftkings.update_salaries(databaseSession, csv_dict)

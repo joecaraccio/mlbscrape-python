@@ -46,7 +46,7 @@ class NetworkTrainer(object):
 
 class HitterNetworkTrainer(NetworkTrainer):
 
-    TRAINING_ITERATIONS = 1000
+    TRAINING_ITERATIONS = 300
     SIZE_TRAINING_BATCH = 250
 
     def __init__(self, database_session):
@@ -87,10 +87,14 @@ class HitterNetworkTrainer(NetworkTrainer):
         mlb_training_data, mlb_evaluation_data = self.get_train_eval_data(db_query, 0.8)
 
         # y = x*w + b
-        x = tf.placeholder(tf.float32, [None, 47*1])
-        w = tf.Variable(tf.zeros([47*1, 1]))
-        b = tf.Variable(tf.zeros([1, 47*1]))
-        y = tf.reduce_sum(tf.matmul(x, w) + b, 1)
+        input_dimension = len(mlb_training_data[0].to_input_vector())
+        x = tf.placeholder(tf.float32, [None, input_dimension])
+        #w = tf.Variable(tf.zeros([input_dimension, 1]))
+        w1 = tf.Variable(tf.zeros([input_dimension, 1]))
+        #w2 = tf.Variable(tf.zeros([5, 1]))
+        b = tf.Variable(tf.zeros([1, input_dimension]))
+        #y = tf.nn.relu(tf.matmul(x, w1) + b)
+        y = tf.add(tf.matmul(x, w1), b)
 
         # Actual Draftkings points
         y_ = tf.placeholder(tf.float32, [None, 1])
@@ -116,17 +120,25 @@ class HitterNetworkTrainer(NetworkTrainer):
         # Save the weights to a file
         with open('hitter_weights.csv', 'wb') as csvfile:
             spamwriter = csv.writer(csvfile, delimiter=',')
-            for weight in w.eval(sess):
+            spamwriter.writerow("w1")
+            for weight in w1.eval(sess):
                 spamwriter.writerow(weight)
+            """spamwriter.writerow("w2")
+            for weight in w2.eval(sess):
+                spamwriter.writerow(weight)
+            """
+            spamwriter.writerow("b")
+            for bias in np.transpose(b.eval(sess)):
+                spamwriter.writerow(bias)
 
         test_data_input = list()
         test_data_output = list()
         for data in mlb_evaluation_data:
-            test_data_input.append(data.to_input_vector())
             try:
                 postgame_entry = self._database_session.query(PostgameHitterGameEntry).filter(PostgameHitterGameEntry.rotowire_id == data.rotowire_id,
                                                                                               PostgameHitterGameEntry.game_date == data.game_date).one()
                 test_data_output.append([postgame_entry.actual_draftkings_points])
+                test_data_input.append(data.to_input_vector())
             except NoResultFound:
                 print "Ignoring hitter %s since his postgame stats were not found." % data.rotowire_id
                 continue
@@ -142,18 +154,31 @@ class HitterNetworkTrainer(NetworkTrainer):
     def get_prediction(input_data):
         # Load the weights from the file, evaluate the output using numpy
         # Save the weights to a file
-        model_weights = list()
+        model_weights1 = list()
         weights_file = open('hitter_weights.csv', 'rb')
         spamreader = csv.reader(weights_file, delimiter=',')
         for weight in spamreader:
-            model_weights.append(weight[0])
+            if weight == "b":
+                break
+            model_weights1.append(weight[0])
+        if len(input_data) != len(model_weights1):
+            return 0
+        """model_weights2 = list()
+        for weight in spamreader:
+            if weight == "b":
+                break
+            model_weights2.append(weight[0])
+        """
+        biases = list()
+        for bias in spamreader:
+            biases.append(bias[0])
         weights_file.close()
-        if len(input_data) != len(model_weights):
+        if len(input_data) != len(biases):
             return 0
 
-        model_weight_array = np.array(model_weights, dtype=float)
+        model_weight_array1 = np.array(model_weights1, dtype=float)
         input_data_array = np.array(input_data, dtype=float)
-        return np.matmul(model_weight_array, input_data_array)
+        return np.add(np.matmul(model_weight_array1, input_data_array), np.array(biases, dtype=float))
 
 
 class PitcherNetworkTrainer(NetworkTrainer):

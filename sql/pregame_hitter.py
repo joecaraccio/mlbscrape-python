@@ -139,16 +139,57 @@ class PregameHitterGameEntry(Base):
         self.recent_hr = 0
         self.recent_rbi = 0
 
+    @staticmethod
+    def get_pct_stat(divisor, dividend):
+        try:
+            return float(divisor) / float(dividend)
+        except ZeroDivisionError:
+            return 0
+
+    def to_season_input_vector(self):
+        return [self.get_pct_stat(self.season_h, self.season_pa),
+                self.get_pct_stat(self.season_bb, self.season_pa),
+                self.get_pct_stat(self.season_rbi, self.season_pa),
+                self.get_pct_stat(self.season_r, self.season_pa),
+                self.get_pct_stat(self.season_sb, self.season_pa),
+                self.get_pct_stat(self.season_hr, self.season_pa),
+                self.season_pa]
+
+    def to_career_input_vector(self):
+        return [self.get_pct_stat(self.career_h, self.career_pa),
+                self.get_pct_stat(self.career_bb, self.career_pa),
+                self.get_pct_stat(self.career_rbi, self.career_pa),
+                self.get_pct_stat(self.career_r, self.career_pa),
+                self.get_pct_stat(self.career_sb, self.career_pa),
+                self.get_pct_stat(self.career_hr, self.career_pa),
+                self.career_pa]
+
+    def to_vs_input_vector(self):
+        return [self.get_pct_stat(self.vs_h, self.vs_pa),
+                self.get_pct_stat(self.vs_bb, self.vs_pa),
+                self.get_pct_stat(self.vs_rbi, self.vs_pa),
+                self.get_pct_stat(self.vs_hr, self.vs_pa),
+                self.vs_pa]
+
+    def to_vs_hand_input_vector(self):
+        return [self.get_pct_stat(self.vs_hand_h, self.vs_hand_pa),
+                self.get_pct_stat(self.vs_hand_bb, self.vs_hand_pa),
+                self.get_pct_stat(self.vs_hand_rbi, self.vs_hand_pa),
+                self.get_pct_stat(self.vs_hand_r, self.vs_hand_pa),
+                self.get_pct_stat(self.vs_hand_hr, self.vs_hand_pa),
+                self.vs_hand_pa]
+
+    def to_recent_input_vector(self):
+        return [self.get_pct_stat(self.recent_h, self.recent_pa),
+                self.get_pct_stat(self.recent_bb, self.recent_pa),
+                self.get_pct_stat(self.recent_rbi, self.recent_pa),
+                self.get_pct_stat(self.recent_r, self.recent_pa),
+                self.get_pct_stat(self.recent_hr, self.recent_pa),
+                self.recent_pa]
+
     def to_input_vector(self):
-        return [self.season_pa, self.season_ab, self.season_h, self.season_bb, self.season_so, self.season_r, self.season_sb,
-                self.season_cs, self.season_hr, self.season_rbi,
-                self.career_pa, self.career_ab, self.career_h, self.career_bb, self.career_so, self.career_r, self.career_sb,
-                self.career_cs, self.career_hr, self.career_rbi,
-                self.vs_pa, self.vs_ab, self.vs_h, self.vs_bb, self.vs_so, self.vs_hr, self.vs_rbi,
-                self.vs_hand_pa, self.vs_hand_ab, self.vs_hand_h, self.vs_hand_bb, self.vs_hand_so, self.vs_hand_r,
-                self.vs_hand_sb, self.vs_hand_cs, self.vs_hand_hr, self.vs_hand_rbi,
-                self.recent_pa, self.recent_ab, self.recent_h, self.recent_bb, self.recent_so, self.recent_r,
-                self.recent_sb, self.recent_cs, self.recent_hr, self.recent_rbi]
+        return self.to_season_input_vector() + self.to_career_input_vector() + self.to_vs_hand_input_vector() + \
+               self.to_vs_input_vector() + self.to_recent_input_vector()
 
     def __repr__(self):
         """
@@ -158,9 +199,10 @@ class PregameHitterGameEntry(Base):
             point_factor = float(self.draftkings_salary) / self.predicted_draftkings_points
         except ZeroDivisionError:
             point_factor = 0
-        return "<Hitter PreGame Entry(name=%s %s, id='%s', salary=%i, $/point=%f)>" % \
+        return "<Hitter PreGame Entry(name=%s %s, team='%s', id='%s', salary=%i, $/point=%f)>" % \
                (self.hitter_entries.first_name,
                 self.hitter_entries.last_name,
+                self.hitter_entries.team,
                 self.rotowire_id,
                 self.draftkings_salary,
                 point_factor)

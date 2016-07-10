@@ -206,7 +206,7 @@ class BaseballReference(object):
             soup = BeautifulSoupHelper.get_soup_from_url(BaseballReference.BASE_URL + "/players/split.cgi?id=" +
                                                          str(baseball_reference_id) + "&year=Career&t=b")
 
-        return BaseballReference.get_table_row_dict(soup, "total", "Last 14 days", "Split")
+        return BaseballReference.get_table_row_dict(soup, "total", "Last 7 days", "Split")
 
     @staticmethod
     def get_season_hitting_stats(baseball_reference_id, year=None, soup=None):

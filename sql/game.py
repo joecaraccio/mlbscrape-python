@@ -5,60 +5,18 @@ from datetime import date
 from mlb_database import Base
 
 
-class PregamePitcherGameEntry(Base):
+class GameEntry(Base):
 
-    __tablename__ = 'pregame_pitcher_entries'
+    __tablename__ = 'game_entries'
 
-    rotowire_id = Column(String, ForeignKey("pitcher_entries.rotowire_id"), primary_key=True)
-    team = Column(String)
     game_date = Column(String, primary_key=True)
-    #game = Column(Integer, ForeignKeyConstraint([GameEntry.game_date, GameEntry.game_time]), primary_key=True)
-    #home_team = Column(String)
-    team = Column(String)
-    #away_team = Column(String)
-    opposing_team = Column(String)
-    #is_home = Column(Boolean)
-    predicted_draftkings_points = Column(Float)
-    draftkings_salary = Column(Integer)
+    home_team = Column(String, primary_key=True)
+    away_team = Column(String, primary_key=True)
+    game_time = Column(String, primary_key=True)
 
-    # Season stats
-    season_bf = Column(Integer)
-    season_ip = Column(Float)
-    season_so = Column(Integer)
-    season_wins = Column(Integer)
-    season_losses = Column(Integer)
-    season_er = Column(Integer)
-    season_h = Column(Integer)
-    season_bb = Column(Integer)
-    season_hr = Column(Integer)
+    game_hitter_entries = relationship("PregameHitterGameEntry", backref="game_entries")
+    game_pitcher_entries = relationship("PregamePitcherGameEntry", backref="game_entries")
 
-    # Career stats
-    career_bf = Column(Integer)
-    career_ip = Column(Float)
-    career_so = Column(Integer)
-    career_wins = Column(Integer)
-    career_losses = Column(Integer)
-    career_er = Column(Integer)
-    career_h = Column(Integer)
-    career_bb = Column(Integer)
-    career_hr = Column(Integer)
-
-    # Versus stats
-    vs_bf = Column(Integer)
-    vs_so = Column(Integer)
-    vs_er = Column(Integer)
-    vs_h = Column(Integer)
-    vs_bb = Column(Integer)
-    vs_hr = Column(Integer)
-
-    # Recent (last 14 days) stats
-    recent_bf = Column(Integer)
-    recent_ip = Column(Float)
-    recent_so = Column(Integer)
-    recent_er = Column(Integer)
-    recent_h = Column(Integer)
-    recent_bb = Column(Integer)
-    recent_hr = Column(Integer)
 
     def __init__(self):
         """ Constructor
@@ -108,7 +66,7 @@ class PregamePitcherGameEntry(Base):
         self.recent_h = 0
         self.recent_bb = 0
         self.recent_hr = 0
-        
+
     def __repr__(self):
         """
         :return: string representation identifying the Pitcher entry

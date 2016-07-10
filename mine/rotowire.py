@@ -328,7 +328,7 @@ def get_pregame_hitting_stats_wrapper(game):
 
 
 def get_pregame_hitting_stats(games):
-    thread_pool = Pool(1)
+    thread_pool = Pool(4)
 
     thread_pool.map(get_pregame_hitting_stats_wrapper, games)
 
@@ -338,51 +338,51 @@ def predict_draftkings_points(pregame_hitter_entry):
 
 
 def get_pregame_pitching_stats(games):
-    thread_pool = Pool(1)
+    thread_pool = Pool(4)
 
     thread_pool.map(get_pregame_pitching_stats_wrapper, games)
 
 
-def get_pregame_pitching_stats_wrapper(games):
+def get_pregame_pitching_stats_wrapper(game):
     database_session = mlb_database.open_session()
-    for game in games:
-        current_pitcher = game.away_pitcher
-        print "Mining %s." % current_pitcher.name
-        try:
-            pregame_pitcher_entry = get_pitcher_stats(current_pitcher.rotowire_id,
-                                                               current_pitcher.team,
-                                                               game.home_pitcher.team,
-                                                               database_session)
 
-            predict_draftkings_points(pregame_pitcher_entry)
-            database_session.add(pregame_pitcher_entry)
-            database_session.commit()
-        except IntegrityError:
-            print "Attempt to duplicate pitcher entry: %s %s %s" % (current_pitcher.name,
-                                                                    pregame_pitcher_entry.team,
-                                                                    pregame_pitcher_entry.opposing_team)
-            database_session.rollback()
-        except PitcherNotFound as e:
-            print e
+    current_pitcher = game.away_pitcher
+    print "Mining %s." % current_pitcher.name
+    try:
+        pregame_pitcher_entry = get_pitcher_stats(current_pitcher.rotowire_id,
+                                                           current_pitcher.team,
+                                                           game.home_pitcher.team,
+                                                           database_session)
 
-        current_pitcher = game.home_pitcher
-        print "Mining %s." % current_pitcher.name
-        try:
-            pregame_pitcher_entry = get_pitcher_stats(current_pitcher.rotowire_id,
-                                                               current_pitcher.team,
-                                                               game.away_pitcher.team,
-                                                               database_session)
+        predict_draftkings_points(pregame_pitcher_entry)
+        database_session.add(pregame_pitcher_entry)
+        database_session.commit()
+    except IntegrityError:
+        print "Attempt to duplicate pitcher entry: %s %s %s" % (current_pitcher.name,
+                                                                pregame_pitcher_entry.team,
+                                                                pregame_pitcher_entry.opposing_team)
+        database_session.rollback()
+    except PitcherNotFound as e:
+        print e
 
-            predict_draftkings_points(pregame_pitcher_entry)
-            database_session.add(pregame_pitcher_entry)
-            database_session.commit()
-        except IntegrityError:
-            print "Attempt to duplicate pitcher entry: %s %s %s" % (current_pitcher.name,
-                                                                    pregame_pitcher_entry.team,
-                                                                    pregame_pitcher_entry.opposing_team)
-            database_session.rollback()
-        except PitcherNotFound as e:
-            print e
+    current_pitcher = game.home_pitcher
+    print "Mining %s." % current_pitcher.name
+    try:
+        pregame_pitcher_entry = get_pitcher_stats(current_pitcher.rotowire_id,
+                                                           current_pitcher.team,
+                                                           game.away_pitcher.team,
+                                                           database_session)
+
+        predict_draftkings_points(pregame_pitcher_entry)
+        database_session.add(pregame_pitcher_entry)
+        database_session.commit()
+    except IntegrityError:
+        print "Attempt to duplicate pitcher entry: %s %s %s" % (current_pitcher.name,
+                                                                pregame_pitcher_entry.team,
+                                                                pregame_pitcher_entry.opposing_team)
+        database_session.rollback()
+    except PitcherNotFound as e:
+        print e
 
     database_session.close()
 

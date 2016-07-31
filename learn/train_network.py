@@ -2,10 +2,10 @@ import random
 
 import numpy as np
 import tensorflow as tf
-from sql.pregame_hitter import PregameHitterGameEntry
-from sql.postgame_hitter import PostgameHitterGameEntry
-from sql.pregame_pitcher import PregamePitcherGameEntry
-from sql.postgame_pitcher import PostgamePitcherGameEntry
+from Released.mlbscrape_python.sql.pregame_hitter import PregameHitterGameEntry
+from Released.mlbscrape_python.sql.postgame_hitter import PostgameHitterGameEntry
+from Released.mlbscrape_python.sql.pregame_pitcher import PregamePitcherGameEntry
+from Released.mlbscrape_python.sql.postgame_pitcher import PostgamePitcherGameEntry
 from sqlalchemy.orm.exc import NoResultFound
 import csv
 

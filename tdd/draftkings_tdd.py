@@ -1,9 +1,9 @@
 
 import unittest
-from mlbscrape_python.mine.draft_kings import Draftkings
-from mlbscrape_python.mine.draft_kings import OptimalLineupDict
-from mlbscrape_python.sql.pregame_hitter import PregameHitterGameEntry
-from mlbscrape_python.sql.pregame_pitcher import PregamePitcherGameEntry
+from Released.mlbscrape_python.mine.draft_kings import Draftkings
+from Released.mlbscrape_python.mine.draft_kings import OptimalLineupDict
+from Released.mlbscrape_python.sql.pregame_hitter import PregameHitterGameEntry
+from Released.mlbscrape_python.sql.pregame_pitcher import PregamePitcherGameEntry
 
 
 class OptimalLineupTest(unittest.TestCase):

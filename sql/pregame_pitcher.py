@@ -119,7 +119,7 @@ class PregamePitcherGameEntry(Base):
                 self.pitcher_entries.team,
                 self.rotowire_id,
                 self.draftkings_salary,
-                float(self.draftkings_salary) / self.predicted_draftkings_points)
+                self.dollars_per_point())
 
     def to_input_vector(self):
         """ Convert the entry to a vector
@@ -134,10 +134,42 @@ class PregamePitcherGameEntry(Base):
                 self.recent_hr]
 
     @staticmethod
+    def get_input_vector_labels():
+        return ["Season Batters Faced", "Season IP", "Season SO", "Season Wins", "Season Losses", "Season ER",
+                "Season Hits", "Season Walks", "Season HR",
+                "Career Batters Faced", "Career IP", "Career SO", "Career Wins", "Career Losses", "Career ER",
+                "Career Hits", "Career Walks", "Career HR",
+                "Versus Batters Faced", "Versus SO", "Versus ER", "Versus Hits", "Versus Walks", "Versus HR",
+                "Recent Batters Faced", "Recent IP", "Recent SO", "Recent ER", "Recent Hits", "Recent Walks",
+                "Recent HR"]
+
+    @staticmethod
     def get_all_daily_entries(database_session, game_date=None):
         if game_date is None:
             game_date = date.today()
         return database_session.query(PregamePitcherGameEntry).filter(PregamePitcherGameEntry.game_date == game_date)
+
+    def points_per_dollar(self):
+        """ Calculate the predicted points per dollar for this player.
+        Return 0 if the Draftkings salary is equal to zero
+        :param sql_player: a SQLAlchemy player object
+        :return: float representing the predicted points per dollar
+        """
+        if float(self.draftkings_salary) == 0.0:
+            return 0.0
+
+        return float(self.predicted_draftkings_points) / float(self.draftkings_salary)
+
+    def dollars_per_point(self):
+        """ Calculate the predicted points per dollar for this player.
+        Return 0 if the Draftkings salary is equal to zero
+        :param sql_player: a SQLAlchemy player object
+        :return: float representing the predicted points per dollar
+        """
+        if float(self.predicted_draftkings_points) == 0.0:
+            return 0.0
+
+        return float(self.draftkings_salary) / float(self.predicted_draftkings_points)
 
 
 

@@ -1,7 +1,7 @@
 
 import unittest
-from mine.baseball_reference import BaseballReference
-from mine.beautiful_soup_helper import BeautifulSoupHelper
+from Released.mlbscrape_python.mine.baseball_reference import BaseballReference
+from Released.mlbscrape_python.mine.beautiful_soup_helper import BeautifulSoupHelper
 from datetime import date, timedelta
 
 class GetHitterIdTest(unittest.TestCase):

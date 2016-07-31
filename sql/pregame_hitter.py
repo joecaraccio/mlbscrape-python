@@ -191,21 +191,29 @@ class PregameHitterGameEntry(Base):
         return self.to_season_input_vector() + self.to_career_input_vector() + self.to_vs_hand_input_vector() + \
                self.to_vs_input_vector() + self.to_recent_input_vector()
 
+    @staticmethod
+    def get_input_vector_labels():
+        return ["Season Hits / PA", "Season Walks / PA", "Season RBIs / PA", "Season Runs / PA",
+                "Season SB / PA", "Season HR / PA", "Season PA",
+                "Career Hits / PA", "Career Walks / PA", "Career RBIs / PA", "Career Runs / PA",
+                "Career SB / PA", "Career HR / PA", "Career PA",
+                "Versus Hits / PA", "Versus Walks / PA", "Versus RBIs / PA", "Versus HR / PA", "Versus PA",
+                "Versus Hand Hits / PA", "Versus Hand Walks / PA", "Versus Hand RBIs / PA",
+                "Versus Hand Runs / PA", "Versus Hand HR / PA", "Versus Hand PA",
+                "Recent Hits / PA", "Recent Walks / PA", "Recent RBIs / PA", "Recent Runs / PA",
+                "Recent HR / PA", "Recent PA"]
+
     def __repr__(self):
         """
         :return: string representation identifying the Hitter entry
         """
-        try:
-            point_factor = float(self.draftkings_salary) / self.predicted_draftkings_points
-        except ZeroDivisionError:
-            point_factor = 0
         return "<Hitter PreGame Entry(name=%s %s, team='%s', id='%s', salary=%i, $/point=%f)>" % \
                (self.hitter_entries.first_name,
                 self.hitter_entries.last_name,
                 self.hitter_entries.team,
                 self.rotowire_id,
                 self.draftkings_salary,
-                point_factor)
+                self.dollars_per_point())
 
     @staticmethod
     def get_all_daily_entries(database_session, game_date=None):
@@ -221,6 +229,25 @@ class PregameHitterGameEntry(Base):
                                                                      or_(PregameHitterGameEntry.primary_position == position,
                                                                      PregameHitterGameEntry.secondary_position == position))
 
+    def points_per_dollar(self):
+        """ Calculate the predicted points per dollar for this player.
+        Return 0 if the Draftkings salary is equal to zero
+        :param sql_player: a SQLAlchemy player object
+        :return: float representing the predicted points per dollar
+        """
+        if float(self.draftkings_salary) == 0.0:
+            return 0.0
 
+        return float(self.predicted_draftkings_points) / float(self.draftkings_salary)
 
+    def dollars_per_point(self):
+        """ Calculate the predicted points per dollar for this player.
+        Return 0 if the Draftkings salary is equal to zero
+        :param sql_player: a SQLAlchemy player object
+        :return: float representing the predicted points per dollar
+        """
+        if float(self.predicted_draftkings_points) == 0.0:
+            return 0.0
+
+        return float(self.draftkings_salary) / float(self.predicted_draftkings_points)
 

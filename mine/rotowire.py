@@ -5,6 +5,7 @@ from sql.hitter_entry import HitterEntry
 from sql.pregame_hitter import PregameHitterGameEntry
 from sql.pregame_pitcher import PregamePitcherGameEntry
 from sql.pitcher_entry import PitcherEntry
+#from sql.game import GameEntry
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import NoResultFound
 import bidict
@@ -20,6 +21,7 @@ GAME_REGION_LABEL = "offset1 span15"
 TEAM_REGION_LABEL = "span15 dlineups-topbox"
 AWAY_TEAM_REGION_LABEL = "span5 dlineups-topboxleft"
 HOME_TEAM_REGION_LABEL = "span5 dlineups-topboxright"
+TIME_REGION_LABEL = "span5 dlineups-topboxcenter-topline"
 AWAY_TEAM_PLAYER_LABEL = "dlineups-vplayer"
 HOME_TEAM_PLAYER_LABEL = "dlineups-hplayer"
 LINEUPS_CLASS_LABEL = "span15 dlineups-mainbox"
@@ -86,9 +88,7 @@ def get_game_lineups(database_session):
     Note: longer names are abbreviated by RotoWire and need to be resolved by another source
     :return: list of Game objects representing the lineups for the day
     """
-    #TODO: add feature to look if the lineup is pending
     #TODO: add feature to look if it's going to rain
-    #TODO: add feature to check the starting time of the game so we can ignore games that have already occurred
     lineup_soup = BeautifulSoupHelper.get_soup_from_url(DAILY_LINEUPS_URL)
     header_nodes = lineup_soup.findAll("div", {"class": TEAM_REGION_LABEL})
     games = list()
@@ -115,6 +115,11 @@ def get_game_lineups(database_session):
             continue
 
         current_game = Game(away_team_lineup, away_team_pitcher, home_team_lineup, home_team_pitcher)
+        """game_time = game_node.find("div", {"class": TIME_REGION_LABEL}).find("a").text
+        game_entry = GameEntry(date.today(), game_time, home_team_abbreviation, away_team_abbreviation)
+        database_session.add(game_entry)
+        database_session.commit()
+        """
         if current_game.is_valid():
             games.append(current_game)
         else:

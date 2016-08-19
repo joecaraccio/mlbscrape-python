@@ -3,6 +3,7 @@ from mlb_database import Base
 from sqlalchemy import Column, Integer, String, Float, or_, ForeignKeyConstraint, ForeignKey, Boolean
 from hitter_entry import HitterEntry
 from datetime import date
+from game import GameEntry
 
 
 class PregameHitterGameEntry(Base):
@@ -13,7 +14,7 @@ class PregameHitterGameEntry(Base):
     rotowire_id = Column(String, ForeignKey('hitter_entries.rotowire_id'), primary_key=True)
     pitcher_id = Column(String)
     game_date = Column(String, primary_key=True)
-    #game = Column(Integer, ForeignKeyConstraint([GameEntry.game_date, GameEntry.game_time]), primary_key=True)
+    #game = Column(Integer, ForeignKeyConstraint([GameEntry.game_date, GameEntry.game_time, GameEntry.home_team, GameEntry.away_team]))
     #is_home = Column(Boolean)
     team = Column(String)
     opposing_team = Column(String)
@@ -207,13 +208,14 @@ class PregameHitterGameEntry(Base):
         """
         :return: string representation identifying the Hitter entry
         """
-        return "<Hitter PreGame Entry(name=%s %s, team='%s', id='%s', salary=%i, $/point=%f)>" % \
+        return "<Hitter PreGame Entry(name=%s %s, team='%s', id='%s', salary=%i, $/point=%f, points=%f)>" % \
                (self.hitter_entries.first_name,
                 self.hitter_entries.last_name,
                 self.hitter_entries.team,
                 self.rotowire_id,
                 self.draftkings_salary,
-                self.dollars_per_point())
+                self.dollars_per_point(),
+                self.predicted_draftkings_points)
 
     @staticmethod
     def get_all_daily_entries(database_session, game_date=None):

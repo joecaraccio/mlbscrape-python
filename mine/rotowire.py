@@ -14,6 +14,7 @@ from sql.postgame_pitcher import PostgamePitcherGameEntry
 from mine.draft_kings import Draftkings
 from sql.mlb_database import MlbDatabase, mlb_database
 from multiprocessing import Pool
+from sql.game import GameEntry
 
 # Daily lineups relevant HTML labels
 DAILY_LINEUPS_URL = "http://www.rotowire.com/baseball/daily_lineups.htm"
@@ -21,7 +22,7 @@ GAME_REGION_LABEL = "offset1 span15"
 TEAM_REGION_LABEL = "span15 dlineups-topbox"
 AWAY_TEAM_REGION_LABEL = "span5 dlineups-topboxleft"
 HOME_TEAM_REGION_LABEL = "span5 dlineups-topboxright"
-TIME_REGION_LABEL = "span5 dlineups-topboxcenter-topline"
+TIME_REGION_LABEL = "dlineups-topboxcenter-topline"
 AWAY_TEAM_PLAYER_LABEL = "dlineups-vplayer"
 HOME_TEAM_PLAYER_LABEL = "dlineups-hplayer"
 LINEUPS_CLASS_LABEL = "span15 dlineups-mainbox"
@@ -119,7 +120,7 @@ def get_game_lineups(database_session):
         game_entry = GameEntry(date.today(), game_time, home_team_abbreviation, away_team_abbreviation)
         database_session.add(game_entry)
         database_session.commit()
-        """
+"""
         if current_game.is_valid():
             games.append(current_game)
         else:

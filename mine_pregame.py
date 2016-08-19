@@ -20,6 +20,7 @@ try:
     print optimal_lineup
     send_email(optimal_lineup.__str__())
 except Exception as e:
+    print e
     send_email("The predictor generated an exception: {0}".format(e))
 
 databaseSession.close()

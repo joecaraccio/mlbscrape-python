@@ -113,13 +113,14 @@ class PregamePitcherGameEntry(Base):
         """
         :return: string representation identifying the Pitcher entry
         """
-        return "<Pitcher PreGame Entry(name=%s %s, team='%s', id='%s', salary=%i, $/point=%f)>" %\
+        return "<Pitcher PreGame Entry(name=%s %s, team='%s', id='%s', salary=%i, $/point=%f, points=%f)>" %\
                (self.pitcher_entries.first_name,
                 self.pitcher_entries.last_name,
                 self.pitcher_entries.team,
                 self.rotowire_id,
                 self.draftkings_salary,
-                self.dollars_per_point())
+                self.dollars_per_point(),
+                self.predicted_draftkings_points)
 
     def to_input_vector(self):
         """ Convert the entry to a vector

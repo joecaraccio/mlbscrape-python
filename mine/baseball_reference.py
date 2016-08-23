@@ -303,7 +303,7 @@ class BaseballReference(object):
 
         if team_soup is None:
             team_soup = BeautifulSoupHelper.get_soup_from_url(BaseballReference.BASE_URL + "/teams/" +
-                                                          team_abbreviation + "/" + year_of_interest + ".shtml")
+                                                          team_abbreviation + "/" + str(year_of_interest) + ".shtml")
 
         sub_nodes = team_soup.find("a", {"href": URL}).parent.parent.findAll("strong")
         for sub_node in sub_nodes:
@@ -314,7 +314,7 @@ class BaseballReference(object):
                     hitter_factor = int(factor_string[0].split("-")[1].strip().split(" ")[0])
                     pitcher_factor = int(factor_string[1].split("-")[1].strip().split(" ")[0])
 
-                    return TeamInformation(team_abbreviation, hitter_factor, pitcher_factor)
+                    return hitter_factor, pitcher_factor
 
         return None
 

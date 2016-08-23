@@ -79,9 +79,9 @@ def mine_pregame_stats():
     """
     database_session = MlbDatabase().open_session()
     games = get_game_lineups(database_session)
-    update_ids(games, database_session)
+    """update_ids(games, database_session)
     get_pregame_hitting_stats(games)
-    get_pregame_pitching_stats(games)
+    get_pregame_pitching_stats(games)"""
     database_session.close()
 
 
@@ -117,15 +117,22 @@ def get_game_lineups(database_session):
             continue
 
         current_game = Game(away_team_lineup, away_team_pitcher, home_team_lineup, home_team_pitcher)
-        game_time = game_node.find("div", {"class": TIME_REGION_LABEL}).find("a").text.replace("ET", "").strip()
-        game_time = datetime.strptime(game_time, '%I:%M %p').strftime("%H:%M")
-        game_entry = GameEntry(date.today(), game_time, home_team_abbreviation, away_team_abbreviation)
-        game_entry.wind_speed = get_wind_speed(lineup_soup)
-        game_entry.ump_ks_per_game = get_ump_ks_per_game(lineup_soup)
-        game_entry.ump_runs_per_game = get_ump_runs_per_game(lineup_soup)
 
-        database_session.add(game_entry)
-        database_session.commit()
+        # TODO: since they only release the ump data ~1 hour before the game, we'll have to make this robust later
+        try:
+            game_time = game_node.find("div", {"class": TIME_REGION_LABEL}).find("a").text.replace("ET", "").strip()
+            game_time = datetime.strptime(game_time, '%I:%M %p').strftime("%H:%M")
+            game_entry = GameEntry(date.today(), game_time, home_team_abbreviation, away_team_abbreviation)
+            game_entry.wind_speed = get_wind_speed(game_node)
+            game_entry.ump_ks_per_game = get_ump_ks_per_game(game_node)
+            game_entry.ump_runs_per_game = get_ump_runs_per_game(game_node)
+            game_entry.park_hitter_score, game_entry.park_pitcher_score = BaseballReference.get_team_info(team_dict[home_team_abbreviation])
+
+            database_session.add(game_entry)
+            database_session.commit()
+        except Exception as e:
+            print e
+            pass
 
         if current_game.is_valid():
             games.append(current_game)
@@ -747,6 +754,12 @@ def get_wind_speed(soup):
     return 0
 
 
+class UmpDataNotFound(Exception):
+
+    def __init__(self, invalid_soup):
+        super(UmpDataNotFound, self).__init__("The ump data was not found in the soup %s." % invalid_soup)
+
+
 def get_ump_ks_per_game(soup):
     """ Extract the strikeouts per 9 innings for the ump for a given game
     :param soup: Rotowire soup for the individual game
@@ -763,8 +776,7 @@ def get_ump_ks_per_game(soup):
                     if ump_words[i] == "K/9:":
                         return float(ump_words[i+1])
 
-    #TODO: raise an exception here
-    assert 0
+    raise UmpDataNotFound(soup)
 
 
 def get_ump_runs_per_game(soup):
@@ -783,8 +795,7 @@ def get_ump_runs_per_game(soup):
                     if ump_words[i] == "R/9:":
                         return float(ump_words[i+1].replace("&nbsp", ""))
 
-    #TODO: raise an exception here
-    assert 0
+    raise UmpDataNotFound(soup)
 
 # Two-way dictionary
 team_dict = bidict.bidict(ARI="Arizona Diamondbacks",

@@ -16,6 +16,7 @@ import heapq
 from Released.mlbscrape_python.learn.train_regression import HitterRegressionForestTrainer, PitcherRegressionForestTrainer
 from Released.mlbscrape_python.sql.lineup import LineupEntry
 
+
 class OptimalLineupDict(dict):
     """ Class for managing the optimal lineup for a given day
     """
@@ -415,5 +416,3 @@ class Draftkings(object):
                 predicted_points = 0
             daily_entry.predicted_draftkings_points = predicted_points
             database_session.commit()
-
-

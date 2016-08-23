@@ -11,7 +11,7 @@ os.chdir("/home/cameron/workspaces/MlbDatabase/mlb_scrape/Released/mlbscrape_pyt
 databaseSession = MlbDatabase().open_session()
 
 try:
-    cProfile.run('mine_pregame_stats(mlb_database)')
+    cProfile.run('mine_pregame_stats()')
     Draftkings.save_daily_csv()
     csv_dict = Draftkings.get_csv_dict()
     Draftkings.update_salaries(databaseSession, csv_dict)

@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from baseball_reference import BaseballReference
 from beautiful_soup_helper import BeautifulSoupHelper
 from sql.hitter_entry import HitterEntry
@@ -11,6 +11,7 @@ import bidict
 from sql.postgame_hitter import PostgameHitterGameEntry
 from sql.postgame_pitcher import PostgamePitcherGameEntry
 from sql.mlb_database import MlbDatabase
+from sql.game import GameEntry
 from multiprocessing import Pool
 from mine.draft_kings import Draftkings
 
@@ -41,6 +42,8 @@ BATTER_SPLIT_BASE_URL = "http://www.rotowire.com/baseball/battersplit.htm?id="
 # Split stats relevent HTML labels
 SPLIT_TABLE_LABEL = "tablesorter makesortable"
 
+WIND_LABEL = "dlineups-topboxcenter-bottomline"
+
 
 class PlayerStruct(object):
     def __init__(self, name, team, rotowire_id, position, hand):
@@ -70,7 +73,7 @@ class HomeAwayEnum:
     HOME = 1
 
 
-def mine_pregame_stats(mlb_database):
+def mine_pregame_stats():
     """ Mine the hitter/pitcher stats and predict the outcomes and commit to the database session
     :param mlb_database: MlbDatabase object
     """
@@ -114,11 +117,16 @@ def get_game_lineups(database_session):
             continue
 
         current_game = Game(away_team_lineup, away_team_pitcher, home_team_lineup, home_team_pitcher)
-        """game_time = game_node.find("div", {"class": TIME_REGION_LABEL}).find("a").text
+        game_time = game_node.find("div", {"class": TIME_REGION_LABEL}).find("a").text.replace("ET", "").strip()
+        game_time = datetime.strptime(game_time, '%I:%M %p').strftime("%H:%M")
         game_entry = GameEntry(date.today(), game_time, home_team_abbreviation, away_team_abbreviation)
+        game_entry.wind_speed = get_wind_speed(lineup_soup)
+        game_entry.ump_ks_per_game = get_ump_ks_per_game(lineup_soup)
+        game_entry.ump_runs_per_game = get_ump_runs_per_game(lineup_soup)
+
         database_session.add(game_entry)
         database_session.commit()
-"""
+
         if current_game.is_valid():
             games.append(current_game)
         else:
@@ -773,7 +781,7 @@ def get_ump_runs_per_game(soup):
                 ump_words = ump_text.strip().split()
                 for i in range(0, len(ump_words)):
                     if ump_words[i] == "R/9:":
-                        return float(ump_words[i+1])
+                        return float(ump_words[i+1].replace("&nbsp", ""))
 
     #TODO: raise an exception here
     assert 0

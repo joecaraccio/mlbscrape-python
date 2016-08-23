@@ -14,6 +14,7 @@ class GameEntry(Base):
     ump_ks_per_game = Column(Float)
     ump_runs_per_game = Column(Float)
     park_score = Column(Integer)
+    wind_speed = Column(Integer)
 
     #game_hitter_entries = relationship("PregameHitterGameEntry", backref="game_hitter_entries")
     #game_pitcher_entries = relationship("PregamePitcherGameEntry", backref="game_entries")

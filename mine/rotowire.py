@@ -5,16 +5,14 @@ from sql.hitter_entry import HitterEntry
 from sql.pregame_hitter import PregameHitterGameEntry
 from sql.pregame_pitcher import PregamePitcherGameEntry
 from sql.pitcher_entry import PitcherEntry
-#from sql.game import GameEntry
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import NoResultFound
 import bidict
 from sql.postgame_hitter import PostgameHitterGameEntry
 from sql.postgame_pitcher import PostgamePitcherGameEntry
-from mine.draft_kings import Draftkings
-from sql.mlb_database import MlbDatabase, mlb_database
+from sql.mlb_database import MlbDatabase
 from multiprocessing import Pool
-from sql.game import GameEntry
+from mine.draft_kings import Draftkings
 
 # Daily lineups relevant HTML labels
 DAILY_LINEUPS_URL = "http://www.rotowire.com/baseball/daily_lineups.htm"
@@ -76,7 +74,7 @@ def mine_pregame_stats(mlb_database):
     """ Mine the hitter/pitcher stats and predict the outcomes and commit to the database session
     :param mlb_database: MlbDatabase object
     """
-    database_session = mlb_database.open_session()
+    database_session = MlbDatabase().open_session()
     games = get_game_lineups(database_session)
     update_ids(games, database_session)
     get_pregame_hitting_stats(games)
@@ -285,7 +283,7 @@ def get_name_from_id(rotowire_id):
 
 
 def get_pregame_hitting_stats_wrapper(game):
-    database_session = mlb_database.open_session()
+    database_session = MlbDatabase().open_session()
     for current_hitter in game.away_lineup:
         pitcher_hand = game.home_pitcher.hand
         print "Mining %s." % current_hitter.name
@@ -350,7 +348,7 @@ def get_pregame_pitching_stats(games):
 
 
 def get_pregame_pitching_stats_wrapper(game):
-    database_session = mlb_database.open_session()
+    database_session = MlbDatabase().open_session()
 
     current_pitcher = game.away_pitcher
     print "Mining %s." % current_pitcher.name

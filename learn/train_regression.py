@@ -9,7 +9,7 @@ from Released.mlbscrape_python.sql.pregame_hitter import PregameHitterGameEntry
 from Released.mlbscrape_python.sql.pregame_pitcher import PregamePitcherGameEntry
 from Released.mlbscrape_python.sql.postgame_hitter import PostgameHitterGameEntry
 from Released.mlbscrape_python.sql.postgame_pitcher import PostgamePitcherGameEntry
-from Released.mlbscrape_python.sql.mlb_database import mlb_database
+from Released.mlbscrape_python.sql.mlb_database import MlbDatabase
 from sqlalchemy.orm.exc import NoResultFound
 from sklearn.externals.six import StringIO
 import pydotplus
@@ -18,7 +18,7 @@ import pydotplus
 class RegressionTree(object):
     def __init__(self):
         self._decision_tree = DecisionTreeRegressor()
-        self._database_session = mlb_database.open_session()
+        self._database_session = MlbDatabase().open_session()
 
     @staticmethod
     def get_train_eval_data(db_query, training_pct):
@@ -43,7 +43,7 @@ class RegressionTree(object):
 class RegressionForest(object):
     def __init__(self):
         self._decision_tree = RandomForestRegressor(n_estimators=1000, max_depth=15)
-        self._database_session = mlb_database.open_session()
+        self._database_session = MlbDatabase().open_session()
 
     @staticmethod
     def get_train_eval_data(db_query, training_pct):
@@ -118,7 +118,7 @@ class HitterRegressionTrainer(RegressionTree):
 
 class HitterRegressionForestTrainer(RegressionForest):
 
-    SIZE_TRAINING_BATCH = 2000
+    SIZE_TRAINING_BATCH = 2500
 
     def get_stochastic_batch(self, input_query, num_samples):
         player_samples = random.sample([itm for itm in input_query], num_samples)
@@ -144,23 +144,6 @@ class HitterRegressionForestTrainer(RegressionForest):
         mlb_training_data, mlb_evaluation_data = self.get_train_eval_data(db_query, 0.8)
         X_train, Y_train = self.get_stochastic_batch(mlb_training_data, self.SIZE_TRAINING_BATCH)
         self._decision_tree.fit(X_train, Y_train)
-        """dot_data = StringIO()
-        tree.export_graphviz(self._decision_tree, out_file=dot_data,
-                             feature_names=PregameHitterGameEntry.get_input_vector_labels())
-        graph = pydotplus.graph_from_dot_data(dot_data.getvalue())
-        graph.write_pdf("hitter_tree.pdf")
-        x_test_actual = list()
-        y_test_actual = list()
-        for data in mlb_evaluation_data:
-            try:
-                postgame_entry = self._database_session.query(PostgameHitterGameEntry).filter(PostgameHitterGameEntry.rotowire_id == data.rotowire_id,
-                                                                                              PostgameHitterGameEntry.game_date == data.game_date).one()
-                y_test_actual.append([postgame_entry.actual_draftkings_points])
-                x_test_actual.append(data.to_input_vector())
-            except NoResultFound:
-                print "Ignoring hitter %s since his postgame stats were not found." % data.rotowire_id
-                continue
-        """
         self._database_session.close()
 
     def get_prediction(self, input_data):
@@ -256,23 +239,6 @@ class PitcherRegressionTrainer(RegressionForest):
         mlb_training_data, mlb_evaluation_data = self.get_train_eval_data(db_query, 0.8)
         X_train, Y_train = self.get_stochastic_batch(mlb_training_data, self.SIZE_TRAINING_BATCH)
         self._decision_tree.fit(X_train, Y_train)
-        """dot_data = StringIO()
-        tree.export_graphviz(self._decision_tree, out_file=dot_data,
-                             feature_names=PregamePitcherGameEntry.get_input_vector_labels())
-        graph = pydotplus.graph_from_dot_data(dot_data.getvalue())
-        graph.write_pdf("pitcher_tree.pdf")
-        x_test_actual = list()
-        y_test_actual = list()
-        for data in mlb_evaluation_data:
-            try:
-                postgame_entry = self._database_session.query(PostgamePitcherGameEntry).filter(PostgamePitcherGameEntry.rotowire_id == data.rotowire_id,
-                                                                                              PostgamePitcherGameEntry.game_date == data.game_date).one()
-                y_test_actual.append([postgame_entry.actual_draftkings_points])
-                x_test_actual.append(data.to_input_vector())
-            except NoResultFound:
-                print "Ignoring hitter %s since his postgame stats were not found." % data.rotowire_id
-                continue
-        """
         self._database_session.close()
 
     def get_prediction(self, input_data):

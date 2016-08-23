@@ -1,13 +1,12 @@
 
 from mlb_database import Base
 from sqlalchemy import Column, Integer, String, Float, or_, ForeignKeyConstraint, ForeignKey, Boolean
-from hitter_entry import HitterEntry
 from datetime import date
-from game import GameEntry
 
 
 class PregameHitterGameEntry(Base):
     """ Class for SQL entry for a single game played by a hitter
+    Many-to-one relationship with HitterEntry
     """
     __tablename__ = 'pregame_hitter_entries'
 
@@ -209,9 +208,9 @@ class PregameHitterGameEntry(Base):
         :return: string representation identifying the Hitter entry
         """
         return "<Hitter PreGame Entry(name=%s %s, team='%s', id='%s', salary=%i, $/point=%f, points=%f)>" % \
-               (self.hitter_entries.first_name,
-                self.hitter_entries.last_name,
-                self.hitter_entries.team,
+               (self.hitter_entry.first_name,
+                self.hitter_entry.last_name,
+                self.hitter_entry.team,
                 self.rotowire_id,
                 self.draftkings_salary,
                 self.dollars_per_point(),

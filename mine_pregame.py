@@ -1,5 +1,5 @@
 import os
-from sql.mlb_database import mlb_database
+from sql.mlb_database import MlbDatabase
 from mine.rotowire import mine_pregame_stats
 from mine.draft_kings import Draftkings
 from datetime import date, timedelta
@@ -8,7 +8,7 @@ import cProfile
 
 os.chdir("/home/cameron/workspaces/MlbDatabase/mlb_scrape/Released/mlbscrape_python")
 
-databaseSession = mlb_database.open_session()
+databaseSession = MlbDatabase().open_session()
 
 try:
     cProfile.run('mine_pregame_stats(mlb_database)')

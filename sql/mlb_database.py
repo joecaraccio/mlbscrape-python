@@ -16,6 +16,16 @@ class MlbDatabase(object):
         """ Constructor
         Create/open a local database.
         """
+        # Import all the metadata
+        from sql.game import GameEntry
+        from sql.hitter_entry import HitterEntry
+        from sql.pitcher_entry import PitcherEntry
+        from sql.pregame_hitter import PregameHitterGameEntry
+        from sql.pregame_pitcher import PregamePitcherGameEntry
+        from sql.postgame_hitter import PostgameHitterGameEntry
+        from sql.postgame_pitcher import PostgamePitcherGameEntry
+        from sql.lineup import LineupEntry
+
         # Create/open a local database
         engine = create_engine('sqlite:////home/cameron/workspaces/MlbDatabase/mlb_scrape/Released/mlbscrape_python/mlb_stats.db', echo=False)
         Base.metadata.create_all(engine)
@@ -26,5 +36,3 @@ class MlbDatabase(object):
         :return: a Session instance
         """
         return self.sessionMaker()
-
-mlb_database = MlbDatabase()

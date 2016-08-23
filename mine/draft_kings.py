@@ -6,16 +6,15 @@ from selenium.webdriver.common.by import By
 from urlparse import urljoin
 from urllib import urlretrieve
 import csv
-from datetime import date
+from datetime import date, datetime
 from Released.mlbscrape_python.sql.pregame_hitter import PregameHitterGameEntry
 from Released.mlbscrape_python.sql.pregame_pitcher import PregamePitcherGameEntry
 from Released.mlbscrape_python.sql.hitter_entry import HitterEntry
 from Released.mlbscrape_python.sql.pitcher_entry import PitcherEntry
 from sqlalchemy import desc, or_
 import heapq
-from Released.mlbscrape_python.learn.train_network import HitterNetworkTrainer, PitcherNetworkTrainer
-from Released.mlbscrape_python.learn.train_regression import HitterRegressionTrainer, HitterRegressionForestTrainer, PitcherRegressionTrainer, PitcherRegressionForestTrainer
-
+from Released.mlbscrape_python.learn.train_regression import HitterRegressionForestTrainer, PitcherRegressionForestTrainer
+from Released.mlbscrape_python.sql.lineup import LineupEntry
 
 class OptimalLineupDict(dict):
     """ Class for managing the optimal lineup for a given day
@@ -315,7 +314,7 @@ class Draftkings(object):
     def get_optimal_lineup(database_session, day=None):
         """ Get the optimal lineup of the players to choose for tonight
         :param database_session: SQLAlchemy database session
-        :return:
+        :return: an OptimalLineupDict structure
         """
         if day is None:
             day = date.today()
@@ -340,7 +339,7 @@ class Draftkings(object):
                     optimal_lineup.add(candidate_player)
             for player in query_results:
                 try:
-                    heapq.heappush(player_heap, (player.predicted_draftkings_points, player))
+                    heapq.heappush(player_heap, (-player.predicted_draftkings_points, player))
                 except ZeroDivisionError:
                     continue
 
@@ -354,7 +353,7 @@ class Draftkings(object):
 
         for pitcher in query_results:
             try:
-                heapq.heappush(player_heap, (pitcher.predicted_draftkings_points, pitcher))
+                heapq.heappush(player_heap, (-pitcher.predicted_draftkings_points, pitcher))
             except ZeroDivisionError:
                 continue
 
@@ -370,6 +369,23 @@ class Draftkings(object):
         for player in player_heap:
             print player[1]
         print " "
+
+        # Commit the prediction to the database
+        lineup_db_entry = LineupEntry()
+        lineup_db_entry.game_date = date.today()
+        lineup_db_entry.game_time = datetime.now().strftime("%H:%M:%S")
+        lineup_db_entry.starting_pitcher_1 = optimal_lineup["SP"][0][1].rotowire_id
+        lineup_db_entry.starting_pitcher_2 = optimal_lineup["SP"][1][1].rotowire_id
+        lineup_db_entry.catcher = optimal_lineup["C"].rotowire_id
+        lineup_db_entry.first_baseman = optimal_lineup["1B"].rotowire_id
+        lineup_db_entry.second_baseman = optimal_lineup["2B"].rotowire_id
+        lineup_db_entry.third_baseman = optimal_lineup["3B"].rotowire_id
+        lineup_db_entry.shortstop = optimal_lineup["SS"].rotowire_id
+        lineup_db_entry.outfielder_1 = optimal_lineup["OF"][0][1].rotowire_id
+        lineup_db_entry.outfielder_2 = optimal_lineup["OF"][1][1].rotowire_id
+        lineup_db_entry.outfielder_3 = optimal_lineup["OF"][2][1].rotowire_id
+        database_session.add(lineup_db_entry)
+        database_session.commit()
 
         return optimal_lineup
 

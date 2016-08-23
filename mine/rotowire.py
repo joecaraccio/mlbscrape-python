@@ -79,9 +79,9 @@ def mine_pregame_stats():
     """
     database_session = MlbDatabase().open_session()
     games = get_game_lineups(database_session)
-    """update_ids(games, database_session)
+    update_ids(games, database_session)
     get_pregame_hitting_stats(games)
-    get_pregame_pitching_stats(games)"""
+    get_pregame_pitching_stats(games)
     database_session.close()
 
 

@@ -12,7 +12,6 @@ databaseSession = MlbDatabase().open_session()
 
 try:
     cProfile.run('mine_pregame_stats()')
-    mine_pregame_stats()
     Draftkings.save_daily_csv()
     csv_dict = Draftkings.get_csv_dict()
     Draftkings.update_salaries(databaseSession, csv_dict)

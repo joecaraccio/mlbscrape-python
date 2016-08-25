@@ -130,6 +130,12 @@ def get_game_lineups(database_session):
 
             database_session.add(game_entry)
             database_session.commit()
+        except IntegrityError:
+            database_session.rollback()
+            print "Warning: attempt to duplicate game entry: %s %s %s %s" % (str(home_team_abbreviation),
+                                                                             str(away_team_abbreviation),
+                                                                             str(game_entry.game_date),
+                                                                             str(game_entry.game_time))
         except Exception as e:
             print e
             pass
@@ -347,7 +353,7 @@ def get_pregame_hitting_stats_wrapper(game):
 
 
 def get_pregame_hitting_stats(games):
-    thread_pool = Pool(4)
+    thread_pool = Pool(6)
 
     thread_pool.map(get_pregame_hitting_stats_wrapper, games)
 
@@ -357,7 +363,7 @@ def predict_draftkings_points(pregame_hitter_entry):
 
 
 def get_pregame_pitching_stats(games):
-    thread_pool = Pool(4)
+    thread_pool = Pool(6)
 
     thread_pool.map(get_pregame_pitching_stats_wrapper, games)
 
@@ -505,12 +511,11 @@ def get_hitter_stats(batter_id, pitcher_id, team, pitcher_hand, database_session
         print str(e), "with", str(hitter_entry.first_name), str(hitter_entry.last_name)
 
     # Career versus this pitcher
-    pitcher_entries = database_session.query(PitcherEntry).filter(PitcherEntry.rotowire_id == pregame_hitter_entry.pitcher_id)
+    pitcher_entry = database_session.query(PitcherEntry).get(pregame_hitter_entry.pitcher_id)
     # Couldn't find the pitcher, just continue and use default values
-    if pitcher_entries.count() == 0:
+    if pitcher_entry is None:
         return pregame_hitter_entry
     else:
-        pitcher_entry = pitcher_entries[0]
         try:
             vs_pitcher_stats = BaseballReference.get_vs_pitcher_stats(hitter_entry.baseball_reference_id,
                                                                       pitcher_entry.baseball_reference_id)

@@ -75,10 +75,9 @@ class HitterRegressionTrainer(RegressionTree):
         y = list()
         for item in player_samples:
             input_vector = item.to_input_vector()
-            try:
-                postgame_entry = self._database_session.query(PostgameHitterGameEntry).filter(PostgameHitterGameEntry.rotowire_id == item.rotowire_id,
-                                                                                              PostgameHitterGameEntry.game_date == item.game_date).one()
-            except NoResultFound:
+            postgame_entry = self._database_session.query(PostgameHitterGameEntry).get(item.rotowire_id,
+                                                                                       item.game_date)
+            if postgame_entry is None:
                 continue
 
             x.append(input_vector)
@@ -101,14 +100,14 @@ class HitterRegressionTrainer(RegressionTree):
         x_test_actual = list()
         y_test_actual = list()
         for data in mlb_evaluation_data:
-            try:
-                postgame_entry = self._database_session.query(PostgameHitterGameEntry).filter(PostgameHitterGameEntry.rotowire_id == data.rotowire_id,
-                                                                                              PostgameHitterGameEntry.game_date == data.game_date).one()
-                y_test_actual.append([postgame_entry.actual_draftkings_points])
-                x_test_actual.append(data.to_input_vector())
-            except NoResultFound:
+            postgame_entry = self._database_session.query(PostgameHitterGameEntry).get(data.rotowire_id,
+                                                                                       data.game_date)
+            if postgame_entry is None:
                 print "Ignoring hitter %s since his postgame stats were not found." % data.rotowire_id
                 continue
+
+            y_test_actual.append([postgame_entry.actual_draftkings_points])
+            x_test_actual.append(data.to_input_vector())
 
         self._database_session.close()
 
@@ -160,10 +159,9 @@ class PitcherRegressionForestTrainer(RegressionTree):
         y = list()
         for item in player_samples:
             input_vector = item.to_input_vector()
-            try:
-                postgame_entry = self._database_session.query(PostgamePitcherGameEntry).filter(PostgamePitcherGameEntry.rotowire_id == item.rotowire_id,
-                                                                                              PostgamePitcherGameEntry.game_date == item.game_date).one()
-            except NoResultFound:
+            postgame_entry = self._database_session.query(PostgamePitcherGameEntry).get((item.rotowire_id,
+                                                                                        item.game_date))
+            if postgame_entry is None:
                 continue
 
             x.append(input_vector)
@@ -191,14 +189,15 @@ class PitcherRegressionForestTrainer(RegressionTree):
         x_test_actual = list()
         y_test_actual = list()
         for data in mlb_evaluation_data:
-            try:
-                postgame_entry = self._database_session.query(PostgamePitcherGameEntry).filter(PostgamePitcherGameEntry.rotowire_id == data.rotowire_id,
-                                                                                              PostgamePitcherGameEntry.game_date == data.game_date).one()
-                y_test_actual.append([postgame_entry.actual_draftkings_points])
-                x_test_actual.append(data.to_input_vector())
-            except NoResultFound:
+            postgame_entry = self._database_session.query(PostgamePitcherGameEntry).get((data.rotowire_id,
+                                                                                         data.game_date))
+
+            if postgame_entry is None:
                 print "Ignoring hitter %s since his postgame stats were not found." % data.rotowire_id
                 continue
+
+            y_test_actual.append([postgame_entry.actual_draftkings_points])
+            x_test_actual.append(data.to_input_vector())
 
         self._database_session.close()
 
@@ -216,10 +215,9 @@ class PitcherRegressionTrainer(RegressionForest):
         y = list()
         for item in player_samples:
             input_vector = item.to_input_vector()
-            try:
-                postgame_entry = self._database_session.query(PostgamePitcherGameEntry).filter(PostgamePitcherGameEntry.rotowire_id == item.rotowire_id,
-                                                                                              PostgamePitcherGameEntry.game_date == item.game_date).one()
-            except NoResultFound:
+            postgame_entry = self._database_session.query(PostgamePitcherGameEntry).get(item.rotowire_id,
+                                                                                            item.game_date)
+            if postgame_entry is None:
                 continue
 
             x.append(input_vector)

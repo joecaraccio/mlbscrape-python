@@ -156,7 +156,7 @@ class BaseballReference(object):
         :param table_column_label:
         :return:
         """
-        BATTER_VS_PITCHER_BASE = "/play-index/batter_vs_pitcher.cgi?batter="
+        BATTER_VS_PITCHER_BASE = BaseballReference.BASE_URL + "/play-index/batter_vs_pitcher.cgi?batter="
 
         results_table = soup.find("table", {"id": "ajax_result_table"})
         if results_table is None:

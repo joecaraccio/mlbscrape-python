@@ -78,14 +78,14 @@ class GetHittingStats(unittest.TestCase):
         ID = "pedrodu01"
         soup = BeautifulSoupHelper.get_soup_from_url(HTML_LOCATION)
         career_stats = BaseballReference.get_recent_hitting_stats(ID, soup)
-        self.assertEqual(int(career_stats["AB"]), 48)
-        self.assertEqual(int(career_stats["R"]), 8)
-        self.assertEqual(int(career_stats["H"]), 14)
+        self.assertEqual(int(career_stats["AB"]), 24)
+        self.assertEqual(int(career_stats["R"]), 4)
+        self.assertEqual(int(career_stats["H"]), 7)
         self.assertEqual(int(career_stats["HR"]), 1)
-        self.assertEqual(int(career_stats["RBI"]), 4)
+        self.assertEqual(int(career_stats["RBI"]), 3)
         self.assertEqual(int(career_stats["SB"]), 0)
-        self.assertEqual(int(career_stats["BB"]), 3)
-        self.assertEqual(int(career_stats["SO"]), 10)
+        self.assertEqual(int(career_stats["BB"]), 0)
+        self.assertEqual(int(career_stats["SO"]), 5)
 
     def test_vs_hand_typical(self):
         HTML_LOCATION = "career_stats_pedroia.html"
@@ -122,11 +122,11 @@ class GetHittingStats(unittest.TestCase):
         PITCHER_ID = "sabatc.01"
         soup = BeautifulSoupHelper.get_soup_from_url(HTML_LOCATION)
         vs_stats = BaseballReference.get_vs_pitcher_stats(ID, PITCHER_ID, soup)
-        self.assertEqual(int(vs_stats["AB"]), 61)
-        self.assertEqual(int(vs_stats["H"]), 17)
+        self.assertEqual(int(vs_stats["AB"]), 68)
+        self.assertEqual(int(vs_stats["H"]), 19)
         self.assertEqual(int(vs_stats["HR"]), 0)
         self.assertEqual(int(vs_stats["RBI"]), 3)
-        self.assertEqual(int(vs_stats["BB"]), 6)
+        self.assertEqual(int(vs_stats["BB"]), 8)
         self.assertEqual(int(vs_stats["SO"]), 15)
 
 
@@ -189,9 +189,9 @@ class GetTeamInfoTest(unittest.TestCase):
 
     def runTest(self):
         team_soup = BeautifulSoupHelper.get_soup_from_url(GetTeamInfoTest.HTML_LOCATION)
-        team_info = BaseballReference.get_team_info("San Diego Padres", 2016, team_soup)
-        self.assertEqual(team_info.hitter_factor, 93)
-        self.assertEqual(team_info.pitcher_factor, 94)
+        hitter_factor, pitcher_factor = BaseballReference.get_team_info("San Diego Padres", 2016, team_soup)
+        self.assertEqual(hitter_factor, 93)
+        self.assertEqual(pitcher_factor, 94)
 
 
 def suite():

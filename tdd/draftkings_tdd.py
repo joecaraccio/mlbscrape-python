@@ -4,13 +4,14 @@ from Released.mlbscrape_python.mine.draft_kings import Draftkings
 from Released.mlbscrape_python.mine.draft_kings import OptimalLineupDict
 from Released.mlbscrape_python.sql.pregame_hitter import PregameHitterGameEntry
 from Released.mlbscrape_python.sql.pregame_pitcher import PregamePitcherGameEntry
+import heapq
 
 
 class OptimalLineupTest(unittest.TestCase):
     """ Base class used to initialize the optimal lineup before operating on it
     """
     OPTIMAL_LINEUP_SP1_ID = "1"
-    OPTIMAL_LINEUP_SP1_SALARY = 10000
+    OPTIMAL_LINEUP_SP1_SALARY = 1000
     OPTIMAL_LINEUP_SP1_POINTS = 23.5
 
     OPTIMAL_LINEUP_SP2_ID = "2"
@@ -30,7 +31,7 @@ class OptimalLineupTest(unittest.TestCase):
     OPTIMAL_LINEUP_2B_POINTS = 10
 
     OPTIMAL_LINEUP_3B_ID = "6"
-    OPTIMAL_LINEUP_3B_SALARY = 5500
+    OPTIMAL_LINEUP_3B_SALARY = 4500
     OPTIMAL_LINEUP_3B_POINTS = 14
 
     OPTIMAL_LINEUP_SS_ID = "7"
@@ -46,7 +47,7 @@ class OptimalLineupTest(unittest.TestCase):
     OPTIMAL_LINEUP_OF2_POINTS = 15
 
     OPTIMAL_LINEUP_OF3_ID = "10"
-    OPTIMAL_LINEUP_OF3_SALARY = 6000
+    OPTIMAL_LINEUP_OF3_SALARY = 3000
     OPTIMAL_LINEUP_OF3_POINTS = 13
 
     OPTIMAL_LINEUP_TOTAL_SALARY = OPTIMAL_LINEUP_SP1_SALARY + OPTIMAL_LINEUP_SP2_SALARY + \
@@ -76,6 +77,7 @@ class OptimalLineupTest(unittest.TestCase):
         player3.draftkings_salary = OptimalLineupTest.OPTIMAL_LINEUP_C_SALARY
         player3.predicted_draftkings_points = OptimalLineupTest.OPTIMAL_LINEUP_C_POINTS
         player3.primary_position = "C"
+        player3.secondary_position = "1B"
         self.optimal_lineup.add(player3)
 
         player4 = PregameHitterGameEntry()
@@ -83,6 +85,7 @@ class OptimalLineupTest(unittest.TestCase):
         player4.draftkings_salary = OptimalLineupTest.OPTIMAL_LINEUP_1B_SALARY
         player4.predicted_draftkings_points = OptimalLineupTest.OPTIMAL_LINEUP_1B_POINTS
         player4.primary_position = "1B"
+        player4.secondary_position = "1B"
         self.optimal_lineup.add(player4)
 
         player5 = PregameHitterGameEntry()
@@ -90,12 +93,14 @@ class OptimalLineupTest(unittest.TestCase):
         player5.draftkings_salary = OptimalLineupTest.OPTIMAL_LINEUP_2B_SALARY
         player5.predicted_draftkings_points = OptimalLineupTest.OPTIMAL_LINEUP_2B_POINTS
         player5.primary_position = "2B"
+        player5.secondary_position = "SS"
         self.optimal_lineup.add(player5)
 
         player6 = PregameHitterGameEntry()
         player6.rotowire_id = OptimalLineupTest.OPTIMAL_LINEUP_3B_ID
         player6.draftkings_salary = OptimalLineupTest.OPTIMAL_LINEUP_3B_SALARY
         player6.predicted_draftkings_points = OptimalLineupTest.OPTIMAL_LINEUP_3B_POINTS
+        player6.primary_position = "3B"
         player6.primary_position = "3B"
         self.optimal_lineup.add(player6)
 
@@ -104,6 +109,7 @@ class OptimalLineupTest(unittest.TestCase):
         player7.draftkings_salary = OptimalLineupTest.OPTIMAL_LINEUP_SS_SALARY
         player7.predicted_draftkings_points = OptimalLineupTest.OPTIMAL_LINEUP_SS_POINTS
         player7.primary_position = "SS"
+        player7.secondary_position = "SS"
         self.optimal_lineup.add(player7)
 
         player8 = PregameHitterGameEntry()
@@ -111,12 +117,14 @@ class OptimalLineupTest(unittest.TestCase):
         player8.draftkings_salary = OptimalLineupTest.OPTIMAL_LINEUP_OF1_SALARY
         player8.predicted_draftkings_points = OptimalLineupTest.OPTIMAL_LINEUP_OF1_POINTS
         player8.primary_position = "OF"
+        player8.secondary_position = "OF"
         self.optimal_lineup.add(player8)
 
         player9 = PregameHitterGameEntry()
         player9.rotowire_id = OptimalLineupTest.OPTIMAL_LINEUP_OF2_ID
         player9.draftkings_salary = OptimalLineupTest.OPTIMAL_LINEUP_OF2_SALARY
         player9.predicted_draftkings_points = OptimalLineupTest.OPTIMAL_LINEUP_OF2_POINTS
+        player9.primary_position = "OF"
         player9.primary_position = "OF"
         self.optimal_lineup.add(player9)
 
@@ -125,6 +133,7 @@ class OptimalLineupTest(unittest.TestCase):
         player10.draftkings_salary = OptimalLineupTest.OPTIMAL_LINEUP_OF3_SALARY
         player10.predicted_draftkings_points = OptimalLineupTest.OPTIMAL_LINEUP_OF3_POINTS
         player10.primary_position = "OF"
+        player10.secondary_position = "OF"
         self.optimal_lineup.add(player10)
 
 
@@ -189,15 +198,23 @@ class TestAddPlayerWorse(OptimalLineupTest):
 
 class TestAddPlayerSecondary(OptimalLineupTest):
     """ Test of a SS where the candidate SS has a smaller points per dollar ratio than the original optimal SS
-    but larger then the original optimal 3B. Therefore, the player is added to the lineup at 3B.
+    but larger then the original optimal 2B. Therefore, the player is added to the lineup at 3B.
     """
     CANDIDATE_ID = "9999"
     CANDIDATE_PRIMARY_POS = "SS"
-    CANDIDATE_SECONDARY_POS = "3B"
-    CANDIDATE_POINTS = OptimalLineupTest.OPTIMAL_LINEUP_3B_POINTS
-    CANDIDATE_SALARY = OptimalLineupTest.OPTIMAL_LINEUP_3B_SALARY - 100
+    CANDIDATE_SECONDARY_POS = "2B"
+    CANDIDATE_POINTS = (float(OptimalLineupTest.OPTIMAL_LINEUP_SS_POINTS) + OptimalLineupTest.OPTIMAL_LINEUP_2B_POINTS) / 2
+    CANDIDATE_SALARY = OptimalLineupTest.OPTIMAL_LINEUP_SS_SALARY - 700
 
     def runTest(self):
+        # Sanity check of the relationship of our parameters
+        self.assertLess(TestAddPlayerSecondary.CANDIDATE_POINTS, OptimalLineupTest.OPTIMAL_LINEUP_SS_POINTS)
+        self.assertGreater(TestAddPlayerSecondary.CANDIDATE_POINTS, OptimalLineupTest.OPTIMAL_LINEUP_2B_POINTS)
+        self.assertLess(TestAddPlayerSecondary.CANDIDATE_SALARY / float(TestAddPlayerSecondary.CANDIDATE_POINTS),
+                        OptimalLineupTest.OPTIMAL_LINEUP_2B_SALARY / float(OptimalLineupTest.OPTIMAL_LINEUP_2B_POINTS))
+        self.assertLessEqual(OptimalLineupTest.OPTIMAL_LINEUP_TOTAL_SALARY - OptimalLineupTest.OPTIMAL_LINEUP_2B_SALARY +
+                             TestAddPlayerSecondary.CANDIDATE_SALARY, Draftkings.CONTEST_SALARY)
+
         player = PregameHitterGameEntry()
         player.rotowire_id = TestAddPlayerSecondary.CANDIDATE_ID
         player.primary_position = TestAddPlayerSecondary.CANDIDATE_PRIMARY_POS
@@ -212,7 +229,7 @@ class TestAddPlayerSecondary(OptimalLineupTest):
 
         self.assertEqual(self.optimal_lineup.get_total_salary(),
                          OptimalLineupTest.OPTIMAL_LINEUP_TOTAL_SALARY -
-                         OptimalLineupTest.OPTIMAL_LINEUP_3B_SALARY +
+                         OptimalLineupTest.OPTIMAL_LINEUP_2B_SALARY +
                          TestAddPlayerSecondary.CANDIDATE_SALARY)
 
 
@@ -252,16 +269,8 @@ class TestAddOutfielder(OptimalLineupTest):
     CANDIDATE_ID = "9999"
     CANDIDATE_PRIMARY_POS = "OF"
     CANDIDATE_SECONDARY_POS = "1B"
-    CANDIDATE_POINTS = OptimalLineupTest.OPTIMAL_LINEUP_OF2_POINTS
+    CANDIDATE_POINTS = (OptimalLineupTest.OPTIMAL_LINEUP_OF1_POINTS + OptimalLineupTest.OPTIMAL_LINEUP_OF2_POINTS)/2
     CANDIDATE_SALARY = OptimalLineupTest.OPTIMAL_LINEUP_OF2_SALARY - 100
-    CANDIDATE_INSERTION_POSITION = 1
-
-    BEST_CANDIDATE_ID = "1212"
-    BEST_CANDIDATE_PRIMARY_POS = "OF"
-    BEST_CANDIDATE_SECONDARY_POS = "OF"
-    BEST_CANDIDATE_POINTS = OptimalLineupTest.OPTIMAL_LINEUP_OF1_POINTS
-    BEST_CANDIDATE_SALARY = OptimalLineupTest.OPTIMAL_LINEUP_OF1_SALARY - 100
-    BEST_CANDIDATE_INSERTION_POSITION = 2
 
     def runTest(self):
         # Add the mediocre player
@@ -272,35 +281,17 @@ class TestAddOutfielder(OptimalLineupTest):
         player.predicted_draftkings_points = TestAddOutfielder.CANDIDATE_POINTS
         player.draftkings_salary = TestAddOutfielder.CANDIDATE_SALARY
         self.optimal_lineup.add(player)
-        self.assertEqual(self.optimal_lineup[TestAddOutfielder.CANDIDATE_PRIMARY_POS][TestAddOutfielder.CANDIDATE_INSERTION_POSITION][1].rotowire_id,
+        worst_player = heapq.heappop(self.optimal_lineup[TestAddOutfielder.CANDIDATE_PRIMARY_POS])
+        self.assertEqual(self.optimal_lineup[TestAddOutfielder.CANDIDATE_PRIMARY_POS][0][1].rotowire_id,
                          TestAddOutfielder.CANDIDATE_ID)
+        heapq.heappush(self.optimal_lineup[TestAddOutfielder.CANDIDATE_PRIMARY_POS], worst_player)
         self.assertEqual(self.optimal_lineup[TestAddOutfielder.CANDIDATE_SECONDARY_POS].rotowire_id,
                          OptimalLineupTest.OPTIMAL_LINEUP_1B_ID)
 
         self.assertEqual(self.optimal_lineup.get_total_salary(),
                          OptimalLineupTest.OPTIMAL_LINEUP_TOTAL_SALARY -
-                         OptimalLineupTest.OPTIMAL_LINEUP_OF3_SALARY +
+                         OptimalLineupTest.OPTIMAL_LINEUP_OF1_SALARY +
                          TestAddOutfielder.CANDIDATE_SALARY)
-
-        # Add the best player
-        best_player = PregameHitterGameEntry()
-        best_player.rotowire_id = TestAddOutfielder.BEST_CANDIDATE_ID
-        best_player.primary_position = TestAddOutfielder.BEST_CANDIDATE_PRIMARY_POS
-        best_player.secondary_position = TestAddOutfielder.BEST_CANDIDATE_SECONDARY_POS
-        best_player.predicted_draftkings_points = TestAddOutfielder.BEST_CANDIDATE_POINTS
-        best_player.draftkings_salary = TestAddOutfielder.BEST_CANDIDATE_SALARY
-        self.optimal_lineup.add(best_player)
-        self.assertEqual(self.optimal_lineup[TestAddOutfielder.BEST_CANDIDATE_PRIMARY_POS][TestAddOutfielder.BEST_CANDIDATE_INSERTION_POSITION][1].rotowire_id,
-                         TestAddOutfielder.BEST_CANDIDATE_ID)
-
-        self.assertEqual(self.optimal_lineup.get_total_salary(),
-                         OptimalLineupTest.OPTIMAL_LINEUP_TOTAL_SALARY -
-                         OptimalLineupTest.OPTIMAL_LINEUP_OF3_SALARY +
-                         TestAddOutfielder.CANDIDATE_SALARY -
-                         OptimalLineupTest.OPTIMAL_LINEUP_OF2_SALARY +
-                         TestAddOutfielder.BEST_CANDIDATE_SALARY)
-
-
 
 
 class GetSalariesTest(unittest.TestCase):

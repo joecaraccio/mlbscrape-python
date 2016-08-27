@@ -43,6 +43,17 @@ class OptimalLineupDict(dict):
         """
         return self._total_salary
 
+    def is_position_open(self, position):
+        try:
+            if self[position] is None:
+                return True
+            elif position == "OF" and len(self["OF"]) == 3:
+                return True
+        except KeyError:
+            return True
+
+        return True
+
     def add(self, sql_player):
         """Add a player to the optimal lineup dictionary based on his positions
         :param sql_player: a SQLAlchemy object with the first_name and last_name attribute
@@ -57,36 +68,35 @@ class OptimalLineupDict(dict):
                 self._add_player(sql_player, worst_position_candidate)
 
     def get_position_priorities(self, primary_position, secondary_position):
-        best_candidate_position = primary_position
-        worst_candidate_position = secondary_position
+        """ Decide which position would be better for this player to play based on projected points
+        :param primary_position: the primary position of the player
+        :param secondary_position: the secondary position of the player
+        :return: a list of the posiitons from most suitable to least suitable
+        """
 
-        if self[primary_position] is None and self[secondary_position] is not None:
-            if not primary_position == "OF":
-                best_candidate_position = secondary_position
-                worst_candidate_position = primary_position
-            return best_candidate_position, worst_candidate_position
-        elif self[secondary_position] is None:
-            return best_candidate_position, worst_candidate_position
+        # Primary position is open
+        if self.is_position_open(primary_position):
+            return primary_position, secondary_position
 
-        if primary_position == "OF":
-            if len(self[primary_position]) > 0:
-                primary_player = self[primary_position][0][1]
-            else:
-                return best_candidate_position, worst_candidate_position
+        # Primary position not open, Secondary position is open
+        if self.is_position_open(secondary_position):
+            return secondary_position, primary_position
+        # Both positions not open, some arbitration required
         else:
-            primary_player = self[primary_position]
-        if secondary_position == "OF":
-            if len(self[secondary_position]) > 0:
-                secondary_player = self[secondary_position][0][1]
+            if primary_position == "OF":
+                primary_player = self["OF"][0][1]
             else:
-                return best_candidate_position, worst_candidate_position
-        else:
-            secondary_player = self[secondary_position]
-        if primary_player.points_per_dollar() < secondary_player.points_per_dollar():
-            best_candidate_position = secondary_position
-            worst_candidate_position = primary_position
+                primary_player = self[primary_position]
 
-        return best_candidate_position, worst_candidate_position
+            if secondary_position == "OF":
+                secondary_player = self["OF"][0][1]
+            else:
+                secondary_player = self[secondary_position]
+
+            if primary_player.predicted_draftkings_points < secondary_player.predicted_draftkings_points:
+                return secondary_position, primary_position
+
+        return primary_position, secondary_position
 
     def _add_player(self, sql_player, position):
         """ Add a player to the optimal lineup dictionary based on his primary position
@@ -111,27 +121,34 @@ class OptimalLineupDict(dict):
 
         if position == "SP" or position == "OF":
             if len(self[position]) < max_number_players:
-                heapq.heappush(self[position], (points_per_dollar, sql_player))
-                self._total_salary += sql_player.draftkings_salary
-                return True
-            else:
-                worst_player = self[position][0][1]
-                if worst_player.points_per_dollar() < points_per_dollar:
-                    heapq.heappushpop(self[position], (points_per_dollar, sql_player))
-                    self._total_salary -= worst_player.draftkings_salary
+                if self.get_total_salary() + sql_player.draftkings_salary <= Draftkings.CONTEST_SALARY:
+                    heapq.heappush(self[position], (sql_player.predicted_draftkings_points, sql_player))
                     self._total_salary += sql_player.draftkings_salary
                     return True
+            else:
+                for i in range(0, len(self[position])):
+                    worst_player = self[position][i][1]
+                    if worst_player.points_per_dollar() < points_per_dollar:
+                        if self.get_total_salary() + sql_player.draftkings_salary - worst_player.draftkings_salary <= Draftkings.CONTEST_SALARY:
+                            heapq.heappushpop(self[position], (sql_player.predicted_draftkings_points, sql_player))
+                            self._total_salary -= worst_player.draftkings_salary
+                            self._total_salary += sql_player.draftkings_salary
+                            return True
         else:
             if self[position] is None:
-                self._total_salary += sql_player.draftkings_salary
-                self[position] = sql_player
-                return True
+                if self.get_total_salary() + sql_player.draftkings_salary <= Draftkings.CONTEST_SALARY:
+                    self._total_salary += sql_player.draftkings_salary
+                    self[position] = sql_player
+                    return True
             worst_player = self[position]
             if worst_player.points_per_dollar() < points_per_dollar:
+                if self.get_total_salary() + sql_player.draftkings_salary - worst_player.draftkings_salary <= Draftkings.CONTEST_SALARY:
                     self._total_salary -= worst_player.draftkings_salary
                     self._total_salary += sql_player.draftkings_salary
                     self[position] = sql_player
                     return True
+
+        return False
 
     def is_in_dict(self, sql_player):
         try:
@@ -248,7 +265,9 @@ class Draftkings(object):
         for pregame_entry in pregame_hitters:
             # Lookup the player's name in the database
             # Lookup the name in the dictionary
-            hitter_entry = database_session.query(HitterEntry).filter(HitterEntry.rotowire_id == pregame_entry.rotowire_id).first()
+            hitter_entry = database_session.query(HitterEntry).get(pregame_entry.rotowire_id)
+            if hitter_entry is None:
+                print "Player %s not found in the Draftkings CSV file. Deleting entry." % pregame_entry.rotowire_id
             try:
                 csv_entry = csv_dict[(hitter_entry.first_name + " " + hitter_entry.last_name + hitter_entry.team).lower()]
                 pregame_entry.draftkings_salary = int(csv_entry["Salary"])
@@ -266,7 +285,9 @@ class Draftkings(object):
         for pregame_entry in pregame_pitchers:
             # Lookup the player's name in the database
             # Lookup the name in the dictionary
-            pitcher_entry = database_session.query(PitcherEntry).filter(PitcherEntry.rotowire_id == pregame_entry.rotowire_id).first()
+            pitcher_entry = database_session.query(PitcherEntry).get(pregame_entry.rotowire_id)
+            if pitcher_entry is None:
+                print "Player %s not found in the Draftkings CSV file. Deleting entry." % pregame_entry.rotowire_id
             try:
                 csv_entry = csv_dict[(pitcher_entry.first_name + " " + pitcher_entry.last_name + pitcher_entry.team).lower()]
                 pregame_entry.draftkings_salary = int(csv_entry["Salary"])

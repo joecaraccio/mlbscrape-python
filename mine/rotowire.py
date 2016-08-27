@@ -163,7 +163,7 @@ def get_hitter(soup, team, database_session=None):
         name = get_name_from_id(rotowire_id)
     else:
         try:
-            hitter_entry = database_session.query(HitterEntry).filter(HitterEntry.rotowire_id == rotowire_id).one()
+            hitter_entry = database_session.query(HitterEntry).get(rotowire_id)
             name = "%s %s" % (hitter_entry.first_name, hitter_entry.last_name)
             hand = hitter_entry.batting_hand
         except NoResultFound:
@@ -180,13 +180,14 @@ def get_pitcher(soup, team, database_session=None):
     if database_session is None:
         name = get_name_from_id(rotowire_id)
     else:
-        try:
-            pitcher_entry = database_session.query(PitcherEntry).filter(PitcherEntry.rotowire_id == rotowire_id).one()
+        pitcher_entry = database_session.query(PitcherEntry).get(rotowire_id)
+        if pitcher_entry is not None:
             name = "%s %s" % (pitcher_entry.first_name, pitcher_entry.last_name)
             hand = pitcher_entry.pitching_hand
-        except NoResultFound:
+        else:
             name = get_name_from_id(rotowire_id)
             hand = get_hand(soup)
+
     return PlayerStruct(name, team, rotowire_id, "P", hand)
 
 
@@ -230,14 +231,14 @@ def update_lineup_ids(lineup, database_session):
         name = current_player.name.split()
         first_name = name[0]
         last_name = " ".join(str(x) for x in name[1:len(name)])
-        db_query = database_session.query(HitterEntry).filter(HitterEntry.rotowire_id == current_player.rotowire_id)
+        db_query = database_session.query(HitterEntry).get(current_player.rotowire_id)
         # Found unique entry, check to make sure the team matches the database
-        if db_query.count() == 1:
-            if db_query[0].team == current_player.team:
+        if db_query is not None:
+            if db_query.team == current_player.team:
                 continue
             # Update the player's team in the database
             else:
-                db_query[0].team = current_player.team
+                db_query.team = current_player.team
                 database_session.commit()
         # Found no entries, create a bare bones entry with just the name and id
         else:
@@ -258,22 +259,22 @@ def update_pitcher_id(pitcher, database_session):
     name = pitcher.name.split()
     first_name = name[0]
     last_name = " ".join(str(x) for x in name[1:len(name)])
-    db_query = database_session.query(PitcherEntry).filter(PitcherEntry.rotowire_id == pitcher.rotowire_id)
+    db_query = database_session.query(PitcherEntry).get(pitcher.rotowire_id)
     # Found unique entry, check to make sure the team matches the database
-    if db_query.count() == 1:
-        if db_query[0].team == pitcher.team:
+    if db_query is not None:
+        if db_query.team == pitcher.team:
             return
         # Update the player's team in the database
         else:
-            db_query[0].team = pitcher.team
+            db_query.team = pitcher.team
             database_session.commit()
     # Found no entries, create a bare bones entry with just the name and id
     else:
         try:
             baseball_reference_id = BaseballReference.get_pitcher_id(first_name + " " + last_name,
-                                                                    BaseballReference.team_dict.inv[team_dict[pitcher.team]],
-                                                                    date.today().year,
-                                                                    pitcher_soup)
+                                                                     BaseballReference.team_dict.inv[team_dict[pitcher.team]],
+                                                                     date.today().year,
+                                                                     pitcher_soup)
         except BaseballReference.NameNotFound:
             print "Skipping committing this pitcher '%s %s'." % (first_name, last_name)
             return
@@ -434,10 +435,10 @@ def get_hitter_stats(batter_id, pitcher_id, team, pitcher_hand, database_session
     pregame_hitter_entry.team = team
 
     # Career stats
-    hitter_entries = database_session.query(HitterEntry).filter(HitterEntry.rotowire_id == batter_id)
-    if hitter_entries.count() == 0:
+    hitter_entry = database_session.query(HitterEntry).get(batter_id)
+    if hitter_entry is None:
         raise HitterNotFound(batter_id)
-    hitter_entry = hitter_entries[0]
+
     hitter_career_soup = BaseballReference.get_hitter_page_career_soup(hitter_entry.baseball_reference_id)
     try:
         career_stats = BaseballReference.get_career_hitting_stats(hitter_entry.baseball_reference_id, hitter_career_soup)
@@ -547,10 +548,9 @@ def get_pitcher_stats(pitcher_id, team, opposing_team, database_session, game_da
     pregame_pitcher_entry.game_date = game_date
 
     # Career stats
-    pitcher_entries = database_session.query(PitcherEntry).filter(PitcherEntry.rotowire_id == pitcher_id)
-    if pitcher_entries.count() == 0:
+    pitcher_entry = database_session.query(PitcherEntry).get(pitcher_id)
+    if pitcher_entry is None:
         raise PitcherNotFound(pitcher_id)
-    pitcher_entry = pitcher_entries[0]
 
     pitcher_career_soup = BaseballReference.get_pitcher_page_career_soup(pitcher_entry.baseball_reference_id)
     try:
@@ -632,7 +632,7 @@ def mine_yesterdays_results(database_session):
     # Query the database for all hitter game entries from yesterday
     hitter_entries = database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.game_date == (date.today() - timedelta(days=1)))
     for pregame_hitter_entry in hitter_entries:
-        hitter_entry = database_session.query(HitterEntry).filter(HitterEntry.rotowire_id == pregame_hitter_entry.rotowire_id)[0]
+        hitter_entry = database_session.query(HitterEntry).get(pregame_hitter_entry.rotowire_id)
         try:
             stat_row_dict = BaseballReference.get_yesterdays_hitting_game_log(hitter_entry.baseball_reference_id)
         except BaseballReference.TableRowNotFound:
@@ -672,7 +672,7 @@ def mine_yesterdays_results(database_session):
     # Query the database for all hitter game entries from yesterday
     pitcher_entries = database_session.query(PregamePitcherGameEntry).filter(PregamePitcherGameEntry.game_date == (date.today() - timedelta(days=1)))
     for pregame_pitcher_entry in pitcher_entries:
-        pitcher_entry = database_session.query(PitcherEntry).filter(PitcherEntry.rotowire_id == pregame_pitcher_entry.rotowire_id)[0]
+        pitcher_entry = database_session.query(PitcherEntry).get(pregame_pitcher_entry.rotowire_id)
         print "Mining yesterday for %s %s" % (pitcher_entry.first_name, pitcher_entry.last_name)
         try:
             stat_row_dict = BaseballReference.get_pitching_game_log(pitcher_entry.baseball_reference_id)

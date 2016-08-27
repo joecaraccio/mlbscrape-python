@@ -1,19 +1,19 @@
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from baseball_reference import BaseballReference
 from beautiful_soup_helper import BeautifulSoupHelper
 from sql.hitter_entry import HitterEntry
 from sql.pregame_hitter import PregameHitterGameEntry
 from sql.pregame_pitcher import PregamePitcherGameEntry
 from sql.pitcher_entry import PitcherEntry
-#from sql.game import GameEntry
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import NoResultFound
 import bidict
 from sql.postgame_hitter import PostgameHitterGameEntry
 from sql.postgame_pitcher import PostgamePitcherGameEntry
-from mine.draft_kings import Draftkings
-from sql.mlb_database import MlbDatabase, mlb_database
+from sql.mlb_database import MlbDatabase
+from sql.game import GameEntry
 from multiprocessing import Pool
+from mine.draft_kings import Draftkings
 
 # Daily lineups relevant HTML labels
 DAILY_LINEUPS_URL = "http://www.rotowire.com/baseball/daily_lineups.htm"
@@ -21,7 +21,7 @@ GAME_REGION_LABEL = "offset1 span15"
 TEAM_REGION_LABEL = "span15 dlineups-topbox"
 AWAY_TEAM_REGION_LABEL = "span5 dlineups-topboxleft"
 HOME_TEAM_REGION_LABEL = "span5 dlineups-topboxright"
-TIME_REGION_LABEL = "span5 dlineups-topboxcenter-topline"
+TIME_REGION_LABEL = "dlineups-topboxcenter-topline"
 AWAY_TEAM_PLAYER_LABEL = "dlineups-vplayer"
 HOME_TEAM_PLAYER_LABEL = "dlineups-hplayer"
 LINEUPS_CLASS_LABEL = "span15 dlineups-mainbox"
@@ -41,6 +41,8 @@ BATTER_SPLIT_BASE_URL = "http://www.rotowire.com/baseball/battersplit.htm?id="
 
 # Split stats relevent HTML labels
 SPLIT_TABLE_LABEL = "tablesorter makesortable"
+
+WIND_LABEL = "dlineups-topboxcenter-bottomline"
 
 
 class PlayerStruct(object):
@@ -71,11 +73,11 @@ class HomeAwayEnum:
     HOME = 1
 
 
-def mine_pregame_stats(mlb_database):
+def mine_pregame_stats():
     """ Mine the hitter/pitcher stats and predict the outcomes and commit to the database session
     :param mlb_database: MlbDatabase object
     """
-    database_session = mlb_database.open_session()
+    database_session = MlbDatabase().open_session()
     games = get_game_lineups(database_session)
     update_ids(games, database_session)
     get_pregame_hitting_stats(games)
@@ -115,11 +117,29 @@ def get_game_lineups(database_session):
             continue
 
         current_game = Game(away_team_lineup, away_team_pitcher, home_team_lineup, home_team_pitcher)
-        """game_time = game_node.find("div", {"class": TIME_REGION_LABEL}).find("a").text
-        game_entry = GameEntry(date.today(), game_time, home_team_abbreviation, away_team_abbreviation)
-        database_session.add(game_entry)
-        database_session.commit()
-        """
+
+        # TODO: since they only release the ump data ~1 hour before the game, we'll have to make this robust later
+        try:
+            game_time = game_node.find("div", {"class": TIME_REGION_LABEL}).find("a").text.replace("ET", "").strip()
+            game_time = datetime.strptime(game_time, '%I:%M %p').strftime("%H:%M")
+            game_entry = GameEntry(date.today(), game_time, home_team_abbreviation, away_team_abbreviation)
+            game_entry.wind_speed = get_wind_speed(game_node)
+            game_entry.ump_ks_per_game = get_ump_ks_per_game(game_node)
+            game_entry.ump_runs_per_game = get_ump_runs_per_game(game_node)
+            game_entry.park_hitter_score, game_entry.park_pitcher_score = BaseballReference.get_team_info(team_dict[home_team_abbreviation])
+
+            database_session.add(game_entry)
+            database_session.commit()
+        except IntegrityError:
+            database_session.rollback()
+            print "Warning: attempt to duplicate game entry: %s %s %s %s" % (str(home_team_abbreviation),
+                                                                             str(away_team_abbreviation),
+                                                                             str(game_entry.game_date),
+                                                                             str(game_entry.game_time))
+        except Exception as e:
+            print e
+            pass
+
         if current_game.is_valid():
             games.append(current_game)
         else:
@@ -143,7 +163,7 @@ def get_hitter(soup, team, database_session=None):
         name = get_name_from_id(rotowire_id)
     else:
         try:
-            hitter_entry = database_session.query(HitterEntry).filter(HitterEntry.rotowire_id == rotowire_id).one()
+            hitter_entry = database_session.query(HitterEntry).get(rotowire_id)
             name = "%s %s" % (hitter_entry.first_name, hitter_entry.last_name)
             hand = hitter_entry.batting_hand
         except NoResultFound:
@@ -160,13 +180,14 @@ def get_pitcher(soup, team, database_session=None):
     if database_session is None:
         name = get_name_from_id(rotowire_id)
     else:
-        try:
-            pitcher_entry = database_session.query(PitcherEntry).filter(PitcherEntry.rotowire_id == rotowire_id).one()
+        pitcher_entry = database_session.query(PitcherEntry).get(rotowire_id)
+        if pitcher_entry is not None:
             name = "%s %s" % (pitcher_entry.first_name, pitcher_entry.last_name)
             hand = pitcher_entry.pitching_hand
-        except NoResultFound:
+        else:
             name = get_name_from_id(rotowire_id)
             hand = get_hand(soup)
+
     return PlayerStruct(name, team, rotowire_id, "P", hand)
 
 
@@ -210,14 +231,14 @@ def update_lineup_ids(lineup, database_session):
         name = current_player.name.split()
         first_name = name[0]
         last_name = " ".join(str(x) for x in name[1:len(name)])
-        db_query = database_session.query(HitterEntry).filter(HitterEntry.rotowire_id == current_player.rotowire_id)
+        db_query = database_session.query(HitterEntry).get(current_player.rotowire_id)
         # Found unique entry, check to make sure the team matches the database
-        if db_query.count() == 1:
-            if db_query[0].team == current_player.team:
+        if db_query is not None:
+            if db_query.team == current_player.team:
                 continue
             # Update the player's team in the database
             else:
-                db_query[0].team = current_player.team
+                db_query.team = current_player.team
                 database_session.commit()
         # Found no entries, create a bare bones entry with just the name and id
         else:
@@ -238,22 +259,22 @@ def update_pitcher_id(pitcher, database_session):
     name = pitcher.name.split()
     first_name = name[0]
     last_name = " ".join(str(x) for x in name[1:len(name)])
-    db_query = database_session.query(PitcherEntry).filter(PitcherEntry.rotowire_id == pitcher.rotowire_id)
+    db_query = database_session.query(PitcherEntry).get(pitcher.rotowire_id)
     # Found unique entry, check to make sure the team matches the database
-    if db_query.count() == 1:
-        if db_query[0].team == pitcher.team:
+    if db_query is not None:
+        if db_query.team == pitcher.team:
             return
         # Update the player's team in the database
         else:
-            db_query[0].team = pitcher.team
+            db_query.team = pitcher.team
             database_session.commit()
     # Found no entries, create a bare bones entry with just the name and id
     else:
         try:
             baseball_reference_id = BaseballReference.get_pitcher_id(first_name + " " + last_name,
-                                                                    BaseballReference.team_dict.inv[team_dict[pitcher.team]],
-                                                                    date.today().year,
-                                                                    pitcher_soup)
+                                                                     BaseballReference.team_dict.inv[team_dict[pitcher.team]],
+                                                                     date.today().year,
+                                                                     pitcher_soup)
         except BaseballReference.NameNotFound:
             print "Skipping committing this pitcher '%s %s'." % (first_name, last_name)
             return
@@ -284,7 +305,7 @@ def get_name_from_id(rotowire_id):
 
 
 def get_pregame_hitting_stats_wrapper(game):
-    database_session = mlb_database.open_session()
+    database_session = MlbDatabase().open_session()
     for current_hitter in game.away_lineup:
         pitcher_hand = game.home_pitcher.hand
         print "Mining %s." % current_hitter.name
@@ -333,7 +354,7 @@ def get_pregame_hitting_stats_wrapper(game):
 
 
 def get_pregame_hitting_stats(games):
-    thread_pool = Pool(4)
+    thread_pool = Pool(6)
 
     thread_pool.map(get_pregame_hitting_stats_wrapper, games)
 
@@ -343,13 +364,13 @@ def predict_draftkings_points(pregame_hitter_entry):
 
 
 def get_pregame_pitching_stats(games):
-    thread_pool = Pool(4)
+    thread_pool = Pool(6)
 
     thread_pool.map(get_pregame_pitching_stats_wrapper, games)
 
 
 def get_pregame_pitching_stats_wrapper(game):
-    database_session = mlb_database.open_session()
+    database_session = MlbDatabase().open_session()
 
     current_pitcher = game.away_pitcher
     print "Mining %s." % current_pitcher.name
@@ -414,10 +435,10 @@ def get_hitter_stats(batter_id, pitcher_id, team, pitcher_hand, database_session
     pregame_hitter_entry.team = team
 
     # Career stats
-    hitter_entries = database_session.query(HitterEntry).filter(HitterEntry.rotowire_id == batter_id)
-    if hitter_entries.count() == 0:
+    hitter_entry = database_session.query(HitterEntry).get(batter_id)
+    if hitter_entry is None:
         raise HitterNotFound(batter_id)
-    hitter_entry = hitter_entries[0]
+
     hitter_career_soup = BaseballReference.get_hitter_page_career_soup(hitter_entry.baseball_reference_id)
     try:
         career_stats = BaseballReference.get_career_hitting_stats(hitter_entry.baseball_reference_id, hitter_career_soup)
@@ -491,12 +512,11 @@ def get_hitter_stats(batter_id, pitcher_id, team, pitcher_hand, database_session
         print str(e), "with", str(hitter_entry.first_name), str(hitter_entry.last_name)
 
     # Career versus this pitcher
-    pitcher_entries = database_session.query(PitcherEntry).filter(PitcherEntry.rotowire_id == pregame_hitter_entry.pitcher_id)
+    pitcher_entry = database_session.query(PitcherEntry).get(pregame_hitter_entry.pitcher_id)
     # Couldn't find the pitcher, just continue and use default values
-    if pitcher_entries.count() == 0:
+    if pitcher_entry is None:
         return pregame_hitter_entry
     else:
-        pitcher_entry = pitcher_entries[0]
         try:
             vs_pitcher_stats = BaseballReference.get_vs_pitcher_stats(hitter_entry.baseball_reference_id,
                                                                       pitcher_entry.baseball_reference_id)
@@ -528,10 +548,9 @@ def get_pitcher_stats(pitcher_id, team, opposing_team, database_session, game_da
     pregame_pitcher_entry.game_date = game_date
 
     # Career stats
-    pitcher_entries = database_session.query(PitcherEntry).filter(PitcherEntry.rotowire_id == pitcher_id)
-    if pitcher_entries.count() == 0:
+    pitcher_entry = database_session.query(PitcherEntry).get(pitcher_id)
+    if pitcher_entry is None:
         raise PitcherNotFound(pitcher_id)
-    pitcher_entry = pitcher_entries[0]
 
     pitcher_career_soup = BaseballReference.get_pitcher_page_career_soup(pitcher_entry.baseball_reference_id)
     try:
@@ -613,7 +632,7 @@ def mine_yesterdays_results(database_session):
     # Query the database for all hitter game entries from yesterday
     hitter_entries = database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.game_date == (date.today() - timedelta(days=1)))
     for pregame_hitter_entry in hitter_entries:
-        hitter_entry = database_session.query(HitterEntry).filter(HitterEntry.rotowire_id == pregame_hitter_entry.rotowire_id)[0]
+        hitter_entry = database_session.query(HitterEntry).get(pregame_hitter_entry.rotowire_id)
         try:
             stat_row_dict = BaseballReference.get_yesterdays_hitting_game_log(hitter_entry.baseball_reference_id)
         except BaseballReference.TableRowNotFound:
@@ -653,7 +672,7 @@ def mine_yesterdays_results(database_session):
     # Query the database for all hitter game entries from yesterday
     pitcher_entries = database_session.query(PregamePitcherGameEntry).filter(PregamePitcherGameEntry.game_date == (date.today() - timedelta(days=1)))
     for pregame_pitcher_entry in pitcher_entries:
-        pitcher_entry = database_session.query(PitcherEntry).filter(PitcherEntry.rotowire_id == pregame_pitcher_entry.rotowire_id)[0]
+        pitcher_entry = database_session.query(PitcherEntry).get(pregame_pitcher_entry.rotowire_id)
         print "Mining yesterday for %s %s" % (pitcher_entry.first_name, pitcher_entry.last_name)
         try:
             stat_row_dict = BaseballReference.get_pitching_game_log(pitcher_entry.baseball_reference_id)
@@ -740,6 +759,12 @@ def get_wind_speed(soup):
     return 0
 
 
+class UmpDataNotFound(Exception):
+
+    def __init__(self, invalid_soup):
+        super(UmpDataNotFound, self).__init__("The ump data was not found in the soup %s." % invalid_soup)
+
+
 def get_ump_ks_per_game(soup):
     """ Extract the strikeouts per 9 innings for the ump for a given game
     :param soup: Rotowire soup for the individual game
@@ -756,8 +781,7 @@ def get_ump_ks_per_game(soup):
                     if ump_words[i] == "K/9:":
                         return float(ump_words[i+1])
 
-    #TODO: raise an exception here
-    assert 0
+    raise UmpDataNotFound(soup)
 
 
 def get_ump_runs_per_game(soup):
@@ -774,10 +798,9 @@ def get_ump_runs_per_game(soup):
                 ump_words = ump_text.strip().split()
                 for i in range(0, len(ump_words)):
                     if ump_words[i] == "R/9:":
-                        return float(ump_words[i+1])
+                        return float(ump_words[i+1].replace("&nbsp", ""))
 
-    #TODO: raise an exception here
-    assert 0
+    raise UmpDataNotFound(soup)
 
 # Two-way dictionary
 team_dict = bidict.bidict(ARI="Arizona Diamondbacks",

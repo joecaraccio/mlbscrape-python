@@ -68,11 +68,9 @@ class HitterNetworkTrainer(NetworkTrainer):
         y = list()
         for item in player_samples:
             input_vector = item.to_input_vector()
-            try:
-                postgame_entry = self._database_session.query(PostgameHitterGameEntry).filter(PostgameHitterGameEntry.rotowire_id == item.rotowire_id,
-                                                                                              PostgameHitterGameEntry.game_date == item.game_date).one()
-            except NoResultFound:
-                #print "Ignoring hitter %s since his postgame stats were not found." % item.rotowire_id
+            postgame_entry = self._database_session.query(PostgameHitterGameEntry).get(item.rotowire_id,
+                                                                                           item.game_date)
+            if postgame_entry is None:
                 continue
 
             x.append(input_vector)
@@ -134,14 +132,14 @@ class HitterNetworkTrainer(NetworkTrainer):
         test_data_input = list()
         test_data_output = list()
         for data in mlb_evaluation_data:
-            try:
-                postgame_entry = self._database_session.query(PostgameHitterGameEntry).filter(PostgameHitterGameEntry.rotowire_id == data.rotowire_id,
-                                                                                              PostgameHitterGameEntry.game_date == data.game_date).one()
-                test_data_output.append([postgame_entry.actual_draftkings_points])
-                test_data_input.append(data.to_input_vector())
-            except NoResultFound:
+            postgame_entry = self._database_session.query(PostgameHitterGameEntry).get(data.rotowire_id,
+                                                                                           data.game_date)
+            if postgame_entry is None:
                 print "Ignoring hitter %s since his postgame stats were not found." % data.rotowire_id
                 continue
+
+            test_data_output.append([postgame_entry.actual_draftkings_points])
+            test_data_input.append(data.to_input_vector())
 
         test_data_input = np.array(test_data_input, dtype=float)
         print "Input data shape: " + str(test_data_input.shape)
@@ -195,10 +193,9 @@ class PitcherNetworkTrainer(NetworkTrainer):
         y = list()
         for item in player_samples:
             input_vector = item.to_input_vector()
-            try:
-                postgame_entry = self._database_session.query(PostgamePitcherGameEntry).filter(PostgamePitcherGameEntry.rotowire_id == item.rotowire_id,
-                                                                                               PostgamePitcherGameEntry.game_date == item.game_date).one()
-            except NoResultFound:
+            postgame_entry = self._database_session.query(PostgamePitcherGameEntry).get(item.rotowire_id,
+                                                                                        item.game_date)
+            if postgame_entry is None:
                 continue
 
             x.append(input_vector)
@@ -249,12 +246,12 @@ class PitcherNetworkTrainer(NetworkTrainer):
         test_data_output = list()
         for data in mlb_evaluation_data:
             test_data_input.append(data.to_input_vector())
-            try:
-                postgame_entry = self._database_session.query(PostgamePitcherGameEntry).filter(PostgamePitcherGameEntry.rotowire_id == data.rotowire_id,
-                                                                                               PostgamePitcherGameEntry.game_date == data.game_date).one()
-                test_data_output.append([postgame_entry.actual_draftkings_points])
-            except NoResultFound:
+            postgame_entry = self._database_session.query(PostgamePitcherGameEntry).get(data.rotowire_id,
+                                                                                        data.game_date)
+            if postgame_entry is None:
                 continue
+
+            test_data_output.append([postgame_entry.actual_draftkings_points])
 
         test_data_input = np.array(test_data_input, dtype=float)
         print "Input data shape: " + str(test_data_input.shape)

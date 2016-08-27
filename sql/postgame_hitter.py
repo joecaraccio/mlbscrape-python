@@ -1,7 +1,6 @@
 
 from mlb_database import Base
-from sqlalchemy import Column, Integer, String, Float
-from datetime import date
+from sqlalchemy import Column, Integer, String, Float, ForeignKey
 
 
 class PostgameHitterGameEntry(Base):
@@ -9,7 +8,7 @@ class PostgameHitterGameEntry(Base):
     """
     __tablename__ = 'postgame_hitter_entries'
 
-    rotowire_id = Column(String, primary_key=True)
+    rotowire_id = Column(String, ForeignKey("hitter_entries.rotowire_id"), primary_key=True)
     game_date = Column(String, primary_key=True)
     actual_draftkings_points = Column(Float)
 

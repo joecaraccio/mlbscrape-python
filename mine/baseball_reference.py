@@ -146,6 +146,47 @@ class BaseballReference(object):
                                                                      (table_row, table_column, table_name))
 
     @staticmethod
+    def get_vs_table_row_dict(soup, batter_id, pitcher_id):
+        """ Special version of get_table_row_dict. Since Baseball Reference's batter vs. pitcher
+        tables don't really have a standardized row name, we have to just count the number of rows and
+        accumulate the stats.
+        :param soup: BeautifulSoup object containing the table HTML
+        :param table_name: the id of the table
+        :param table_row_label: the name of the row (typically a year or RegSeason)
+        :param table_column_label:
+        :return:
+        """
+        BATTER_VS_PITCHER_BASE = BaseballReference.BASE_URL + "/play-index/batter_vs_pitcher.cgi?batter="
+
+        results_table = soup.find("table", {"id": "ajax_result_table"})
+        if results_table is None:
+            raise BaseballReference.TableNotFound("ajax_result_table")
+
+        table_header_list = results_table.find("thead").findAll("th")
+        table_header_list = [x.text for x in table_header_list]
+        table_body = results_table.find("tbody")
+
+        matching_url = BATTER_VS_PITCHER_BASE + batter_id + "&pitcher=" + pitcher_id
+        try:
+            stat_row = table_body.find("a", {"href": matching_url}).parent.parent
+        except AttributeError:
+            raise BaseballReference.TableRowNotFound(matching_url, "NULL", "ajax_result_table")
+
+        # Create a dictionary of the stat attributes
+        stat_dict = dict()
+        stat_entries = stat_row.findAll("td")
+        # The dictionary does not have valid entries, move on to the next row
+        if len(stat_entries) != len(table_header_list):
+            raise BaseballReference.TableRowNotFound(matching_url, "NULL", "ajax_result_table")
+        for i in range(0, len(table_header_list)):
+            if stat_entries[i].text == "":
+                stat_dict[table_header_list[i]] = 0
+            else:
+                stat_dict[table_header_list[i]] = stat_entries[i].text.replace(u"\xa0", " ")
+
+        return stat_dict
+
+    @staticmethod
     def get_table_row_dict(soup, table_name, table_row_label, table_column_label):
         results_table = soup.find("table", {"id": table_name})
         if results_table is None:
@@ -223,12 +264,11 @@ class BaseballReference(object):
     @staticmethod
     def get_vs_pitcher_stats(batter_id, pitcher_id, soup=None):
         if soup is None:
-            url = BaseballReference.BASE_URL + "/play-index/batter_vs_pitcher.cgi?batter=" + str(batter_id) + \
-                  "&pitcher=" + str(pitcher_id)
+            url = BaseballReference.BASE_URL + "/play-index/batter_vs_pitcher.cgi?batter=" + str(batter_id)
             print url
             soup = BeautifulSoupHelper.get_soup_from_url(url)
 
-        return BaseballReference.get_table_row_dict(soup, "ajax_result_table_1", "RegSeason", "Year")
+        return BaseballReference.get_vs_table_row_dict(soup, batter_id, pitcher_id)
 
     @staticmethod
     def get_hitter_page_career_soup(baseball_reference_id):
@@ -275,9 +315,14 @@ class BaseballReference(object):
         if soup is None:
             soup = BeautifulSoupHelper.get_soup_from_url(BaseballReference.BASE_URL + "/players/gl.cgi?id=" +
                                                          str(baseball_reference_id) + "&t=b&year=" + str(yesterdays_date.year))
-        return BaseballReference.get_table_row_dict(soup, "batting_gamelogs",
-                                                    BaseballReference.date_abbreviations[yesterdays_date.month] + " " + str(yesterdays_date.day),
-                                                    "Date")
+        try:
+            return BaseballReference.get_table_row_dict(soup, "batting_gamelogs",
+                                                        BaseballReference.date_abbreviations[yesterdays_date.month] + " " + str(yesterdays_date.day), "Date")
+        # TODO: just try again for now, explore BeautifulSoup built-in options for this
+        except BaseballReference.TableNotFound as e:
+            print e
+            return BaseballReference.get_table_row_dict(soup, "batting_gamelogs",
+                                                        BaseballReference.date_abbreviations[yesterdays_date.month] + " " + str(yesterdays_date.day), "Date")
 
     @staticmethod
     def get_pitching_game_log(baseball_reference_id, soup=None, game_date=None):
@@ -303,7 +348,7 @@ class BaseballReference(object):
 
         if team_soup is None:
             team_soup = BeautifulSoupHelper.get_soup_from_url(BaseballReference.BASE_URL + "/teams/" +
-                                                          team_abbreviation + "/" + year_of_interest + ".shtml")
+                                                          team_abbreviation + "/" + str(year_of_interest) + ".shtml")
 
         sub_nodes = team_soup.find("a", {"href": URL}).parent.parent.findAll("strong")
         for sub_node in sub_nodes:
@@ -314,7 +359,7 @@ class BaseballReference(object):
                     hitter_factor = int(factor_string[0].split("-")[1].strip().split(" ")[0])
                     pitcher_factor = int(factor_string[1].split("-")[1].strip().split(" ")[0])
 
-                    return TeamInformation(team_abbreviation, hitter_factor, pitcher_factor)
+                    return hitter_factor, pitcher_factor
 
         return None
 

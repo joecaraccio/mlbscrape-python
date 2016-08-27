@@ -1,6 +1,5 @@
 from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKeyConstraint, ForeignKey
 from sqlalchemy.orm import relationship
-from pitcher_entry import PitcherEntry
 from datetime import date
 from mlb_database import Base
 
@@ -113,13 +112,14 @@ class PregamePitcherGameEntry(Base):
         """
         :return: string representation identifying the Pitcher entry
         """
-        return "<Pitcher PreGame Entry(name=%s %s, team='%s', id='%s', salary=%i, $/point=%f)>" %\
-               (self.pitcher_entries.first_name,
-                self.pitcher_entries.last_name,
-                self.pitcher_entries.team,
+        return "<Pitcher PreGame Entry(name=%s %s, team='%s', id='%s', salary=%i, $/point=%f, points=%f)>" %\
+               (self.pitcher_entry.first_name,
+                self.pitcher_entry.last_name,
+                self.pitcher_entry.team,
                 self.rotowire_id,
                 self.draftkings_salary,
-                self.dollars_per_point())
+                self.dollars_per_point(),
+                self.predicted_draftkings_points)
 
     def to_input_vector(self):
         """ Convert the entry to a vector

@@ -1,13 +1,15 @@
 from sqlalchemy import Column, Integer, String, Float
-
 from mlb_database import Base
+from sqlalchemy import ForeignKey
 
 
-# Baseball player class
 class PostgamePitcherGameEntry(Base):
+    """ Class for storing a SQL entry of the  actual stats for a pitcher
+    Many-to-one relationship with PitcherEntry
+    """
     __tablename__ = 'postgame_pitcher_entries'
 
-    rotowire_id = Column(String, primary_key=True)
+    rotowire_id = Column(String, ForeignKey("pitcher_entries.rotowire_id"), primary_key=True)
     game_date = Column(String, primary_key=True)
     actual_draftkings_points = Column(Float)
 

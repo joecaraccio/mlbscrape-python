@@ -2,8 +2,7 @@ from learn.train_network import HitterNetworkTrainer, PitcherNetworkTrainer
 from sql.mlb_database import MlbDatabase
 from learn.train_regression import HitterRegressionTrainer
 
-mlbDatabase = MlbDatabase()
-databaseSession = mlbDatabase.open_session()
+databaseSession = MlbDatabase().open_session()
 
 #hitter_network_trainer = HitterNetworkTrainer(databaseSession)
 #hitter_network_trainer.train_network()

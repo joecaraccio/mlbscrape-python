@@ -6,15 +6,15 @@ from selenium.webdriver.common.by import By
 from urlparse import urljoin
 from urllib import urlretrieve
 import csv
-from datetime import date
+from datetime import date, datetime
 from Released.mlbscrape_python.sql.pregame_hitter import PregameHitterGameEntry
 from Released.mlbscrape_python.sql.pregame_pitcher import PregamePitcherGameEntry
 from Released.mlbscrape_python.sql.hitter_entry import HitterEntry
 from Released.mlbscrape_python.sql.pitcher_entry import PitcherEntry
 from sqlalchemy import desc, or_
 import heapq
-from Released.mlbscrape_python.learn.train_network import HitterNetworkTrainer, PitcherNetworkTrainer
-from Released.mlbscrape_python.learn.train_regression import HitterRegressionTrainer, PitcherRegressionTrainer
+from Released.mlbscrape_python.learn.train_regression import HitterRegressionForestTrainer, PitcherRegressionForestTrainer
+from Released.mlbscrape_python.sql.lineup import LineupEntry
 
 
 class OptimalLineupDict(dict):
@@ -43,31 +43,16 @@ class OptimalLineupDict(dict):
         """
         return self._total_salary
 
-    #TODO: move this to the base player sql class
-    @staticmethod
-    def points_per_dollar(sql_player):
-        """ Calculate the predicted points per dollar for this player.
-        Return 0 if the Draftkings salary is equal to zero
-        :param sql_player: a SQLAlchemy player object
-        :return: float representing the predicted points per dollar
-        """
-        if float(sql_player.draftkings_salary) == 0.0:
-            return 0.0
+    def is_position_open(self, position):
+        try:
+            if self[position] is None:
+                return True
+            elif position == "OF" and len(self["OF"]) == 3:
+                return True
+        except KeyError:
+            return True
 
-        return float(sql_player.predicted_draftkings_points) / float(sql_player.draftkings_salary)
-
-    #TODO: move this to the base player sql class
-    @staticmethod
-    def dollars_per_point(sql_player):
-        """ Calculate the predicted points per dollar for this player.
-        Return 0 if the Draftkings salary is equal to zero
-        :param sql_player: a SQLAlchemy player object
-        :return: float representing the predicted points per dollar
-        """
-        if float(sql_player.predicted_draftkings_points) == 0.0:
-            return 0.0
-
-        return float(sql_player.draftkings_salary) / float(sql_player.predicted_draftkings_points)
+        return True
 
     def add(self, sql_player):
         """Add a player to the optimal lineup dictionary based on his positions
@@ -83,36 +68,35 @@ class OptimalLineupDict(dict):
                 self._add_player(sql_player, worst_position_candidate)
 
     def get_position_priorities(self, primary_position, secondary_position):
-        best_candidate_position = primary_position
-        worst_candidate_position = secondary_position
+        """ Decide which position would be better for this player to play based on projected points
+        :param primary_position: the primary position of the player
+        :param secondary_position: the secondary position of the player
+        :return: a list of the posiitons from most suitable to least suitable
+        """
 
-        if self[primary_position] is None and self[secondary_position] is not None:
-            if not primary_position == "OF":
-                best_candidate_position = secondary_position
-                worst_candidate_position = primary_position
-            return best_candidate_position, worst_candidate_position
-        elif self[secondary_position] is None:
-            return best_candidate_position, worst_candidate_position
+        # Primary position is open
+        if self.is_position_open(primary_position):
+            return primary_position, secondary_position
 
-        if primary_position == "OF":
-            if len(self[primary_position]) > 0:
-                primary_player = self[primary_position][0][1]
-            else:
-                return best_candidate_position, worst_candidate_position
+        # Primary position not open, Secondary position is open
+        if self.is_position_open(secondary_position):
+            return secondary_position, primary_position
+        # Both positions not open, some arbitration required
         else:
-            primary_player = self[primary_position]
-        if secondary_position == "OF":
-            if len(self[secondary_position]) > 0:
-                secondary_player = self[secondary_position][0][1]
+            if primary_position == "OF":
+                primary_player = self["OF"][0][1]
             else:
-                return best_candidate_position, worst_candidate_position
-        else:
-            secondary_player = self[secondary_position]
-        if primary_player.points_per_dollar() < secondary_player.points_per_dollar():
-            best_candidate_position = secondary_position
-            worst_candidate_position = primary_position
+                primary_player = self[primary_position]
 
-        return best_candidate_position, worst_candidate_position
+            if secondary_position == "OF":
+                secondary_player = self["OF"][0][1]
+            else:
+                secondary_player = self[secondary_position]
+
+            if primary_player.predicted_draftkings_points < secondary_player.predicted_draftkings_points:
+                return secondary_position, primary_position
+
+        return primary_position, secondary_position
 
     def _add_player(self, sql_player, position):
         """ Add a player to the optimal lineup dictionary based on his primary position
@@ -124,7 +108,7 @@ class OptimalLineupDict(dict):
             return False
 
         try:
-            points_per_dollar = self.points_per_dollar(sql_player)
+            points_per_dollar = sql_player.points_per_dollar()
         except ZeroDivisionError:
             return False
 
@@ -137,27 +121,34 @@ class OptimalLineupDict(dict):
 
         if position == "SP" or position == "OF":
             if len(self[position]) < max_number_players:
-                heapq.heappush(self[position], (points_per_dollar, sql_player))
-                self._total_salary += sql_player.draftkings_salary
-                return True
-            else:
-                worst_player = self[position][0][1]
-                if worst_player.points_per_dollar() < points_per_dollar:
-                    heapq.heappushpop(self[position], (points_per_dollar, sql_player))
-                    self._total_salary -= worst_player.draftkings_salary
+                if self.get_total_salary() + sql_player.draftkings_salary <= Draftkings.CONTEST_SALARY:
+                    heapq.heappush(self[position], (sql_player.predicted_draftkings_points, sql_player))
                     self._total_salary += sql_player.draftkings_salary
                     return True
+            else:
+                for i in range(0, len(self[position])):
+                    worst_player = self[position][i][1]
+                    if worst_player.points_per_dollar() < points_per_dollar:
+                        if self.get_total_salary() + sql_player.draftkings_salary - worst_player.draftkings_salary <= Draftkings.CONTEST_SALARY:
+                            heapq.heappushpop(self[position], (sql_player.predicted_draftkings_points, sql_player))
+                            self._total_salary -= worst_player.draftkings_salary
+                            self._total_salary += sql_player.draftkings_salary
+                            return True
         else:
             if self[position] is None:
-                self._total_salary += sql_player.draftkings_salary
-                self[position] = sql_player
-                return True
+                if self.get_total_salary() + sql_player.draftkings_salary <= Draftkings.CONTEST_SALARY:
+                    self._total_salary += sql_player.draftkings_salary
+                    self[position] = sql_player
+                    return True
             worst_player = self[position]
             if worst_player.points_per_dollar() < points_per_dollar:
+                if self.get_total_salary() + sql_player.draftkings_salary - worst_player.draftkings_salary <= Draftkings.CONTEST_SALARY:
                     self._total_salary -= worst_player.draftkings_salary
                     self._total_salary += sql_player.draftkings_salary
                     self[position] = sql_player
                     return True
+
+        return False
 
     def is_in_dict(self, sql_player):
         try:
@@ -274,7 +265,9 @@ class Draftkings(object):
         for pregame_entry in pregame_hitters:
             # Lookup the player's name in the database
             # Lookup the name in the dictionary
-            hitter_entry = database_session.query(HitterEntry).filter(HitterEntry.rotowire_id == pregame_entry.rotowire_id).first()
+            hitter_entry = database_session.query(HitterEntry).get(pregame_entry.rotowire_id)
+            if hitter_entry is None:
+                print "Player %s not found in the Draftkings CSV file. Deleting entry." % pregame_entry.rotowire_id
             try:
                 csv_entry = csv_dict[(hitter_entry.first_name + " " + hitter_entry.last_name + hitter_entry.team).lower()]
                 pregame_entry.draftkings_salary = int(csv_entry["Salary"])
@@ -292,7 +285,9 @@ class Draftkings(object):
         for pregame_entry in pregame_pitchers:
             # Lookup the player's name in the database
             # Lookup the name in the dictionary
-            pitcher_entry = database_session.query(PitcherEntry).filter(PitcherEntry.rotowire_id == pregame_entry.rotowire_id).first()
+            pitcher_entry = database_session.query(PitcherEntry).get(pregame_entry.rotowire_id)
+            if pitcher_entry is None:
+                print "Player %s not found in the Draftkings CSV file. Deleting entry." % pregame_entry.rotowire_id
             try:
                 csv_entry = csv_dict[(pitcher_entry.first_name + " " + pitcher_entry.last_name + pitcher_entry.team).lower()]
                 pregame_entry.draftkings_salary = int(csv_entry["Salary"])
@@ -341,7 +336,7 @@ class Draftkings(object):
     def get_optimal_lineup(database_session, day=None):
         """ Get the optimal lineup of the players to choose for tonight
         :param database_session: SQLAlchemy database session
-        :return:
+        :return: an OptimalLineupDict structure
         """
         if day is None:
             day = date.today()
@@ -358,14 +353,15 @@ class Draftkings(object):
                     if not optimal_lineup.is_in_dict(candidate_player):
                         optimal_lineup.add(candidate_player)
             else:
-                candidate_player = heapq.heappop(query_results)
+                try:
+                    candidate_player = heapq.heappop(query_results)
+                except IndexError:
+                    print "Exception."
                 if not optimal_lineup.is_in_dict(candidate_player):
                     optimal_lineup.add(candidate_player)
             for player in query_results:
                 try:
-                    dollars_per_point = OptimalLineupDict.dollars_per_point(player)
-                    if dollars_per_point > 0:
-                        heapq.heappush(player_heap, (dollars_per_point, player))
+                    heapq.heappush(player_heap, (-player.predicted_draftkings_points, player))
                 except ZeroDivisionError:
                     continue
 
@@ -379,16 +375,13 @@ class Draftkings(object):
 
         for pitcher in query_results:
             try:
-                dollars_per_point = OptimalLineupDict.dollars_per_point(pitcher)
-                if dollars_per_point > 0:
-                    heapq.heappush(player_heap, (OptimalLineupDict.dollars_per_point(pitcher), pitcher))
+                heapq.heappush(player_heap, (-pitcher.predicted_draftkings_points, pitcher))
             except ZeroDivisionError:
                 continue
 
         # Replace players one by one who are "overpaid" based on predicted points per dollar
         while (optimal_lineup.get_total_salary() > Draftkings.CONTEST_SALARY and len(player_heap) > 0) or \
                 not optimal_lineup.is_valid():
-            # TODO: we should add the player back on the player heap when kicked out of lineup
             next_player = heapq.heappop(player_heap)[1]
             if not optimal_lineup.is_in_dict(next_player):
                 optimal_lineup.add(next_player)
@@ -399,15 +392,34 @@ class Draftkings(object):
             print player[1]
         print " "
 
+        # Commit the prediction to the database
+        lineup_db_entry = LineupEntry()
+        lineup_db_entry.game_date = date.today()
+        lineup_db_entry.game_time = datetime.now().strftime("%H:%M:%S")
+        lineup_db_entry.starting_pitcher_1 = optimal_lineup["SP"][0][1].rotowire_id
+        lineup_db_entry.starting_pitcher_2 = optimal_lineup["SP"][1][1].rotowire_id
+        lineup_db_entry.catcher = optimal_lineup["C"].rotowire_id
+        lineup_db_entry.first_baseman = optimal_lineup["1B"].rotowire_id
+        lineup_db_entry.second_baseman = optimal_lineup["2B"].rotowire_id
+        lineup_db_entry.third_baseman = optimal_lineup["3B"].rotowire_id
+        lineup_db_entry.shortstop = optimal_lineup["SS"].rotowire_id
+        lineup_db_entry.outfielder_1 = optimal_lineup["OF"][0][1].rotowire_id
+        lineup_db_entry.outfielder_2 = optimal_lineup["OF"][1][1].rotowire_id
+        lineup_db_entry.outfielder_3 = optimal_lineup["OF"][2][1].rotowire_id
+        database_session.add(lineup_db_entry)
+        database_session.commit()
+
         return optimal_lineup
 
     @staticmethod
     def predict_daily_points(database_session, day=None):
         if day is None:
             day = date.today()
-        hitter_regression = HitterRegressionTrainer()
+        #hitter_regression = HitterRegressionTrainer()
+        hitter_regression = HitterRegressionForestTrainer()
         hitter_regression.train_network()
-        pitcher_regression = PitcherRegressionTrainer()
+        #pitcher_regression = PitcherRegressionTrainer()
+        pitcher_regression = PitcherRegressionForestTrainer()
         pitcher_regression.train_network()
         daily_entries = PregameHitterGameEntry.get_all_daily_entries(database_session, day)
         for daily_entry in daily_entries:
@@ -425,5 +437,3 @@ class Draftkings(object):
                 predicted_points = 0
             daily_entry.predicted_draftkings_points = predicted_points
             database_session.commit()
-
-

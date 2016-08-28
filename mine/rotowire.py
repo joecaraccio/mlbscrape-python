@@ -73,19 +73,48 @@ class HomeAwayEnum:
     HOME = 1
 
 
-def mine_pregame_stats():
+def mine_pregame_stats(cutoff_time=None):
     """ Mine the hitter/pitcher stats and predict the outcomes and commit to the database session
     :param mlb_database: MlbDatabase object
     """
     database_session = MlbDatabase().open_session()
-    games = get_game_lineups(database_session)
+    games = get_game_lineups(database_session, cutoff_time)
     update_ids(games, database_session)
     get_pregame_hitting_stats(games)
     get_pregame_pitching_stats(games)
     database_session.close()
 
 
-def get_game_lineups(database_session):
+def mine_game_times(database_session):
+    """ Get the game times for today and commit them to the database
+    :param database_session: SQLAlchemy database session
+    """
+    lineup_soup = BeautifulSoupHelper.get_soup_from_url(DAILY_LINEUPS_URL)
+    header_nodes = lineup_soup.findAll("div", {"class": TEAM_REGION_LABEL})
+    for header_node in header_nodes:
+        game_node = header_node.parent
+        away_team_abbreviation = game_node.find("div", {"class": AWAY_TEAM_REGION_LABEL}).text.split()[0]
+        home_team_abbreviation = game_node.find("div", {"class": HOME_TEAM_REGION_LABEL}).text.split()[0]
+
+        try:
+            game_time = game_node.find("div", {"class": TIME_REGION_LABEL}).find("a").text.replace("ET", "").strip()
+            game_time = datetime.strptime(game_time, '%I:%M %p').strftime("%H:%M")
+            game_entry = GameEntry(date.today(), game_time, home_team_abbreviation, away_team_abbreviation)
+
+            database_session.add(game_entry)
+            database_session.commit()
+        except IntegrityError:
+            database_session.rollback()
+            print "Warning: attempt to duplicate game entry: %s %s %s %s" % (str(home_team_abbreviation),
+                                                                             str(away_team_abbreviation),
+                                                                             str(game_entry.game_date),
+                                                                             str(game_entry.game_time))
+        except Exception as e:
+            print e
+            pass
+
+
+def get_game_lineups(database_session, cutoff_time=None):
     """ Mine the RotoWire daily lineups page and get the players' name, team, and RotoWire ID
     Note: longer names are abbreviated by RotoWire and need to be resolved by another source
     :return: list of Game objects representing the lineups for the day
@@ -101,6 +130,13 @@ def get_game_lineups(database_session):
         away_team_abbreviation = game_node.find("div", {"class": AWAY_TEAM_REGION_LABEL}).text.split()[0]
         home_team_abbreviation = game_node.find("div", {"class": HOME_TEAM_REGION_LABEL}).text.split()[0]
         game_main_soup = game_node.find("div", {"class": LINEUPS_CLASS_LABEL})
+
+        game_time = game_node.find("div", {"class": TIME_REGION_LABEL}).find("a").text.replace("ET", "").strip()
+        game_time = datetime.strptime(game_time, '%I:%M %p')
+        if cutoff_time is not None:
+            if game_time > cutoff_time:
+                continue
+        game_time = game_time.strftime("%H:%M")
 
         for away_player in game_main_soup.findAll("div", {"class": AWAY_TEAM_PLAYER_LABEL}):
             away_team_lineup.append(get_hitter(away_player, away_team_abbreviation, database_session))
@@ -120,9 +156,9 @@ def get_game_lineups(database_session):
 
         # TODO: since they only release the ump data ~1 hour before the game, we'll have to make this robust later
         try:
-            game_time = game_node.find("div", {"class": TIME_REGION_LABEL}).find("a").text.replace("ET", "").strip()
-            game_time = datetime.strptime(game_time, '%I:%M %p').strftime("%H:%M")
-            game_entry = GameEntry(date.today(), game_time, home_team_abbreviation, away_team_abbreviation)
+            game_entry = database_session.query(GameEntry).get((date.today(), game_time, home_team_abbreviation, away_team_abbreviation))
+            if game_entry is None:
+                game_entry = GameEntry(date.today(), game_time, home_team_abbreviation, away_team_abbreviation)
             game_entry.wind_speed = get_wind_speed(game_node)
             game_entry.ump_ks_per_game = get_ump_ks_per_game(game_node)
             game_entry.ump_runs_per_game = get_ump_runs_per_game(game_node)
@@ -162,11 +198,11 @@ def get_hitter(soup, team, database_session=None):
     if database_session is None:
         name = get_name_from_id(rotowire_id)
     else:
-        try:
-            hitter_entry = database_session.query(HitterEntry).get(rotowire_id)
+        hitter_entry = database_session.query(HitterEntry).get(rotowire_id)
+        if hitter_entry is not None:
             name = "%s %s" % (hitter_entry.first_name, hitter_entry.last_name)
             hand = hitter_entry.batting_hand
-        except NoResultFound:
+        else:
             name = get_name_from_id(rotowire_id)
             hand = get_hand(soup)
     position = soup.find("div", {"class": POSITION_CLASS_LABEL}).text
@@ -628,9 +664,11 @@ def get_draftkings_link(daily_lineup_soup):
     return daily_lineup_soup.find("div", {"class": DRAFTKINGS_LINK_LABEL}).find("a").get("href")
 
 
-def mine_yesterdays_results(database_session):
+def mine_game_results(database_session, game_date=None):
+    if game_date is None:
+        game_date = date.today() - timedelta(1)
     # Query the database for all hitter game entries from yesterday
-    hitter_entries = database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.game_date == (date.today() - timedelta(days=1)))
+    hitter_entries = database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.game_date == game_date)
     for pregame_hitter_entry in hitter_entries:
         hitter_entry = database_session.query(HitterEntry).get(pregame_hitter_entry.rotowire_id)
         try:
@@ -670,7 +708,7 @@ def mine_yesterdays_results(database_session):
                                                                                  pregame_hitter_entry.game_date)
 
     # Query the database for all hitter game entries from yesterday
-    pitcher_entries = database_session.query(PregamePitcherGameEntry).filter(PregamePitcherGameEntry.game_date == (date.today() - timedelta(days=1)))
+    pitcher_entries = database_session.query(PregamePitcherGameEntry).filter(PregamePitcherGameEntry.game_date == game_date)
     for pregame_pitcher_entry in pitcher_entries:
         pitcher_entry = database_session.query(PitcherEntry).get(pregame_pitcher_entry.rotowire_id)
         print "Mining yesterday for %s %s" % (pitcher_entry.first_name, pitcher_entry.last_name)

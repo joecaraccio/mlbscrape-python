@@ -7,9 +7,9 @@ class GameEntry(Base):
     __tablename__ = 'game_entries'
 
     game_date = Column(String, primary_key=True)
+    game_time = Column(String, primary_key=True)
     home_team = Column(String, primary_key=True)
     away_team = Column(String, primary_key=True)
-    game_time = Column(String, primary_key=True)
 
     ump_ks_per_game = Column(Float)
     ump_runs_per_game = Column(Float)

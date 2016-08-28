@@ -221,7 +221,7 @@ class Draftkings(object):
                                                           name)
 
     @staticmethod
-    def save_daily_csv():
+    def save_daily_csv(csv_filename=None):
         browser = webdriver.Chrome()
         browser.get(Draftkings.ROTOWIRE_DAILY_LINEUPS_URL)
         draftkings_button = browser.find_element_by_link_text(Draftkings.ROTOWIRE_LINK_TEXT)
@@ -236,7 +236,10 @@ class Draftkings(object):
 
         # download the file
         csv_url = urljoin(browser.current_url, browser.find_element_by_css_selector("a.export-to-csv").get_attribute("href"))
-        urlretrieve(csv_url, "players.csv")
+        if csv_filename is None:
+            urlretrieve(csv_url, "players.csv")
+        else:
+            urlretrieve(csv_url, csv_filename)
 
     @staticmethod
     def get_csv_dict(filename=None):
@@ -267,7 +270,7 @@ class Draftkings(object):
             # Lookup the name in the dictionary
             hitter_entry = database_session.query(HitterEntry).get(pregame_entry.rotowire_id)
             if hitter_entry is None:
-                print "Player %s not found in the Draftkings CSV file. Deleting entry." % pregame_entry.rotowire_id
+                print "Player %s not found in the Draftkings CSV file." % pregame_entry.rotowire_id
             try:
                 csv_entry = csv_dict[(hitter_entry.first_name + " " + hitter_entry.last_name + hitter_entry.team).lower()]
                 pregame_entry.draftkings_salary = int(csv_entry["Salary"])
@@ -276,9 +279,7 @@ class Draftkings(object):
                 pregame_entry.secondary_position = positions[len(positions) - 1]
                 database_session.commit()
             except KeyError:
-                print "Player %s not found in the Draftkings CSV file. Deleting entry." % (hitter_entry.first_name + " " + hitter_entry.last_name)
-                database_session.delete(pregame_entry)
-                database_session.commit()
+                print "Player %s not found in the Draftkings CSV file." % (hitter_entry.first_name + " " + hitter_entry.last_name)
 
         # Pitchers
         pregame_pitchers = PregamePitcherGameEntry.get_all_daily_entries(database_session, game_date)
@@ -287,15 +288,13 @@ class Draftkings(object):
             # Lookup the name in the dictionary
             pitcher_entry = database_session.query(PitcherEntry).get(pregame_entry.rotowire_id)
             if pitcher_entry is None:
-                print "Player %s not found in the Draftkings CSV file. Deleting entry." % pregame_entry.rotowire_id
+                print "Player %s not found in the Draftkings CSV file." % pregame_entry.rotowire_id
             try:
                 csv_entry = csv_dict[(pitcher_entry.first_name + " " + pitcher_entry.last_name + pitcher_entry.team).lower()]
                 pregame_entry.draftkings_salary = int(csv_entry["Salary"])
                 database_session.commit()
             except KeyError:
-                print "Player %s not found in the Draftkings CSV file. Deleting entry." % (pitcher_entry.first_name + " " + pitcher_entry.last_name)
-                database_session.delete(pregame_entry)
-                database_session.commit()
+                print "Player %s not found in the Draftkings CSV file." % (pitcher_entry.first_name + " " + pitcher_entry.last_name)
 
     @staticmethod
     def get_hitter_points(postgame_hitter):
@@ -333,19 +332,19 @@ class Draftkings(object):
 
     @staticmethod
     #TODO: migrate to an intermediary miner
-    def get_optimal_lineup(database_session, day=None):
+    def get_optimal_lineup(database_session, datetime_object=None):
         """ Get the optimal lineup of the players to choose for tonight
         :param database_session: SQLAlchemy database session
         :return: an OptimalLineupDict structure
         """
-        if day is None:
-            day = date.today()
+        if datetime_object is None:
+            datetime_object = datetime.now()
         optimal_lineup = OptimalLineupDict()
         player_heap = list()
 
         # Look for the hitter entries
         for fielding_position in OptimalLineupDict.FieldingPositions:
-            query_results = PregameHitterGameEntry.get_daily_entries_by_position(database_session, fielding_position, day)
+            query_results = PregameHitterGameEntry.get_daily_entries_by_position(database_session, fielding_position, datetime_object.date())
             query_results = list(query_results.order_by(desc(PregameHitterGameEntry.predicted_draftkings_points)))
             if fielding_position == "OF":
                 while len(optimal_lineup["OF"]) < OptimalLineupDict.MAX_OUTFIELDERS and len(query_results) > 0:
@@ -366,7 +365,7 @@ class Draftkings(object):
                     continue
 
         # Look for pitchers
-        query_results = PregamePitcherGameEntry.get_all_daily_entries(database_session, day)
+        query_results = PregamePitcherGameEntry.get_all_daily_entries(database_session, datetime_object.date())
         query_results = list(query_results.order_by(desc(PregamePitcherGameEntry.predicted_draftkings_points)))
         for i in range(0, OptimalLineupDict.MAX_PITCHERS):
             candidate_player = heapq.heappop(query_results)
@@ -394,8 +393,8 @@ class Draftkings(object):
 
         # Commit the prediction to the database
         lineup_db_entry = LineupEntry()
-        lineup_db_entry.game_date = date.today()
-        lineup_db_entry.game_time = datetime.now().strftime("%H:%M:%S")
+        lineup_db_entry.game_date = datetime_object.date
+        lineup_db_entry.game_time = datetime_object.strftime("%H:%M:%S")
         lineup_db_entry.starting_pitcher_1 = optimal_lineup["SP"][0][1].rotowire_id
         lineup_db_entry.starting_pitcher_2 = optimal_lineup["SP"][1][1].rotowire_id
         lineup_db_entry.catcher = optimal_lineup["C"].rotowire_id
@@ -412,16 +411,18 @@ class Draftkings(object):
         return optimal_lineup
 
     @staticmethod
-    def predict_daily_points(database_session, day=None):
-        if day is None:
-            day = date.today()
+    def predict_daily_points(database_session, datetime_object=None):
+        if datetime_object is None:
+            day = datetime.now()
         #hitter_regression = HitterRegressionTrainer()
         hitter_regression = HitterRegressionForestTrainer()
         hitter_regression.train_network()
         #pitcher_regression = PitcherRegressionTrainer()
         pitcher_regression = PitcherRegressionForestTrainer()
         pitcher_regression.train_network()
-        daily_entries = PregameHitterGameEntry.get_all_daily_entries(database_session, day)
+        daily_entries = database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.game_date == datetime_object.date,
+                                                                              datetime.strptime(datetime_object.strftime("%Y-%m-%d") + " " + PregameHitterGameEntry.game_time, "%Y-%m-%d %H:%M") < datetime_object.date())
+        #daily_entries = PregameHitterGameEntry.get_all_daily_entries(database_session, day)
         for daily_entry in daily_entries:
             predicted_points = hitter_regression.get_prediction(daily_entry.to_input_vector())
 
@@ -430,7 +431,9 @@ class Draftkings(object):
             daily_entry.predicted_draftkings_points = predicted_points
             database_session.commit()
 
-        daily_entries = PregamePitcherGameEntry.get_all_daily_entries(database_session, day)
+        daily_entries = database_session.query(PregamePitcherGameEntry).filter(PregamePitcherGameEntry.game_date == datetime_object.date,
+                                                                              datetime.strptime(datetime_object.strftime("%Y-%m-%d") + " " + PregamePitcherGameEntry.game_time, "%Y-%m-%d %H:%M") < datetime_object.date())
+        #daily_entries = PregamePitcherGameEntry.get_all_daily_entries(database_session, day)
         for daily_entry in daily_entries:
             predicted_points = pitcher_regression.get_prediction(daily_entry.to_input_vector())
             if predicted_points < 0:

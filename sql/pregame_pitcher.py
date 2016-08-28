@@ -2,15 +2,18 @@ from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKeyConstr
 from sqlalchemy.orm import relationship
 from datetime import date
 from mlb_database import Base
+from game import GameEntry
 
 
 class PregamePitcherGameEntry(Base):
 
     __tablename__ = 'pregame_pitcher_entries'
+    __table_args = (ForeignKeyConstraint(['game_date', 'game_time'], ['GameEntry.game_date', 'GameEntry.game_time']))
 
     rotowire_id = Column(String, ForeignKey("pitcher_entries.rotowire_id"), primary_key=True)
     team = Column(String)
     game_date = Column(String, primary_key=True)
+    game_time = Column(String, primary_key=True)
     #game = Column(Integer, ForeignKeyConstraint([GameEntry.game_date, GameEntry.game_time]), primary_key=True)
     #home_team = Column(String)
     team = Column(String)

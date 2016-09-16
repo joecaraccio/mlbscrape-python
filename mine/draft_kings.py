@@ -17,6 +17,119 @@ from Released.mlbscrape_python.learn.train_regression import HitterRegressionFor
 from Released.mlbscrape_python.sql.lineup import LineupEntry
 
 
+class Position(object):
+    def __init__(self, position_string):
+        self._salary = 0
+        self._player = None
+        self._position_string = position_string
+
+    def add(self, sql_player, maximum_salary):
+        if self._player is None:
+            if sql_player.draftkings_salary <= maximum_salary:
+                self._player = sql_player
+                return True
+        else:
+            try:
+                if self._player.points_per_dollar() < sql_player.points_per_dollar():
+                    if sql_player.draftkings_salary <= maximum_salary + self._player.draftkings_salary:
+                        self._player = sql_player
+                        return True
+            except ZeroDivisionError:
+                pass
+
+        return False
+
+    def get_total_salary(self):
+        if self._player is None:
+            return 0
+
+        return self._player.draftkings_salary
+
+    def is_open(self):
+        return self._player is None
+
+    def get_worst_player_points(self):
+        return self._player.predicted_draftkings_points
+
+    def is_player_assigned(self, sql_player):
+        return self._player == sql_player
+
+    def __str__(self):
+        return "%s: %s\n" % (self._position_string, self._player)
+
+    def is_valid(self):
+        return self._player is not None
+
+
+class PositionHeap(object):
+    def __init__(self, max_players, position_string):
+        """ Constructor
+        :param max_players: maximum number of players at this position
+        :param position_string: a str() representing the position abbreviation
+        """
+        self._max_players = max_players
+        self._position_string = position_string
+        self._position_heap = list()
+
+    def add(self, sql_player, maximum_salary):
+        """ Add a player to the position heap
+        :param sql_player: SQLAlchemy player
+        :param maximum_salary: the salary available for the meta object
+        :return True if the player was added, False otherwise
+        """
+        is_added = False
+        if len(self._position_heap) < self._max_players:
+            if sql_player.draftkings_salary <= maximum_salary:
+                heapq.heappush(self._position_heap, (sql_player.predicted_draftkings_points, sql_player))
+                is_added = True
+        else:
+            temp_heap = list()
+            while len(self._position_heap) > 0:
+                player = heapq.heappop(self._position_heap)
+                if is_added:
+                    heapq.heappush(temp_heap, (player.predicted_draftkings_points, player))
+                else:
+                    try:
+                        if player.points_per_dollar() < sql_player.points_per_dollar():
+                            if sql_player.draftkings_salary <= maximum_salary + player.draftkings_salary:
+                                heapq.heappush(temp_heap, (sql_player.predicted_draftkings_points, sql_player))
+                                is_added = True
+                    except ZeroDivisionError:
+                        heapq.heappush(temp_heap, (player.predicted_draftkings_points, player))
+
+            self._position_heap = temp_heap
+
+        return is_added
+
+    def get_total_salary(self):
+        """ Get the total salary for this position heap
+        :return: total salary in dollars
+        """
+        return sum(player[1].draftkings_salary for player in self._position_heap)
+
+    def is_open(self):
+        return len(self._position_heap) < self._max_players
+
+    def get_worst_player_points(self):
+        return self._position_heap[0][0]
+
+    def is_player_assigned(self, sql_player):
+        for player in self._position_heap:
+            if player == sql_player:
+                return True
+
+        return False
+
+    def __str__(self):
+        ret_str = str()
+        for player in self._position_heap:
+            ret_str += "%s: %s\n" % (self._position_string, player[1])
+        return ret_str
+
+    def is_valid(self):
+        return len(self._position_heap) == self._max_players
+
+
 class OptimalLineupDict(dict):
     """ Class for managing the optimal lineup for a given day
     """
@@ -31,28 +144,31 @@ class OptimalLineupDict(dict):
         """ Constructor used to initialize the total salary and the heaps
         """
         super(OptimalLineupDict, self).__init__()
-        self._total_salary = 0
-        for position in OptimalLineupDict.FieldingPositions:
-            self[position] = None
-        self["OF"] = list()
-        self["SP"] = list()
+        self.catcher = Position("C")
+        self.first_baseman = Position("1B")
+        self.second_baseman = Position("2B")
+        self.third_baseman = Position("3B")
+        self.shortstop = Position("SS")
+        self.outfielders = PositionHeap(OptimalLineupDict.MAX_OUTFIELDERS, "OF")
+        self.starting_pitchers = PositionHeap(OptimalLineupDict.MAX_PITCHERS, "SP")
+        self.position_map = dict()
+        self.position_map["C"] = self.catcher
+        self.position_map["1B"] = self.first_baseman
+        self.position_map["2B"] = self.second_baseman
+        self.position_map["3B"] = self.third_baseman
+        self.position_map["SS"] = self.shortstop
+        self.position_map["SP"] = self.starting_pitchers
+        self.position_map["OF"] = self.outfielders
 
     def get_total_salary(self):
         """ Get the current salary of this lineup
         :return: int the current salary for this team
         """
-        return self._total_salary
+        return sum(self.position_map[position].get_total_salary() for position in OptimalLineupDict.FieldingPositions) + \
+               self.position_map["SP"].get_total_salary()
 
     def is_position_open(self, position):
-        try:
-            if self[position] is None:
-                return True
-            elif position == "OF" and len(self["OF"]) == 3:
-                return True
-        except KeyError:
-            return True
-
-        return True
+        return self.position_map[position].is_open()
 
     def add(self, sql_player):
         """Add a player to the optimal lineup dictionary based on his positions
@@ -83,17 +199,8 @@ class OptimalLineupDict(dict):
             return secondary_position, primary_position
         # Both positions not open, some arbitration required
         else:
-            if primary_position == "OF":
-                primary_player = self["OF"][0][1]
-            else:
-                primary_player = self[primary_position]
-
-            if secondary_position == "OF":
-                secondary_player = self["OF"][0][1]
-            else:
-                secondary_player = self[secondary_position]
-
-            if primary_player.predicted_draftkings_points < secondary_player.predicted_draftkings_points:
+            if self.position_map[primary_position].get_worst_player_points() < \
+                    self.position_map[secondary_position].get_worst_player_points():
                 return secondary_position, primary_position
 
         return primary_position, secondary_position
@@ -107,105 +214,38 @@ class OptimalLineupDict(dict):
         if self.is_in_dict(sql_player):
             return False
 
-        try:
-            points_per_dollar = sql_player.points_per_dollar()
-        except ZeroDivisionError:
-            return False
-
-        if position == "SP":
-            max_number_players = OptimalLineupDict.MAX_PITCHERS
-        elif position == "OF":
-            max_number_players = OptimalLineupDict.MAX_OUTFIELDERS
-        else:
-            max_number_players = 0
-
-        if position == "SP" or position == "OF":
-            if len(self[position]) < max_number_players:
-                if self.get_total_salary() + sql_player.draftkings_salary <= Draftkings.CONTEST_SALARY:
-                    heapq.heappush(self[position], (sql_player.predicted_draftkings_points, sql_player))
-                    self._total_salary += sql_player.draftkings_salary
-                    return True
-            else:
-                for i in range(0, len(self[position])):
-                    worst_player = self[position][i][1]
-                    if worst_player.points_per_dollar() < points_per_dollar:
-                        if self.get_total_salary() + sql_player.draftkings_salary - worst_player.draftkings_salary <= Draftkings.CONTEST_SALARY:
-                            heapq.heappushpop(self[position], (sql_player.predicted_draftkings_points, sql_player))
-                            self._total_salary -= worst_player.draftkings_salary
-                            self._total_salary += sql_player.draftkings_salary
-                            return True
-        else:
-            if self[position] is None:
-                if self.get_total_salary() + sql_player.draftkings_salary <= Draftkings.CONTEST_SALARY:
-                    self._total_salary += sql_player.draftkings_salary
-                    self[position] = sql_player
-                    return True
-            worst_player = self[position]
-            if worst_player.points_per_dollar() < points_per_dollar:
-                if self.get_total_salary() + sql_player.draftkings_salary - worst_player.draftkings_salary <= Draftkings.CONTEST_SALARY:
-                    self._total_salary -= worst_player.draftkings_salary
-                    self._total_salary += sql_player.draftkings_salary
-                    self[position] = sql_player
-                    return True
-
-        return False
+        return self.position_map[position].add(sql_player, Draftkings.CONTEST_SALARY - self.get_total_salary())
 
     def is_in_dict(self, sql_player):
-        try:
-            if type(sql_player) is PregamePitcherGameEntry:
-                for pitcher in self["SP"]:
-                    if pitcher == sql_player:
-                        return True
+        return_value = False
+        if type(sql_player) is PregamePitcherGameEntry:
+            return self.position_map["SP"].is_player_assigned(sql_player)
+        else:
+            for fielding_position in OptimalLineupDict.FieldingPositions:
+                if self.position_map[fielding_position].is_player_assigned(sql_player):
+                    return True
 
-            else:
-                for fielding_position in OptimalLineupDict.FieldingPositions:
-                    if fielding_position == "OF":
-                        for outfielder in self["OF"]:
-                            if outfielder[1] == sql_player:
-                                return True
-                    else:
-                        if self[sql_player.primary_position] == sql_player or self[sql_player.secondary_position] == sql_player:
-                            return True
-        except KeyError:
-            pass
-
-        return False
+        return return_value
 
     def __str__(self):
         ret_str = str()
         for fielding_position in OptimalLineupDict.FieldingPositions:
-            if fielding_position == "OF":
-                for outfielder in self["OF"]:
-                    try:
-                        ret_str += "%s: %s\n" % ("OF", outfielder[1])
-                    except KeyError:
-                        ret_str += "%s: \n" % "OF"
-            else:
-                try:
-                    ret_str += "%s: %s\n" % (fielding_position, self[fielding_position])
-                except KeyError:
-                    ret_str += "%s: \n" % fielding_position
+            ret_str += str(self.position_map[fielding_position])
 
-        for pitcher in self["SP"]:
-            try:
-                ret_str += "%s: %s\n" % ("SP", pitcher[1])
-            except KeyError:
-                ret_str += "%s: \n" % "SP"
+        ret_str += str(self.position_map["SP"])
 
-        ret_str += "Total salary: %s" % self._total_salary
+        ret_str += "Total salary: %s" % self.get_total_salary()
 
         return ret_str
 
     def is_valid(self):
-        try:
-            if len(self["SP"]) == OptimalLineupDict.MAX_PITCHERS and len(self["OF"]) == OptimalLineupDict.MAX_OUTFIELDERS \
-            and self["1B"] is not None and self["2B"] is not None and self["3B"] is not None and self["SS"] is not None \
-            and self["C"] is not None:
-                return True
-        except KeyError:
+        if not self.position_map["SP"].is_valid():
             return False
+        for position in OptimalLineupDict.FieldingPositions:
+            if not self.position_map[position].is_valid():
+                return False
 
-        return False
+        return True
 
 
 # Class to interact with Draftkings and obtain the available players and salaries
@@ -347,48 +387,40 @@ class Draftkings(object):
         for fielding_position in OptimalLineupDict.FieldingPositions:
             query_results = PregameHitterGameEntry.get_daily_entries_by_position(database_session, fielding_position, day)
             query_results = list(query_results.order_by(desc(PregameHitterGameEntry.predicted_draftkings_points)))
-            if fielding_position == "OF":
-                while len(optimal_lineup["OF"]) < OptimalLineupDict.MAX_OUTFIELDERS and len(query_results) > 0:
-                    candidate_player = heapq.heappop(query_results)
-                    if not optimal_lineup.is_in_dict(candidate_player):
-                        optimal_lineup.add(candidate_player)
-            else:
-                try:
-                    candidate_player = heapq.heappop(query_results)
-                except IndexError:
-                    print "Exception."
-                if not optimal_lineup.is_in_dict(candidate_player):
-                    optimal_lineup.add(candidate_player)
-            for player in query_results:
-                try:
-                    heapq.heappush(player_heap, (-player.predicted_draftkings_points, player))
-                except ZeroDivisionError:
-                    continue
+            query_result_heap = list()
+            for query_result in query_results:
+                heapq.heappush(query_result_heap, (-query_result.predicted_draftkings_points, query_result))
+            while not optimal_lineup.position_map[fielding_position].is_valid() and len(query_results) > 0:
+                candidate_player = heapq.heappop(query_result_heap)[1]
+                optimal_lineup.add(candidate_player)
+
+            while len(query_result_heap) > 0:
+                player = heapq.heappop(query_result_heap)
+                heapq.heappush(player_heap, player)
 
         # Look for pitchers
         query_results = PregamePitcherGameEntry.get_all_daily_entries(database_session, day)
         query_results = list(query_results.order_by(desc(PregamePitcherGameEntry.predicted_draftkings_points)))
-        for i in range(0, OptimalLineupDict.MAX_PITCHERS):
-            candidate_player = heapq.heappop(query_results)
-            if not optimal_lineup.is_in_dict(candidate_player):
-                optimal_lineup.add(candidate_player)
+        for query_result in query_results:
+            heapq.heappush(query_result_heap, (-query_result.predicted_draftkings_points, query_result))
+        while not optimal_lineup.position_map[fielding_position].is_valid() and len(query_results) > 0:
+            candidate_player = heapq.heappop(query_result_heap)[1]
+            optimal_lineup.add(candidate_player)
 
-        for pitcher in query_results:
-            try:
-                heapq.heappush(player_heap, (-pitcher.predicted_draftkings_points, pitcher))
-            except ZeroDivisionError:
-                continue
+        while len(query_result_heap) > 0:
+            player = heapq.heappop(query_result_heap)
+            heapq.heappush(player_heap, player)
 
         # Replace players one by one who are "overpaid" based on predicted points per dollar
         while (optimal_lineup.get_total_salary() > Draftkings.CONTEST_SALARY and len(player_heap) > 0) or \
                 not optimal_lineup.is_valid():
             next_player = heapq.heappop(player_heap)[1]
-            if not optimal_lineup.is_in_dict(next_player):
-                optimal_lineup.add(next_player)
+            optimal_lineup.add(next_player)
 
         # Print out all the remaining players in order of their value
         print "Runner-up players"
-        for player in player_heap:
+        while len(player_heap) > 0:
+            player = heapq.heappop(player_heap)
             print player[1]
         print " "
 
@@ -396,16 +428,16 @@ class Draftkings(object):
         lineup_db_entry = LineupEntry()
         lineup_db_entry.game_date = date.today()
         lineup_db_entry.game_time = datetime.now().strftime("%H:%M:%S")
-        lineup_db_entry.starting_pitcher_1 = optimal_lineup["SP"][0][1].rotowire_id
-        lineup_db_entry.starting_pitcher_2 = optimal_lineup["SP"][1][1].rotowire_id
-        lineup_db_entry.catcher = optimal_lineup["C"].rotowire_id
-        lineup_db_entry.first_baseman = optimal_lineup["1B"].rotowire_id
-        lineup_db_entry.second_baseman = optimal_lineup["2B"].rotowire_id
-        lineup_db_entry.third_baseman = optimal_lineup["3B"].rotowire_id
-        lineup_db_entry.shortstop = optimal_lineup["SS"].rotowire_id
-        lineup_db_entry.outfielder_1 = optimal_lineup["OF"][0][1].rotowire_id
-        lineup_db_entry.outfielder_2 = optimal_lineup["OF"][1][1].rotowire_id
-        lineup_db_entry.outfielder_3 = optimal_lineup["OF"][2][1].rotowire_id
+        lineup_db_entry.starting_pitcher_1 = optimal_lineup.position_map["SP"]._position_heap[0][1].rotowire_id
+        lineup_db_entry.starting_pitcher_2 = optimal_lineup.position_map["SP"]._position_heap[1][1].rotowire_id
+        lineup_db_entry.catcher = optimal_lineup.position_map["C"]._player.rotowire_id
+        lineup_db_entry.first_baseman = optimal_lineup.position_map["1B"]._player.rotowire_id
+        lineup_db_entry.second_baseman = optimal_lineup.position_map["2B"]._player.rotowire_id
+        lineup_db_entry.third_baseman = optimal_lineup.position_map["3B"]._player.rotowire_id
+        lineup_db_entry.shortstop = optimal_lineup.position_map["SS"]._player.rotowire_id
+        lineup_db_entry.outfielder_1 = optimal_lineup.position_map["OF"]._position_heap[0][1].rotowire_id
+        lineup_db_entry.outfielder_2 = optimal_lineup.position_map["OF"]._position_heap[1][1].rotowire_id
+        lineup_db_entry.outfielder_3 = optimal_lineup.position_map["OF"]._position_heap[2][1].rotowire_id
         database_session.add(lineup_db_entry)
         database_session.commit()
 

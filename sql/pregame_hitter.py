@@ -2,6 +2,7 @@
 from mlb_database import Base
 from sqlalchemy import Column, Integer, String, Float, or_, ForeignKeyConstraint, ForeignKey, Boolean
 from datetime import date
+import numpy as np
 
 
 class PregameHitterGameEntry(Base):
@@ -190,6 +191,41 @@ class PregameHitterGameEntry(Base):
     def to_input_vector(self):
         return self.to_season_input_vector() + self.to_career_input_vector() + self.to_vs_hand_input_vector() + \
                self.to_vs_input_vector() + self.to_recent_input_vector()
+
+    def to_input_vector_raw(self):
+        input_vector = np.concatenate([np.array(self.to_season_input_vector())*self.season_pa,
+        np.array(self.to_career_input_vector())*self.career_pa,
+        np.array(self.to_vs_hand_input_vector())*self.vs_hand_pa,
+        np.array(self.to_vs_input_vector())*self.vs_ab,
+        np.array(self.to_recent_input_vector())*self.recent_ab])
+        return input_vector
+
+    @staticmethod
+    def avg_input_vector(input_vector):
+        try:
+            season = np.array(input_vector[0:7]) / input_vector[6]
+        except ZeroDivisionError:
+            season = np.zeros(6)
+        try:
+            career = np.array(input_vector[7:14]) / input_vector[13]
+        except ZeroDivisionError:
+            career = np.zeros(6)
+        try:
+            vs_hand = np.array(input_vector[14:20]) / input_vector[19]
+        except ZeroDivisionError:
+            vs_hand = np.zeros(5)
+        try:
+            vs = np.array(input_vector[20:25]) / input_vector[24]
+        except ZeroDivisionError:
+            vs = np.zeros(4)
+        except RuntimeWarning:
+            print "Exception:"
+        try:
+            recent = np.array(input_vector[25:31]) / input_vector[30]
+        except ZeroDivisionError:
+            recent = np.zeros(5)
+
+        return np.concatenate([season, [input_vector[6]], career, [input_vector[13]], vs_hand, [input_vector[19]], vs, [input_vector[24]], recent, [input_vector[30]]])
 
     @staticmethod
     def get_input_vector_labels():

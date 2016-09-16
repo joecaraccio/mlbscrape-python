@@ -13,6 +13,7 @@ from Released.mlbscrape_python.sql.mlb_database import MlbDatabase
 from sqlalchemy.orm.exc import NoResultFound
 from sklearn.externals.six import StringIO
 import pydotplus
+import numpy as np
 
 
 class RegressionTree(object):
@@ -42,7 +43,7 @@ class RegressionTree(object):
 
 class RegressionForest(object):
     def __init__(self):
-        self._decision_tree = RandomForestRegressor(n_estimators=1000, max_depth=15)
+        self._decision_tree = RandomForestRegressor(n_estimators=1000)
         self._database_session = MlbDatabase().open_session()
 
     @staticmethod
@@ -117,7 +118,7 @@ class HitterRegressionTrainer(RegressionTree):
 
 class HitterRegressionForestTrainer(RegressionForest):
 
-    SIZE_TRAINING_BATCH = 2500
+    SIZE_TRAINING_BATCH = 4000
 
     def get_stochastic_batch(self, input_query, num_samples):
         player_samples = random.sample([itm for itm in input_query], num_samples)
@@ -149,7 +150,7 @@ class HitterRegressionForestTrainer(RegressionForest):
         return self._decision_tree.predict([input_data])
 
 
-class PitcherRegressionForestTrainer(RegressionTree):
+class PitcherRegressionTrainer(RegressionTree):
 
     SIZE_TRAINING_BATCH = 300
 
@@ -164,7 +165,8 @@ class PitcherRegressionForestTrainer(RegressionTree):
             if postgame_entry is None:
                 continue
 
-            x.append(input_vector)
+            final_hitter_array = item.get_opponent_vector()
+            x.append(input_vector, final_hitter_array)
             y.append([postgame_entry.actual_draftkings_points])
 
         return x, y
@@ -205,7 +207,7 @@ class PitcherRegressionForestTrainer(RegressionTree):
         return self._decision_tree.predict([input_data])
 
 
-class PitcherRegressionTrainer(RegressionForest):
+class PitcherRegressionForestTrainer(RegressionForest):
 
     SIZE_TRAINING_BATCH = 700
 
@@ -215,11 +217,13 @@ class PitcherRegressionTrainer(RegressionForest):
         y = list()
         for item in player_samples:
             input_vector = item.to_input_vector()
-            postgame_entry = self._database_session.query(PostgamePitcherGameEntry).get(item.rotowire_id,
-                                                                                            item.game_date)
+            postgame_entry = self._database_session.query(PostgamePitcherGameEntry).get((item.rotowire_id,
+                                                                                        item.game_date))
             if postgame_entry is None:
                 continue
 
+            final_hitter_array = item.get_opponent_vector(self._database_session)
+            np.concatenate([input_vector, final_hitter_array])
             x.append(input_vector)
             y.append([postgame_entry.actual_draftkings_points])
 

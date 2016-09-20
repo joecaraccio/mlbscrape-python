@@ -145,6 +145,11 @@ class BaseballReference(object):
                                                                      "table %s in the Baseball Reference page" %
                                                                      (table_row, table_column, table_name))
 
+    class DidNotFacePitcher(Exception):
+        def __init__(self, hitter_name, pitcher_name):
+            super(BaseballReference.DidNotFacePitcher, self).__init__("Player %s has never faced pitcher %s" % hitter_name,
+                                                                      pitcher_name)
+
     @staticmethod
     def get_vs_table_row_dict(soup, batter_id, pitcher_id):
         """ Special version of get_table_row_dict. Since Baseball Reference's batter vs. pitcher
@@ -156,7 +161,7 @@ class BaseballReference(object):
         :param table_column_label:
         :return:
         """
-        BATTER_VS_PITCHER_BASE = BaseballReference.BASE_URL + "/play-index/batter_vs_pitcher.cgi?batter="
+        BATTER_VS_PITCHER_BASE = "/play-index/batter_vs_pitcher.cgi?batter="
 
         results_table = soup.find("table", {"id": "ajax_result_table"})
         if results_table is None:

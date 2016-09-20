@@ -202,30 +202,38 @@ class PregameHitterGameEntry(Base):
 
     @staticmethod
     def avg_input_vector(input_vector):
-        try:
-            season = np.array(input_vector[0:7]) / input_vector[6]
-        except ZeroDivisionError:
-            season = np.zeros(6)
-        try:
-            career = np.array(input_vector[7:14]) / input_vector[13]
-        except ZeroDivisionError:
-            career = np.zeros(6)
-        try:
-            vs_hand = np.array(input_vector[14:20]) / input_vector[19]
-        except ZeroDivisionError:
-            vs_hand = np.zeros(5)
-        try:
-            vs = np.array(input_vector[20:25]) / input_vector[24]
-        except ZeroDivisionError:
-            vs = np.zeros(4)
-        except RuntimeWarning:
-            print "Exception:"
-        try:
-            recent = np.array(input_vector[25:31]) / input_vector[30]
-        except ZeroDivisionError:
-            recent = np.zeros(5)
 
-        return np.concatenate([season, [input_vector[6]], career, [input_vector[13]], vs_hand, [input_vector[19]], vs, [input_vector[24]], recent, [input_vector[30]]])
+        if input_vector[6] != 0:
+            season = np.array(input_vector[0:6]) / input_vector[6]
+            season = np.append(season, input_vector[6])
+        else:
+            season = np.zeros(7)
+
+        if input_vector[13] != 0:
+            career = np.array(input_vector[7:13]) / input_vector[13]
+            career = np.append(career, input_vector[13])
+        else:
+            career = np.zeros(7)
+
+        if input_vector[19] != 0:
+            vs_hand = np.array(input_vector[14:19]) / input_vector[19]
+            vs_hand = np.append(vs_hand, input_vector[19])
+        else:
+            vs_hand = np.zeros(6)
+
+        if input_vector[24] != 0:
+            vs = np.array(input_vector[20:24]) / input_vector[24]
+            vs = np.append(vs, input_vector[24])
+        else:
+            vs = np.zeros(5)
+
+        if input_vector[30] != 0:
+            recent = np.array(input_vector[25:30]) / input_vector[30]
+            recent = np.append(recent, input_vector[30])
+        else:
+            recent = np.zeros(6)
+
+        return np.concatenate([season, career, vs_hand, vs, recent])
 
     @staticmethod
     def get_input_vector_labels():

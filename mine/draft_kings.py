@@ -13,9 +13,9 @@ from Released.mlbscrape_python.sql.hitter_entry import HitterEntry
 from Released.mlbscrape_python.sql.pitcher_entry import PitcherEntry
 from sqlalchemy import desc, or_
 import heapq
-from Released.mlbscrape_python.learn.train_regression import HitterRegressionForestTrainer, PitcherRegressionForestTrainer
+from Released.mlbscrape_python.learn.train_regression import HitterRegressionForestTrainer, PitcherRegressionForestTrainer, HitterRegressionTrainer, PitcherRegressionTrainer
 from Released.mlbscrape_python.sql.lineup import LineupEntry
-
+import numpy as np
 
 class Position(object):
     def __init__(self, position_string):
@@ -85,7 +85,7 @@ class PositionHeap(object):
         else:
             temp_heap = list()
             while len(self._position_heap) > 0:
-                player = heapq.heappop(self._position_heap)
+                player = heapq.heappop(self._position_heap)[1]
                 if is_added:
                     heapq.heappush(temp_heap, (player.predicted_draftkings_points, player))
                 else:
@@ -464,7 +464,9 @@ class Draftkings(object):
 
         daily_entries = PregamePitcherGameEntry.get_all_daily_entries(database_session, day)
         for daily_entry in daily_entries:
-            predicted_points = pitcher_regression.get_prediction(daily_entry.to_input_vector())
+            hitter_array = daily_entry.get_opponent_vector(database_session)
+            final_array = np.concatenate([daily_entry.to_input_vector(), hitter_array])
+            predicted_points = pitcher_regression.get_prediction(final_array)
             if predicted_points < 0:
                 predicted_points = 0
             daily_entry.predicted_draftkings_points = predicted_points

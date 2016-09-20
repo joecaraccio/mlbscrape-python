@@ -76,8 +76,8 @@ class HitterRegressionTrainer(RegressionTree):
         y = list()
         for item in player_samples:
             input_vector = item.to_input_vector()
-            postgame_entry = self._database_session.query(PostgameHitterGameEntry).get(item.rotowire_id,
-                                                                                       item.game_date)
+            postgame_entry = self._database_session.query(PostgameHitterGameEntry).get((item.rotowire_id,
+                                                                                       item.game_date))
             if postgame_entry is None:
                 continue
 
@@ -101,8 +101,8 @@ class HitterRegressionTrainer(RegressionTree):
         x_test_actual = list()
         y_test_actual = list()
         for data in mlb_evaluation_data:
-            postgame_entry = self._database_session.query(PostgameHitterGameEntry).get(data.rotowire_id,
-                                                                                       data.game_date)
+            postgame_entry = self._database_session.query(PostgameHitterGameEntry).get((data.rotowire_id,
+                                                                                       data.game_date))
             if postgame_entry is None:
                 print "Ignoring hitter %s since his postgame stats were not found." % data.rotowire_id
                 continue
@@ -143,7 +143,7 @@ class HitterRegressionForestTrainer(RegressionForest):
         db_query = self._database_session.query(PregameHitterGameEntry)
         mlb_training_data, mlb_evaluation_data = self.get_train_eval_data(db_query, 0.8)
         X_train, Y_train = self.get_stochastic_batch(mlb_training_data, self.SIZE_TRAINING_BATCH)
-        self._decision_tree.fit(X_train, Y_train)
+        self._decision_tree.fit(X_train, np.ravel(Y_train))
         self._database_session.close()
 
     def get_prediction(self, input_data):
@@ -161,12 +161,11 @@ class PitcherRegressionTrainer(RegressionTree):
         for item in player_samples:
             input_vector = item.to_input_vector()
             postgame_entry = self._database_session.query(PostgamePitcherGameEntry).get((item.rotowire_id,
-                                                                                        item.game_date))
+                                                                                       item.game_date))
             if postgame_entry is None:
                 continue
 
-            final_hitter_array = item.get_opponent_vector()
-            x.append(input_vector, final_hitter_array)
+            x.append(input_vector)
             y.append([postgame_entry.actual_draftkings_points])
 
         return x, y
@@ -222,12 +221,12 @@ class PitcherRegressionForestTrainer(RegressionForest):
             if postgame_entry is None:
                 continue
 
-            final_hitter_array = item.get_opponent_vector(self._database_session)
-            np.concatenate([input_vector, final_hitter_array])
-            x.append(input_vector)
-            y.append([postgame_entry.actual_draftkings_points])
+            hitter_array = item.get_opponent_vector(self._database_session)
+            final_hitter_array = np.concatenate([input_vector, hitter_array])
+            x.append(final_hitter_array.tolist())
+            y.append(postgame_entry.actual_draftkings_points)
 
-        return x, y
+        return np.matrix(x), y
 
     def _save_model(self):
         """ Pure virtual method for saving the final model

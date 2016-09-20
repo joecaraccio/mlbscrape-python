@@ -162,11 +162,11 @@ def get_hitter(soup, team, database_session=None):
     if database_session is None:
         name = get_name_from_id(rotowire_id)
     else:
-        try:
-            hitter_entry = database_session.query(HitterEntry).get(rotowire_id)
+        hitter_entry = database_session.query(HitterEntry).get(rotowire_id)
+        if hitter_entry is not None:
             name = "%s %s" % (hitter_entry.first_name, hitter_entry.last_name)
             hand = hitter_entry.batting_hand
-        except NoResultFound:
+        else:
             name = get_name_from_id(rotowire_id)
             hand = get_hand(soup)
     position = soup.find("div", {"class": POSITION_CLASS_LABEL}).text
@@ -527,7 +527,7 @@ def get_hitter_stats(batter_id, pitcher_id, team, pitcher_hand, database_session
             pregame_hitter_entry.vs_rbi = int(vs_pitcher_stats["RBI"])
             pregame_hitter_entry.vs_bb = int(vs_pitcher_stats["BB"])
             pregame_hitter_entry.vs_so = int(vs_pitcher_stats["SO"])
-        except (BaseballReference.TableNotFound, BaseballReference.TableRowNotFound) as e:
+        except (BaseballReference.TableNotFound, BaseballReference.TableRowNotFound, BaseballReference.DidNotFacePitcher) as e:
             print str(e), "with", str(hitter_entry.first_name), str(hitter_entry.last_name)
 
         return pregame_hitter_entry

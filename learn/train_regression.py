@@ -208,7 +208,7 @@ class PitcherRegressionTrainer(RegressionTree):
 
 class PitcherRegressionForestTrainer(RegressionForest):
 
-    SIZE_TRAINING_BATCH = 700
+    SIZE_TRAINING_BATCH = 900
 
     def get_stochastic_batch(self, input_query, num_samples):
         player_samples = random.sample([itm for itm in input_query], num_samples)

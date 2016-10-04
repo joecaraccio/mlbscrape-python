@@ -16,6 +16,8 @@ import heapq
 from Released.mlbscrape_python.learn.train_regression import HitterRegressionForestTrainer, PitcherRegressionForestTrainer, HitterRegressionTrainer, PitcherRegressionTrainer
 from Released.mlbscrape_python.sql.lineup import LineupEntry
 import numpy as np
+from email_service import send_email
+
 
 class Position(object):
     def __init__(self, position_string):
@@ -247,6 +249,22 @@ class OptimalLineupDict(dict):
 
         return True
 
+    def get_worst_position(self):
+        """ Get the position with the player with the least predicted points
+        :return: the string of the worst position
+        """
+        worst_point_value = self.position_map["C"].get_worst_player_points()
+        position = str()
+        for fielding_position in OptimalLineupDict.FieldingPositions:
+            if self.position_map[fielding_position].get_worst_player_points() <= worst_point_value:
+                worst_point_value = self.position_map[fielding_position].get_worst_player_points()
+                position = fielding_position
+
+        if self.position_map["SP"].get_worst_player_points() <= worst_point_value:
+            position = "SP"
+
+        return position
+
 
 # Class to interact with Draftkings and obtain the available players and salaries
 class Draftkings(object):
@@ -381,7 +399,7 @@ class Draftkings(object):
         if day is None:
             day = date.today()
         optimal_lineup = OptimalLineupDict()
-        player_heap = list()
+        player_heap = dict()
 
         # Look for the hitter entries
         for fielding_position in OptimalLineupDict.FieldingPositions:
@@ -394,35 +412,48 @@ class Draftkings(object):
                 candidate_player = heapq.heappop(query_result_heap)[1]
                 optimal_lineup.add(candidate_player)
 
+            player_heap[fielding_position] = list()
             while len(query_result_heap) > 0:
                 player = heapq.heappop(query_result_heap)
-                heapq.heappush(player_heap, player)
+                heapq.heappush(player_heap[fielding_position], player)
 
         # Look for pitchers
         query_results = PregamePitcherGameEntry.get_all_daily_entries(database_session, day)
         query_results = list(query_results.order_by(desc(PregamePitcherGameEntry.predicted_draftkings_points)))
         for query_result in query_results:
             heapq.heappush(query_result_heap, (-query_result.predicted_draftkings_points, query_result))
-        while not optimal_lineup.position_map[fielding_position].is_valid() and len(query_results) > 0:
+        while not optimal_lineup.position_map["SP"].is_valid() and len(query_results) > 0:
             candidate_player = heapq.heappop(query_result_heap)[1]
             optimal_lineup.add(candidate_player)
 
+        player_heap["SP"] = list()
         while len(query_result_heap) > 0:
             player = heapq.heappop(query_result_heap)
-            heapq.heappush(player_heap, player)
+            heapq.heappush(player_heap["SP"], player)
 
         # Replace players one by one who are "overpaid" based on predicted points per dollar
         while (optimal_lineup.get_total_salary() > Draftkings.CONTEST_SALARY and len(player_heap) > 0) or \
                 not optimal_lineup.is_valid():
-            next_player = heapq.heappop(player_heap)[1]
+            worst_position = optimal_lineup.get_worst_position()
+            next_player = heapq.heappop(player_heap[worst_position])[1]
             optimal_lineup.add(next_player)
 
         # Print out all the remaining players in order of their value
-        print "Runner-up players"
-        while len(player_heap) > 0:
-            player = heapq.heappop(player_heap)
-            print player[1]
-        print " "
+        runner_up_text = "Runner-up players\n"
+        for fielding_position in OptimalLineupDict.FieldingPositions:
+            runner_up_text += fielding_position + "\n"
+            while len(player_heap[fielding_position]) > 0:
+                player = heapq.heappop(player_heap[fielding_position])
+                runner_up_text += "%s\n" % str(player[1])
+            runner_up_text += "\n"
+
+        runner_up_text += "SP\n"
+        while len(player_heap["SP"]) > 0:
+            player = heapq.heappop(player_heap["SP"])
+            runner_up_text += "%s\n" % str(player[1])
+
+        send_email(runner_up_text)
+        print runner_up_text
 
         # Commit the prediction to the database
         lineup_db_entry = LineupEntry()

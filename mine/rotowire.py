@@ -1,19 +1,16 @@
-from datetime import date, timedelta, datetime
-from baseball_reference import BaseballReference
-from beautiful_soup_helper import BeautifulSoupHelper
+from datetime import datetime
 from sql.hitter_entry import HitterEntry
 from sql.pregame_hitter import PregameHitterGameEntry
 from sql.pregame_pitcher import PregamePitcherGameEntry
 from sql.pitcher_entry import PitcherEntry
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm.exc import NoResultFound
-import bidict
 from sql.postgame_hitter import PostgameHitterGameEntry
 from sql.postgame_pitcher import PostgamePitcherGameEntry
 from sql.mlb_database import MlbDatabase
 from sql.game import GameEntry
 from multiprocessing import Pool
-from mine.draft_kings import Draftkings
+from mine.draft_kings import get_hitter_points, get_pitcher_points
+from mine.baseball_reference import *
 
 # Daily lineups relevant HTML labels
 DAILY_LINEUPS_URL = "http://www.rotowire.com/baseball/daily_lineups.htm"
@@ -75,7 +72,6 @@ class HomeAwayEnum:
 
 def mine_pregame_stats():
     """ Mine the hitter/pitcher stats and predict the outcomes and commit to the database session
-    :param mlb_database: MlbDatabase object
     """
     database_session = MlbDatabase().open_session()
     games = get_game_lineups(database_session)
@@ -91,7 +87,7 @@ def get_game_lineups(database_session):
     :return: list of Game objects representing the lineups for the day
     """
     #TODO: add feature to look if it's going to rain
-    lineup_soup = BeautifulSoupHelper.get_soup_from_url(DAILY_LINEUPS_URL)
+    lineup_soup = get_soup_from_url(DAILY_LINEUPS_URL)
     header_nodes = lineup_soup.findAll("div", {"class": TEAM_REGION_LABEL})
     games = list()
     for header_node in header_nodes:
@@ -126,7 +122,7 @@ def get_game_lineups(database_session):
             game_entry.wind_speed = get_wind_speed(game_node)
             game_entry.ump_ks_per_game = get_ump_ks_per_game(game_node)
             game_entry.ump_runs_per_game = get_ump_runs_per_game(game_node)
-            game_entry.park_hitter_score, game_entry.park_pitcher_score = BaseballReference.get_team_info(team_dict[home_team_abbreviation])
+            game_entry.park_hitter_score, game_entry.park_pitcher_score = get_team_info(team_dict[home_team_abbreviation])
 
             database_session.add(game_entry)
             database_session.commit()
@@ -226,7 +222,7 @@ def get_hand(soup):
 
 
 def update_lineup_ids(lineup, database_session):
-    hitter_soup = BaseballReference.get_hitter_soup()
+    hitter_soup = get_hitter_soup()
     for current_player in lineup:
         name = current_player.name.split()
         first_name = name[0]
@@ -243,11 +239,11 @@ def update_lineup_ids(lineup, database_session):
         # Found no entries, create a bare bones entry with just the name and id
         else:
             try:
-                baseball_reference_id = BaseballReference.get_hitter_id(first_name + " " + last_name,
-                                                                        BaseballReference.team_dict.inv[team_dict[current_player.team]],
+                baseball_reference_id = get_hitter_id(first_name + " " + last_name,
+                                                                        team_dict.inv[team_dict[current_player.team]],
                                                                         date.today().year,
                                                                         hitter_soup)
-            except BaseballReference.NameNotFound:
+            except NameNotFound:
                 print "Skipping committing this hitter '%s %s'." % (first_name, last_name)
                 continue
 
@@ -255,7 +251,7 @@ def update_lineup_ids(lineup, database_session):
 
 
 def update_pitcher_id(pitcher, database_session):
-    pitcher_soup = BaseballReference.get_pitcher_soup()
+    pitcher_soup = get_pitcher_soup()
     name = pitcher.name.split()
     first_name = name[0]
     last_name = " ".join(str(x) for x in name[1:len(name)])
@@ -271,11 +267,11 @@ def update_pitcher_id(pitcher, database_session):
     # Found no entries, create a bare bones entry with just the name and id
     else:
         try:
-            baseball_reference_id = BaseballReference.get_pitcher_id(first_name + " " + last_name,
-                                                                     BaseballReference.team_dict.inv[team_dict[pitcher.team]],
+            baseball_reference_id = get_pitcher_id(first_name + " " + last_name,
+                                                                     team_dict.inv[team_dict[pitcher.team]],
                                                                      date.today().year,
                                                                      pitcher_soup)
-        except BaseballReference.NameNotFound:
+        except NameNotFound:
             print "Skipping committing this pitcher '%s %s'." % (first_name, last_name)
             return
 
@@ -300,7 +296,7 @@ def get_name_from_id(rotowire_id):
     :param rotowire_id: unique ID for a player in RotoWire
     :return: str representation of the name of the player
     """
-    player_soup = BeautifulSoupHelper.get_soup_from_url(PLAYER_PAGE_BASE_URL + str(rotowire_id))
+    player_soup = get_soup_from_url(PLAYER_PAGE_BASE_URL + str(rotowire_id))
     return player_soup.find("div", {"class": PLAYER_PAGE_LABEL}).find("h1").text.strip()
 
 
@@ -439,9 +435,9 @@ def get_hitter_stats(batter_id, pitcher_id, team, pitcher_hand, database_session
     if hitter_entry is None:
         raise HitterNotFound(batter_id)
 
-    hitter_career_soup = BaseballReference.get_hitter_page_career_soup(hitter_entry.baseball_reference_id)
+    hitter_career_soup = get_hitter_page_career_soup(hitter_entry.baseball_reference_id)
     try:
-        career_stats = BaseballReference.get_career_hitting_stats(hitter_entry.baseball_reference_id, hitter_career_soup)
+        career_stats = get_career_hitting_stats(hitter_entry.baseball_reference_id, hitter_career_soup)
         pregame_hitter_entry.career_pa = int(career_stats["PA"])
         pregame_hitter_entry.career_ab = int(career_stats["AB"])
         pregame_hitter_entry.career_r = int(career_stats["R"])
@@ -453,19 +449,19 @@ def get_hitter_stats(batter_id, pitcher_id, team, pitcher_hand, database_session
         pregame_hitter_entry.career_bb = int(career_stats["BB"])
         pregame_hitter_entry.career_so = int(career_stats["SO"])
     #TODO: add ColumnNotFound exception to BaseballReference
-    except (BaseballReference.TableNotFound, BaseballReference.TableRowNotFound) as e:
+    except (TableNotFound, TableRowNotFound) as e:
         print str(e), "with", str(hitter_entry.first_name), str(hitter_entry.last_name)
 
     # Vs hand of the opposing pitcher
     if pitcher_hand == "L":
-        pitcher_hand_lr = BaseballReference.HandEnum.LHP
+        pitcher_hand_lr = HandEnum.LHP
     elif pitcher_hand == "R":
-        pitcher_hand_lr = BaseballReference.HandEnum.RHP
+        pitcher_hand_lr = HandEnum.RHP
     else:
         print "Invalid pitcher hand %i" % pitcher_hand
         assert 0
     try:
-        vs_hand_stats = BaseballReference.get_vs_hand_hitting_stats(hitter_entry.baseball_reference_id, pitcher_hand_lr, hitter_career_soup)
+        vs_hand_stats = get_vs_hand_hitting_stats(hitter_entry.baseball_reference_id, pitcher_hand_lr, hitter_career_soup)
         pregame_hitter_entry.vs_hand_pa = int(vs_hand_stats["PA"])
         pregame_hitter_entry.vs_hand_ab = int(vs_hand_stats["AB"])
         pregame_hitter_entry.vs_hand_r = int(vs_hand_stats["R"])
@@ -476,12 +472,12 @@ def get_hitter_stats(batter_id, pitcher_id, team, pitcher_hand, database_session
         pregame_hitter_entry.vs_hand_cs = int(vs_hand_stats["CS"])
         pregame_hitter_entry.vs_hand_bb = int(vs_hand_stats["BB"])
         pregame_hitter_entry.vs_hand_so = int(vs_hand_stats["SO"])
-    except (BaseballReference.TableNotFound, BaseballReference.TableRowNotFound) as e:
+    except (TableNotFound, TableRowNotFound) as e:
         print str(e), "with", str(hitter_entry.first_name), str(hitter_entry.last_name)
 
     # Recent stats
     try:
-        recent_stats = BaseballReference.get_recent_hitting_stats(hitter_entry.baseball_reference_id, hitter_career_soup)
+        recent_stats = get_recent_hitting_stats(hitter_entry.baseball_reference_id, hitter_career_soup)
         pregame_hitter_entry.recent_pa = int(recent_stats["PA"])
         pregame_hitter_entry.recent_ab = int(recent_stats["AB"])
         pregame_hitter_entry.recent_r = int(recent_stats["R"])
@@ -492,12 +488,12 @@ def get_hitter_stats(batter_id, pitcher_id, team, pitcher_hand, database_session
         pregame_hitter_entry.recent_cs = int(recent_stats["CS"])
         pregame_hitter_entry.recent_bb = int(recent_stats["BB"])
         pregame_hitter_entry.recent_so = int(recent_stats["SO"])
-    except (BaseballReference.TableNotFound, BaseballReference.TableRowNotFound) as e:
+    except (TableNotFound, TableRowNotFound) as e:
         print str(e), "with", str(hitter_entry.first_name), str(hitter_entry.last_name)
 
     #Season stats
     try:
-        season_stats = BaseballReference.get_season_hitting_stats(hitter_entry.baseball_reference_id)
+        season_stats = get_season_hitting_stats(hitter_entry.baseball_reference_id)
         pregame_hitter_entry.season_pa = int(season_stats["PA"])
         pregame_hitter_entry.season_ab = int(season_stats["AB"])
         pregame_hitter_entry.season_r = int(season_stats["R"])
@@ -508,7 +504,7 @@ def get_hitter_stats(batter_id, pitcher_id, team, pitcher_hand, database_session
         pregame_hitter_entry.season_cs = int(season_stats["CS"])
         pregame_hitter_entry.season_bb = int(season_stats["BB"])
         pregame_hitter_entry.season_so = int(season_stats["SO"])
-    except (BaseballReference.TableNotFound, BaseballReference.TableRowNotFound) as e:
+    except (TableNotFound, TableRowNotFound) as e:
         print str(e), "with", str(hitter_entry.first_name), str(hitter_entry.last_name)
 
     # Career versus this pitcher
@@ -518,7 +514,7 @@ def get_hitter_stats(batter_id, pitcher_id, team, pitcher_hand, database_session
         return pregame_hitter_entry
     else:
         try:
-            vs_pitcher_stats = BaseballReference.get_vs_pitcher_stats(hitter_entry.baseball_reference_id,
+            vs_pitcher_stats = get_vs_pitcher_stats(hitter_entry.baseball_reference_id,
                                                                       pitcher_entry.baseball_reference_id)
             pregame_hitter_entry.vs_pa = int(vs_pitcher_stats["PA"])
             pregame_hitter_entry.vs_ab = int(vs_pitcher_stats["AB"])
@@ -527,7 +523,7 @@ def get_hitter_stats(batter_id, pitcher_id, team, pitcher_hand, database_session
             pregame_hitter_entry.vs_rbi = int(vs_pitcher_stats["RBI"])
             pregame_hitter_entry.vs_bb = int(vs_pitcher_stats["BB"])
             pregame_hitter_entry.vs_so = int(vs_pitcher_stats["SO"])
-        except (BaseballReference.TableNotFound, BaseballReference.TableRowNotFound, BaseballReference.DidNotFacePitcher) as e:
+        except (TableNotFound, TableRowNotFound, DidNotFacePitcher) as e:
             print str(e), "with", str(hitter_entry.first_name), str(hitter_entry.last_name)
 
         return pregame_hitter_entry
@@ -552,9 +548,9 @@ def get_pitcher_stats(pitcher_id, team, opposing_team, database_session, game_da
     if pitcher_entry is None:
         raise PitcherNotFound(pitcher_id)
 
-    pitcher_career_soup = BaseballReference.get_pitcher_page_career_soup(pitcher_entry.baseball_reference_id)
+    pitcher_career_soup = get_pitcher_page_career_soup(pitcher_entry.baseball_reference_id)
     try:
-        career_stats = BaseballReference.get_career_pitching_stats(pitcher_entry.baseball_reference_id, pitcher_career_soup)
+        career_stats = get_career_pitching_stats(pitcher_entry.baseball_reference_id, pitcher_career_soup)
         pregame_pitcher_entry.career_bf = int(career_stats["BF"])
         pregame_pitcher_entry.career_ip = float(career_stats["IP"])
         pregame_pitcher_entry.career_h = int(career_stats["H"])
@@ -564,7 +560,7 @@ def get_pitcher_stats(pitcher_id, team, opposing_team, database_session, game_da
         pregame_pitcher_entry.career_so = int(career_stats["SO"])
         pregame_pitcher_entry.career_wins = int(career_stats["W"])
         pregame_pitcher_entry.career_losses = int(career_stats["L"])
-    except (BaseballReference.TableNotFound, BaseballReference.TableRowNotFound) as e:
+    except (TableNotFound, TableRowNotFound) as e:
         print str(e), "with", str(pitcher_entry.first_name), str(pitcher_entry.last_name)
 
     opposing_lineup = database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.game_date == game_date,
@@ -580,7 +576,7 @@ def get_pitcher_stats(pitcher_id, team, opposing_team, database_session, game_da
 
     # Recent stats
     try:
-        recent_stats = BaseballReference.get_recent_pitcher_stats(pitcher_entry.baseball_reference_id, pitcher_career_soup)
+        recent_stats = get_recent_pitcher_stats(pitcher_entry.baseball_reference_id, pitcher_career_soup)
         pregame_pitcher_entry.recent_bf = int(recent_stats["BF"])
         pregame_pitcher_entry.recent_ip = float(recent_stats["IP"])
         pregame_pitcher_entry.recent_h = int(recent_stats["H"])
@@ -590,12 +586,12 @@ def get_pitcher_stats(pitcher_id, team, opposing_team, database_session, game_da
         pregame_pitcher_entry.recent_so = int(recent_stats["SO"])
         pregame_pitcher_entry.recent_wins = int(recent_stats["W"])
         pregame_pitcher_entry.recent_losses = int(recent_stats["L"])
-    except (BaseballReference.TableNotFound, BaseballReference.TableRowNotFound) as e:
+    except (TableNotFound, TableRowNotFound) as e:
         print str(e), "with", str(pitcher_entry.first_name), str(pitcher_entry.last_name)
 
     #Season stats
     try:
-        season_stats = BaseballReference.get_season_pitcher_stats(pitcher_entry.baseball_reference_id)
+        season_stats = get_season_pitcher_stats(pitcher_entry.baseball_reference_id)
         pregame_pitcher_entry.season_bf = int(season_stats["BF"])
         pregame_pitcher_entry.season_ip = float(season_stats["IP"])
         pregame_pitcher_entry.season_h = int(season_stats["H"])
@@ -605,7 +601,7 @@ def get_pitcher_stats(pitcher_id, team, opposing_team, database_session, game_da
         pregame_pitcher_entry.season_so = int(season_stats["SO"])
         pregame_pitcher_entry.season_wins = int(season_stats["W"])
         pregame_pitcher_entry.season_losses = int(season_stats["L"])
-    except (BaseballReference.TableNotFound, BaseballReference.TableRowNotFound) as e:
+    except (TableNotFound, TableRowNotFound) as e:
         print str(e), "with", str(pitcher_entry.first_name), str(pitcher_entry.last_name)
 
     return pregame_pitcher_entry
@@ -634,8 +630,8 @@ def mine_yesterdays_results(database_session):
     for pregame_hitter_entry in hitter_entries:
         hitter_entry = database_session.query(HitterEntry).get(pregame_hitter_entry.rotowire_id)
         try:
-            stat_row_dict = BaseballReference.get_yesterdays_hitting_game_log(hitter_entry.baseball_reference_id)
-        except BaseballReference.TableRowNotFound:
+            stat_row_dict = get_yesterdays_hitting_game_log(hitter_entry.baseball_reference_id)
+        except TableRowNotFound:
             print "Player %s %s did not play yesterday. Deleting pregame entry %s %s" % (hitter_entry.first_name,
                                                                                          hitter_entry.last_name,
                                                                                          pregame_hitter_entry.game_date,
@@ -658,7 +654,7 @@ def mine_yesterdays_results(database_session):
         postgame_hitter_entry.game_3b = int(stat_row_dict["3B"])
         postgame_hitter_entry.game_1b = postgame_hitter_entry.game_h - postgame_hitter_entry.game_2b - \
                                         postgame_hitter_entry.game_3b - postgame_hitter_entry.game_hr
-        postgame_hitter_entry.actual_draftkings_points = Draftkings.get_hitter_points(postgame_hitter_entry)
+        postgame_hitter_entry.actual_draftkings_points = get_hitter_points(postgame_hitter_entry)
         try:
             database_session.add(postgame_hitter_entry)
             database_session.commit()
@@ -675,8 +671,8 @@ def mine_yesterdays_results(database_session):
         pitcher_entry = database_session.query(PitcherEntry).get(pregame_pitcher_entry.rotowire_id)
         print "Mining yesterday for %s %s" % (pitcher_entry.first_name, pitcher_entry.last_name)
         try:
-            stat_row_dict = BaseballReference.get_pitching_game_log(pitcher_entry.baseball_reference_id)
-        except BaseballReference.TableRowNotFound:
+            stat_row_dict = get_pitching_game_log(pitcher_entry.baseball_reference_id)
+        except TableRowNotFound:
             print "Player %s %s did not play yesterday. Deleting pregame entry %s %s" % (pitcher_entry.first_name,
                                                                                          pitcher_entry.last_name,
                                                                                          pregame_pitcher_entry.game_date,
@@ -703,7 +699,7 @@ def mine_yesterdays_results(database_session):
             postgame_pitcher_entry.game_cgso = 1
         if postgame_pitcher_entry.game_cg == 1 and postgame_pitcher_entry.game_h == 0:
             postgame_pitcher_entry.game_no_hitter = 1
-        postgame_pitcher_entry.actual_draftkings_points = Draftkings.get_pitcher_points(postgame_pitcher_entry)
+        postgame_pitcher_entry.actual_draftkings_points = get_pitcher_points(postgame_pitcher_entry)
         try:
             database_session.add(postgame_pitcher_entry)
             database_session.commit()
@@ -718,7 +714,7 @@ def mine_yesterdays_results(database_session):
 def get_table_row_dict(soup, table_name, table_row_label, table_column_label):
     results_table = soup.find("table", {"id": table_name})
     if results_table is None:
-        raise BaseballReference.TableNotFound(table_name)
+        raise TableNotFound(table_name)
 
     table_header_list = results_table.find("thead").findAll("th")
     table_header_list = [x.text for x in table_header_list]
@@ -741,7 +737,7 @@ def get_table_row_dict(soup, table_name, table_row_label, table_column_label):
             break
 
     #TODO: add a TableRowNotFound exception
-    raise BaseballReference.TableNotFound(table_name)
+    raise TableNotFound(table_name)
 
 
 def get_wind_speed(soup):

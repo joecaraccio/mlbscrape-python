@@ -1,8 +1,9 @@
 
 import unittest
-from Released.mlbscrape_python.mine.baseball_reference import BaseballReference
-from Released.mlbscrape_python.mine.beautiful_soup_helper import BeautifulSoupHelper
+from mine.baseball_reference import *
+from mine.beautiful_soup_helper import *
 from datetime import date, timedelta
+
 
 class GetHitterIdTest(unittest.TestCase):
     """ Test case for testing the get_hitter_id function
@@ -10,23 +11,23 @@ class GetHitterIdTest(unittest.TestCase):
     HTML_LOCATION = "baseball_reference_batting_2016.shtml"
 
     def setUp(self):
-        self.soup = BeautifulSoupHelper.get_soup_from_url(GetHitterIdTest.HTML_LOCATION)
+        self.soup = get_soup_from_url(GetHitterIdTest.HTML_LOCATION)
 
     def test_typical(self):
-        hitter_id = BaseballReference.get_hitter_id("Dustin Pedroia",
-                                                    "BOS",
-                                                    "2016",
-                                                    self.soup)
+        hitter_id = get_hitter_id("Dustin Pedroia",
+                                  "BOS",
+                                  "2016",
+                                  self.soup)
         self.assertEqual(hitter_id, "pedrodu01")
 
     def test_wrong_team(self):
         try:
-            hitter_id = BaseballReference.get_hitter_id("Dustin Pedroia",
-                                                    "TBR",
-                                                    "2016",
-                                                    self.soup)
+            hitter_id = get_hitter_id("Dustin Pedroia",
+                                      "TBR",
+                                      "2016",
+                                      self.soup)
             self.assertTrue(False)
-        except BaseballReference.NameNotFound:
+        except NameNotFound:
             self.assertTrue(True)
 
 
@@ -36,23 +37,23 @@ class GetPitcherIdTest(unittest.TestCase):
     HTML_LOCATION = "baseball_reference_pitching_2016.shtml"
 
     def setUp(self):
-        self.soup = BeautifulSoupHelper.get_soup_from_url(GetPitcherIdTest.HTML_LOCATION)
+        self.soup = get_soup_from_url(GetPitcherIdTest.HTML_LOCATION)
 
     def test_typical(self):
-        hitter_id = BaseballReference.get_pitcher_id("Matt Barnes",
-                                                     "BOS",
-                                                     "2016",
-                                                     self.soup)
+        hitter_id = get_pitcher_id("Matt Barnes",
+                                   "BOS",
+                                   "2016",
+                                   self.soup)
         self.assertEqual(hitter_id, "barnema01")
 
     def test_wrong_team(self):
         try:
-            hitter_id = BaseballReference.get_pitcher_id("Matt Barnes",
-                                                    "TBR",
-                                                    "2016",
-                                                    self.soup)
+            hitter_id = get_pitcher_id("Matt Barnes",
+                                       "TBR",
+                                       "2016",
+                                       self.soup)
             self.assertTrue(False)
-        except BaseballReference.NameNotFound:
+        except NameNotFound:
             self.assertTrue(True)
 
 
@@ -62,8 +63,8 @@ class GetHittingStats(unittest.TestCase):
     def test_career_typical(self):
         HTML_LOCATION = "career_stats_beltran.html"
         ID = "beltrca01"
-        soup = BeautifulSoupHelper.get_soup_from_url(HTML_LOCATION)
-        career_stats = BaseballReference.get_career_hitting_stats(ID, soup)
+        soup = get_soup_from_url(HTML_LOCATION)
+        career_stats = get_career_hitting_stats(ID, soup)
         self.assertEqual(int(career_stats["AB"]), 8810)
         self.assertEqual(int(career_stats["R"]), 1459)
         self.assertEqual(int(career_stats["H"]), 2471)
@@ -76,8 +77,8 @@ class GetHittingStats(unittest.TestCase):
     def test_recent_typical(self):
         HTML_LOCATION = "career_stats_pedroia.html"
         ID = "pedrodu01"
-        soup = BeautifulSoupHelper.get_soup_from_url(HTML_LOCATION)
-        career_stats = BaseballReference.get_recent_hitting_stats(ID, soup)
+        soup = get_soup_from_url(HTML_LOCATION)
+        career_stats = get_recent_hitting_stats(ID, soup)
         self.assertEqual(int(career_stats["AB"]), 24)
         self.assertEqual(int(career_stats["R"]), 4)
         self.assertEqual(int(career_stats["H"]), 7)
@@ -90,8 +91,8 @@ class GetHittingStats(unittest.TestCase):
     def test_vs_hand_typical(self):
         HTML_LOCATION = "career_stats_pedroia.html"
         ID = "pedrodu01"
-        soup = BeautifulSoupHelper.get_soup_from_url(HTML_LOCATION)
-        career_stats = BaseballReference.get_vs_hand_hitting_stats(ID, BaseballReference.HandEnum.LHP, soup)
+        soup = get_soup_from_url(HTML_LOCATION)
+        career_stats = get_vs_hand_hitting_stats(ID, HandEnum.LHP, soup)
         self.assertEqual(int(career_stats["AB"]), 1394)
         self.assertEqual(int(career_stats["R"]), 232)
         self.assertEqual(int(career_stats["H"]), 425)
@@ -105,8 +106,8 @@ class GetHittingStats(unittest.TestCase):
         HTML_LOCATION = "stats_pedroia_2016.html"
         ID = "pedrodu01"
         YEAR = "2016"
-        soup = BeautifulSoupHelper.get_soup_from_url(HTML_LOCATION)
-        season_stats = BaseballReference.get_season_hitting_stats(ID, YEAR, soup)
+        soup = get_soup_from_url(HTML_LOCATION)
+        season_stats = get_season_hitting_stats(ID, YEAR, soup)
         self.assertEqual(int(season_stats["AB"]), 67)
         self.assertEqual(int(season_stats["R"]), 11)
         self.assertEqual(int(season_stats["H"]), 20)
@@ -120,8 +121,8 @@ class GetHittingStats(unittest.TestCase):
         HTML_LOCATION = "stats_pedroia_vs_sabathia.html"
         ID = "pedrodu01"
         PITCHER_ID = "sabatc.01"
-        soup = BeautifulSoupHelper.get_soup_from_url(HTML_LOCATION)
-        vs_stats = BaseballReference.get_vs_pitcher_stats(ID, PITCHER_ID, soup)
+        soup = get_soup_from_url(HTML_LOCATION)
+        vs_stats = get_vs_pitcher_stats(ID, PITCHER_ID, soup)
         self.assertEqual(int(vs_stats["AB"]), 68)
         self.assertEqual(int(vs_stats["H"]), 19)
         self.assertEqual(int(vs_stats["HR"]), 0)
@@ -137,8 +138,8 @@ class GetPitchingStats(unittest.TestCase):
     def test_career_typical(self):
         HTML_LOCATION = "career_stats_sabathia.html"
         ID = "sabatc.01"
-        soup = BeautifulSoupHelper.get_soup_from_url(HTML_LOCATION)
-        career_stats = BaseballReference.get_career_pitching_stats(ID, soup)
+        soup = get_soup_from_url(HTML_LOCATION)
+        career_stats = get_career_pitching_stats(ID, soup)
         self.assertEqual(int(career_stats["W"]), 215)
         self.assertEqual(int(career_stats["L"]), 130)
         self.assertEqual(int(career_stats["BF"]), 12538)
@@ -150,8 +151,8 @@ class GetPitchingStats(unittest.TestCase):
     def test_recent_typical(self):
         HTML_LOCATION = "career_stats_sabathia.html"
         ID = "sabatc.01"
-        soup = BeautifulSoupHelper.get_soup_from_url(HTML_LOCATION)
-        recent_stats = BaseballReference.get_recent_pitcher_stats(ID, soup)
+        soup = get_soup_from_url(HTML_LOCATION)
+        recent_stats = get_recent_pitcher_stats(ID, soup)
         self.assertEqual(int(recent_stats["W"]), 0)
         self.assertEqual(int(recent_stats["L"]), 1)
         self.assertEqual(int(recent_stats["BF"]), 48)
@@ -164,8 +165,8 @@ class GetPitchingStats(unittest.TestCase):
         HTML_LOCATION = "stats_sabathia_2016.html"
         ID = "sabatc.01"
         YEAR = "2016"
-        soup = BeautifulSoupHelper.get_soup_from_url(HTML_LOCATION)
-        season_stats = BaseballReference.get_season_pitcher_stats(ID, YEAR, soup)
+        soup = get_soup_from_url(HTML_LOCATION)
+        season_stats = get_season_pitcher_stats(ID, YEAR, soup)
         self.assertEqual(int(season_stats["W"]), 1)
         self.assertEqual(int(season_stats["L"]), 1)
         self.assertEqual(int(season_stats["BF"]), 73)
@@ -177,9 +178,9 @@ class GetPitchingStats(unittest.TestCase):
     def test_yesterdays_game_typical(self):
         HTML_LOCATION = "game_log_steven_wright.html"
         ID = "wrighst01"
-        soup = BeautifulSoupHelper.get_soup_from_url(HTML_LOCATION)
+        soup = get_soup_from_url(HTML_LOCATION)
         game_date = date(day=27, month=4, year=2016)
-        game_stats = BaseballReference.get_pitching_game_log(ID, soup, game_date)
+        game_stats = get_pitching_game_log(ID, soup, game_date)
         self.assertEqual(float(game_stats["IP"]), 7.0)
 
 
@@ -188,8 +189,8 @@ class GetTeamInfoTest(unittest.TestCase):
     HTML_LOCATION = "padres_team_info.html"
 
     def runTest(self):
-        team_soup = BeautifulSoupHelper.get_soup_from_url(GetTeamInfoTest.HTML_LOCATION)
-        hitter_factor, pitcher_factor = BaseballReference.get_team_info("San Diego Padres", 2016, team_soup)
+        team_soup = get_soup_from_url(GetTeamInfoTest.HTML_LOCATION)
+        hitter_factor, pitcher_factor = get_team_info("San Diego Padres", 2016, team_soup)
         self.assertEqual(hitter_factor, 93)
         self.assertEqual(pitcher_factor, 94)
 

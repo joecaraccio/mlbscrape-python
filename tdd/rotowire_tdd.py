@@ -1,8 +1,7 @@
 
 import unittest
-import mine.rotowire
-from mine.beautiful_soup_helper import BeautifulSoupHelper
-from datetime import date, timedelta
+from mine.rotowire import *
+from mine.beautiful_soup_helper import *
 
 
 class GetWindSpeedTest(unittest.TestCase):
@@ -13,18 +12,18 @@ class GetWindSpeedTest(unittest.TestCase):
     HTML_LOCATION_NEGATIVE = "astros_rangers_lineup.htm"
 
     def test_typical_zero(self):
-        soup = BeautifulSoupHelper.get_soup_from_url(GetWindSpeedTest.HTML_LOCATION_ZERO)
+        soup = get_soup_from_url(GetWindSpeedTest.HTML_LOCATION_ZERO)
         wind_speed = get_wind_speed(soup)
         self.assertEqual(wind_speed, 0)
 
     def test_typical_positive(self):
-        soup = BeautifulSoupHelper.get_soup_from_url(GetWindSpeedTest.HTML_LOCATION_POSITIVE)
-        wind_speed = RotoWire.get_wind_speed(soup)
+        soup = get_soup_from_url(GetWindSpeedTest.HTML_LOCATION_POSITIVE)
+        wind_speed = get_wind_speed(soup)
         self.assertEqual(wind_speed, 11)
 
     def test_typical_negative(self):
-        soup = BeautifulSoupHelper.get_soup_from_url(GetWindSpeedTest.HTML_LOCATION_NEGATIVE)
-        wind_speed = RotoWire.get_wind_speed(soup)
+        soup = get_soup_from_url(GetWindSpeedTest.HTML_LOCATION_NEGATIVE)
+        wind_speed = get_wind_speed(soup)
         self.assertEqual(wind_speed, -9)
 
 
@@ -34,8 +33,8 @@ class GetUmpKsTest(unittest.TestCase):
     HTML_LOCATION = "cubs_phillies_lineup.htm"
 
     def test_typical_zero(self):
-        soup = BeautifulSoupHelper.get_soup_from_url(GetUmpKsTest.HTML_LOCATION)
-        ump_ks = RotoWire.get_ump_ks_per_game(soup)
+        soup = get_soup_from_url(GetUmpKsTest.HTML_LOCATION)
+        ump_ks = get_ump_ks_per_game(soup)
         self.assertEqual(ump_ks, 15.75)
 
 
@@ -45,8 +44,8 @@ class GetUmpRunsTest(unittest.TestCase):
     HTML_LOCATION = "cubs_phillies_lineup.htm"
 
     def test_typical_zero(self):
-        soup = BeautifulSoupHelper.get_soup_from_url(GetUmpRunsTest.HTML_LOCATION)
-        ump_runs = RotoWire.get_ump_runs_per_game(soup)
+        soup = get_soup_from_url(GetUmpRunsTest.HTML_LOCATION)
+        ump_runs = get_ump_runs_per_game(soup)
         self.assertEqual(ump_runs, 10.98)
 
 

@@ -1,15 +1,13 @@
 
-import numpy as np
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn import tree
-import matplotlib.pyplot as plt
 import random
-from Released.mlbscrape_python.sql.pregame_hitter import PregameHitterGameEntry
-from Released.mlbscrape_python.sql.pregame_pitcher import PregamePitcherGameEntry
-from Released.mlbscrape_python.sql.postgame_hitter import PostgameHitterGameEntry
-from Released.mlbscrape_python.sql.postgame_pitcher import PostgamePitcherGameEntry
-from Released.mlbscrape_python.sql.mlb_database import MlbDatabase
+from sql.pregame_hitter import PregameHitterGameEntry
+from sql.pregame_pitcher import PregamePitcherGameEntry
+from sql.postgame_hitter import PostgameHitterGameEntry
+from sql.postgame_pitcher import PostgamePitcherGameEntry
+from sql.mlb_database import MlbDatabase
 from sqlalchemy.orm.exc import NoResultFound
 from sklearn.externals.six import StringIO
 import pydotplus
@@ -91,8 +89,8 @@ class HitterRegressionTrainer(RegressionTree):
         """
         db_query = self._database_session.query(PregameHitterGameEntry)
         mlb_training_data, mlb_evaluation_data = self.get_train_eval_data(db_query, 0.8)
-        X_train, Y_train = self.get_stochastic_batch(mlb_training_data, self.SIZE_TRAINING_BATCH)
-        self._decision_tree.fit(X_train, Y_train)
+        x_train, y_train = self.get_stochastic_batch(mlb_training_data, self.SIZE_TRAINING_BATCH)
+        self._decision_tree.fit(x_train, y_train)
         dot_data = StringIO()
         tree.export_graphviz(self._decision_tree, out_file=dot_data,
                              feature_names=PregameHitterGameEntry.get_input_vector_labels())
@@ -127,8 +125,9 @@ class HitterRegressionForestTrainer(RegressionForest):
         for item in player_samples:
             input_vector = item.to_input_vector()
             try:
-                postgame_entry = self._database_session.query(PostgameHitterGameEntry).filter(PostgameHitterGameEntry.rotowire_id == item.rotowire_id,
-                                                                                              PostgameHitterGameEntry.game_date == item.game_date).one()
+                postgame_entry = self._database_session.query(PostgameHitterGameEntry).\
+                                 filter(PostgameHitterGameEntry.rotowire_id == item.rotowire_id,
+                                        PostgameHitterGameEntry.game_date == item.game_date).one()
             except NoResultFound:
                 continue
 
@@ -142,8 +141,8 @@ class HitterRegressionForestTrainer(RegressionForest):
         """
         db_query = self._database_session.query(PregameHitterGameEntry)
         mlb_training_data, mlb_evaluation_data = self.get_train_eval_data(db_query, 0.8)
-        X_train, Y_train = self.get_stochastic_batch(mlb_training_data, self.SIZE_TRAINING_BATCH)
-        self._decision_tree.fit(X_train, np.ravel(Y_train))
+        x_train, y_train = self.get_stochastic_batch(mlb_training_data, self.SIZE_TRAINING_BATCH)
+        self._decision_tree.fit(x_train, np.ravel(y_train))
         self._database_session.close()
 
     def get_prediction(self, input_data):
@@ -161,7 +160,7 @@ class PitcherRegressionTrainer(RegressionTree):
         for item in player_samples:
             input_vector = item.to_input_vector()
             postgame_entry = self._database_session.query(PostgamePitcherGameEntry).get((item.rotowire_id,
-                                                                                       item.game_date))
+                                                                                         item.game_date))
             if postgame_entry is None:
                 continue
 
@@ -180,8 +179,8 @@ class PitcherRegressionTrainer(RegressionTree):
         """
         db_query = self._database_session.query(PregamePitcherGameEntry)
         mlb_training_data, mlb_evaluation_data = self.get_train_eval_data(db_query, 0.8)
-        X_train, Y_train = self.get_stochastic_batch(mlb_training_data, self.SIZE_TRAINING_BATCH)
-        self._decision_tree.fit(X_train, Y_train)
+        x_train, y_train = self.get_stochastic_batch(mlb_training_data, self.SIZE_TRAINING_BATCH)
+        self._decision_tree.fit(x_train, y_train)
         dot_data = StringIO()
         tree.export_graphviz(self._decision_tree, out_file=dot_data,
                              feature_names=PregamePitcherGameEntry.get_input_vector_labels())
@@ -238,8 +237,8 @@ class PitcherRegressionForestTrainer(RegressionForest):
         """
         db_query = self._database_session.query(PregamePitcherGameEntry)
         mlb_training_data, mlb_evaluation_data = self.get_train_eval_data(db_query, 0.8)
-        X_train, Y_train = self.get_stochastic_batch(mlb_training_data, self.SIZE_TRAINING_BATCH)
-        self._decision_tree.fit(X_train, Y_train)
+        x_train, y_train = self.get_stochastic_batch(mlb_training_data, self.SIZE_TRAINING_BATCH)
+        self._decision_tree.fit(x_train, y_train)
         self._database_session.close()
 
     def get_prediction(self, input_data):

@@ -14,7 +14,7 @@ try:
     mine_pregame_stats()
     save_daily_csv()
     csv_dict = get_csv_dict()
-    update_salaries(databaseSession, csv_dict)
+    update_salaries(csv_dict)
     predict_daily_points(databaseSession, date.today())
     optimal_lineup = get_optimal_lineup(databaseSession, date.today())
     print optimal_lineup

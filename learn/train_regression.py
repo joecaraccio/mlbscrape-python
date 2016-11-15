@@ -220,7 +220,7 @@ class PitcherRegressionForestTrainer(RegressionForest):
             if postgame_entry is None:
                 continue
 
-            hitter_array = item.get_opponent_vector(self._database_session)
+            hitter_array = item.get_opponent_vector()
             final_hitter_array = np.concatenate([input_vector, hitter_array])
             x.append(final_hitter_array.tolist())
             y.append(postgame_entry.actual_draftkings_points)

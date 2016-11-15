@@ -17,6 +17,7 @@ from learn.train_regression import HitterRegressionForestTrainer, PitcherRegress
 from sql.lineup import LineupEntry
 import numpy as np
 from email_service import send_email
+from sql.mlb_database import MlbDatabase
 
 
 class Position(object):
@@ -310,7 +311,9 @@ def get_csv_dict(filename=None):
 
 
 #TODO: migrate to intermediary miner
-def update_salaries(database_session, csv_dict=None, game_date=None):
+def update_salaries(csv_dict=None, game_date=None):
+    database_session = MlbDatabase().open_session()
+
     if game_date is None:
         game_date = date.today()
     if csv_dict is None:
@@ -351,6 +354,8 @@ def update_salaries(database_session, csv_dict=None, game_date=None):
             print "Player %s not found in the Draftkings CSV file. Deleting entry." % (pitcher_entry.first_name + " " + pitcher_entry.last_name)
             database_session.delete(pregame_entry)
             database_session.commit()
+
+    database_session.close()
 
 
 def get_hitter_points(postgame_hitter):

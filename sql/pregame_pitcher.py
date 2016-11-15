@@ -4,6 +4,7 @@ from datetime import date
 from mlb_database import Base
 from pregame_hitter import PregameHitterGameEntry
 import numpy as np
+from sql.mlb_database import MlbDatabase
 
 class PregamePitcherGameEntry(Base):
 
@@ -134,8 +135,9 @@ class PregamePitcherGameEntry(Base):
                 self.recent_bf, self.recent_ip, self.recent_so, self.recent_er, self.recent_h, self.recent_bb,
                 self.recent_hr]
 
-    def get_opponent_vector(self, database_session):
+    def get_opponent_vector(self):
 
+        database_session = MlbDatabase().open_session()
         # Get the hitters he is facing as well
         hitter_postgame_entries = database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.team == self.opposing_team,
                                                                                          PregameHitterGameEntry.game_date == self.game_date)
@@ -143,6 +145,8 @@ class PregamePitcherGameEntry(Base):
         hitter_array = np.array(np.zeros(31))
         for hitter_entry in hitter_postgame_entries:
             hitter_array += hitter_entry.to_input_vector_raw()
+
+        database_session.close()
 
         return PregameHitterGameEntry.avg_input_vector(hitter_array)
 

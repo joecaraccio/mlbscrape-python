@@ -1,18 +1,26 @@
 
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.engine import Engine
 
 # Base instance for managing all the objects
 Base = declarative_base()
+
+
+@event.listens_for(Engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
 
 
 class MlbDatabase(object):
     """ Class for managing SQL databases
     """
 
-    def __init__(self):
+    def __init__(self, path=None):
         """ Constructor
         Create/open a local database.
         """
@@ -26,8 +34,13 @@ class MlbDatabase(object):
         from sql.postgame_pitcher import PostgamePitcherGameEntry
         from sql.lineup import LineupEntry
 
+        if path is None:
+            path = 'sqlite:////mlb_stats.db'
+        else:
+            path = 'sqlite:///' + path
+
         # Create/open a local database
-        engine = create_engine('sqlite:////home/cameron/workspaces/MlbDatabase/mlb_scrape/Released/mlbscrape_python/mlb_stats.db', echo=False)
+        engine = create_engine(path, echo=False)
         Base.metadata.create_all(engine)
         self.sessionMaker = sessionmaker(bind=engine)
 

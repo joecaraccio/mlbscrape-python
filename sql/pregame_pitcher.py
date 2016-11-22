@@ -6,21 +6,19 @@ from pregame_hitter import PregameHitterGameEntry
 import numpy as np
 from sql.mlb_database import MlbDatabase
 
+
 class PregamePitcherGameEntry(Base):
 
     __tablename__ = 'pregame_pitcher_entries'
 
-    rotowire_id = Column(String, ForeignKey("pitcher_entries.rotowire_id"), primary_key=True)
+    rotowire_id = Column(String, ForeignKey('pitcher_entries.rotowire_id'), primary_key=True)
+    game_date = Column(String, ForeignKey('game_entries.game_date'), primary_key=True)
+    game_time = Column(String, ForeignKey('game_entries.game_time'), primary_key=True)
     team = Column(String)
-    game_date = Column(String, primary_key=True)
-    #game = Column(Integer, ForeignKeyConstraint([GameEntry.game_date, GameEntry.game_time]), primary_key=True)
-    #home_team = Column(String)
-    team = Column(String)
-    #away_team = Column(String)
     opposing_team = Column(String)
-    #is_home = Column(Boolean)
     predicted_draftkings_points = Column(Float)
     draftkings_salary = Column(Integer)
+    avg_points = Column(Float)
 
     # Season stats
     season_bf = Column(Integer)
@@ -70,6 +68,7 @@ class PregamePitcherGameEntry(Base):
 
         self.predicted_draftkings_points = 0
         self.draftkings_salary = 0
+        self.avg_points = 0
 
         # Season stats
         self.season_bf = 0
@@ -114,14 +113,15 @@ class PregamePitcherGameEntry(Base):
         """
         :return: string representation identifying the Pitcher entry
         """
-        return "<Pitcher PreGame Entry(name=%s %s, team='%s', id='%s', salary=%i, $/point=%f, points=%f)>" %\
+        return "<Pitcher PreGame Entry(name=%s %s, team='%s', id='%s', salary=%i, $/point=%f, points=%f, avg_points=%f)>" %\
                (self.pitcher_entry.first_name,
                 self.pitcher_entry.last_name,
                 self.pitcher_entry.team,
                 self.rotowire_id,
                 self.draftkings_salary,
                 self.dollars_per_point(),
-                self.predicted_draftkings_points)
+                self.predicted_draftkings_points,
+                self.avg_points)
 
     def to_input_vector(self):
         """ Convert the entry to a vector

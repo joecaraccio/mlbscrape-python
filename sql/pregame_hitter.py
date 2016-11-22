@@ -12,16 +12,16 @@ class PregameHitterGameEntry(Base):
     __tablename__ = 'pregame_hitter_entries'
 
     rotowire_id = Column(String, ForeignKey('hitter_entries.rotowire_id'), primary_key=True)
-    pitcher_id = Column(String)
-    game_date = Column(String, primary_key=True)
-    #game = Column(Integer, ForeignKeyConstraint([GameEntry.game_date, GameEntry.game_time, GameEntry.home_team, GameEntry.away_team]))
-    #is_home = Column(Boolean)
+    pitcher_id = Column(String, ForeignKey('pitcher_entries.rotowire_id'))
+    game_date = Column(String, ForeignKey('game_entries.game_date'), primary_key=True)
+    game_time = Column(String, ForeignKey('game_entries.game_time'), primary_key=True)
     team = Column(String)
     opposing_team = Column(String)
     predicted_draftkings_points = Column(Float)
     draftkings_salary = Column(Integer)
     primary_position = Column(String)
     secondary_position = Column(String)
+    avg_points = Column(Float)
 
     season_pa = Column(Integer)
     season_ab = Column(Integer)
@@ -84,6 +84,7 @@ class PregameHitterGameEntry(Base):
 
         self.predicted_draftkings_points = 0
         self.draftkings_salary = 0
+        self.avg_points = 0
 
         self.season_pa = 0
         self.season_ab = 0
@@ -251,14 +252,15 @@ class PregameHitterGameEntry(Base):
         """
         :return: string representation identifying the Hitter entry
         """
-        return "<Hitter PreGame Entry(name=%s %s, team='%s', id='%s', salary=%i, $/point=%f, points=%f)>" % \
+        return "<Hitter PreGame Entry(name=%s %s, team='%s', id='%s', salary=%i, $/point=%f, points=%f, avg_points=%f)>" % \
                (self.hitter_entry.first_name,
                 self.hitter_entry.last_name,
                 self.hitter_entry.team,
                 self.rotowire_id,
                 self.draftkings_salary,
                 self.dollars_per_point(),
-                self.predicted_draftkings_points)
+                self.predicted_draftkings_points,
+                self.avg_points)
 
     @staticmethod
     def get_all_daily_entries(database_session, game_date=None):

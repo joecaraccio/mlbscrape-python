@@ -9,8 +9,12 @@ class PostgamePitcherGameEntry(Base):
     """
     __tablename__ = 'postgame_pitcher_entries'
 
-    rotowire_id = Column(String, ForeignKey("pitcher_entries.rotowire_id"), primary_key=True)
-    game_date = Column(String, primary_key=True)
+    rotowire_id = Column(String, ForeignKey('hitter_entries.rotowire_id'), primary_key=True)
+    pitcher_id = Column(String, ForeignKey('pitcher_entries.rotowire_id'))
+    game_date = Column(String, ForeignKey('game_entries.game_date'), primary_key=True)
+    game_time = Column(String, ForeignKey('game_entries.game_time'), primary_key=True)
+    team = Column(String)
+    opposing_team = Column(String)
     actual_draftkings_points = Column(Float)
 
     # Game stats

@@ -332,6 +332,7 @@ def update_salaries(csv_dict=None, game_date=None):
             positions = csv_entry["Position"].split("/")
             pregame_entry.primary_position = positions[0]
             pregame_entry.secondary_position = positions[len(positions) - 1]
+            pregame_entry.avg_points = float(csv_entry["AvgPointsPerGame"])
             database_session.commit()
         except KeyError:
             print "Player %s not found in the Draftkings CSV file. Deleting entry." % (hitter_entry.first_name + " " + hitter_entry.last_name)
@@ -349,6 +350,7 @@ def update_salaries(csv_dict=None, game_date=None):
         try:
             csv_entry = csv_dict[(pitcher_entry.first_name + " " + pitcher_entry.last_name + pitcher_entry.team).lower()]
             pregame_entry.draftkings_salary = int(csv_entry["Salary"])
+            pregame_entry.avg_points = float(csv_entry["AvgPointsPerGame"])
             database_session.commit()
         except KeyError:
             print "Player %s not found in the Draftkings CSV file. Deleting entry." % (pitcher_entry.first_name + " " + pitcher_entry.last_name)
@@ -393,11 +395,14 @@ def get_pitcher_points(postgame_pitcher):
 
 
 #TODO: migrate to an intermediary miner
-def get_optimal_lineup(database_session, day=None):
+def get_optimal_lineup(day=None):
     """ Get the optimal lineup of the players to choose for tonight
     :param database_session: SQLAlchemy database session
     :return: an OptimalLineupDict structure
     """
+
+    database_session = MlbDatabase().open_session()
+
     if day is None:
         day = date.today()
     optimal_lineup = OptimalLineupDict()
@@ -474,16 +479,19 @@ def get_optimal_lineup(database_session, day=None):
     database_session.add(lineup_db_entry)
     database_session.commit()
 
+    database_session.close()
+
     return optimal_lineup
 
 
-def predict_daily_points(database_session, day=None):
+def predict_daily_points(day=None):
+    database_session = MlbDatabase().open_session()
+
     if day is None:
         day = date.today()
-    #hitter_regression = HitterRegressionTrainer()
+
     hitter_regression = HitterRegressionForestTrainer()
     hitter_regression.train_network()
-    #pitcher_regression = PitcherRegressionTrainer()
     pitcher_regression = PitcherRegressionForestTrainer()
     pitcher_regression.train_network()
     daily_entries = PregameHitterGameEntry.get_all_daily_entries(database_session, day)
@@ -504,3 +512,5 @@ def predict_daily_points(database_session, day=None):
             predicted_points = 0
         daily_entry.predicted_draftkings_points = predicted_points
         database_session.commit()
+
+    database_session.close()

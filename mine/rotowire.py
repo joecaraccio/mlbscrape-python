@@ -73,19 +73,19 @@ class HomeAwayEnum:
 def mine_pregame_stats():
     """ Mine the hitter/pitcher stats and predict the outcomes and commit to the database session
     """
-    database_session = MlbDatabase().open_session()
-    games = get_game_lineups(database_session)
-    update_ids(games, database_session)
+    games = get_game_lineups()
+    update_ids(games)
     get_pregame_hitting_stats(games)
     get_pregame_pitching_stats(games)
-    database_session.close()
 
 
-def get_game_lineups(database_session):
+def get_game_lineups():
     """ Mine the RotoWire daily lineups page and get the players' name, team, and RotoWire ID
     Note: longer names are abbreviated by RotoWire and need to be resolved by another source
     :return: list of Game objects representing the lineups for the day
     """
+    database_session = MlbDatabase().open_session()
+
     #TODO: add feature to look if it's going to rain
     lineup_soup = get_soup_from_url(DAILY_LINEUPS_URL)
     header_nodes = lineup_soup.findAll("div", {"class": TEAM_REGION_LABEL})
@@ -140,6 +140,8 @@ def get_game_lineups(database_session):
             games.append(current_game)
         else:
             print "Game between %s and %s is not valid." % (away_team_abbreviation, home_team_abbreviation)
+
+    database_session.close()
 
     return games
 
@@ -221,7 +223,9 @@ def get_hand(soup):
     return soup.find("span", {"class": HAND_CLASS_LABEL}).text.strip().replace("(", "").replace(")", "")
 
 
-def update_lineup_ids(lineup, database_session):
+def update_lineup_ids(lineup):
+    database_session = MlbDatabase().open_session()
+
     hitter_soup = get_hitter_soup()
     for current_player in lineup:
         name = current_player.name.split()
@@ -249,8 +253,13 @@ def update_lineup_ids(lineup, database_session):
 
             create_new_hitter_entry(current_player, baseball_reference_id, database_session)
 
+    database_session.close()
 
-def update_pitcher_id(pitcher, database_session):
+
+def update_pitcher_id(pitcher):
+
+    database_session = MlbDatabase().open_session()
+
     pitcher_soup = get_pitcher_soup()
     name = pitcher.name.split()
     first_name = name[0]
@@ -277,17 +286,19 @@ def update_pitcher_id(pitcher, database_session):
 
         create_new_pitcher_entry(pitcher, baseball_reference_id, database_session)
 
+    database_session.close()
 
-def update_ids(games, database_session):
+
+def update_ids(games):
     """Cycle through the lineups and make sure every ID is located in the HitterEntry table of the MlbDatabasecreate_new_hitter
     :param game_lineups: list of Game objects
     :param database_session: SQLAlchemy database session
     """
     for game in games:
-        update_lineup_ids(game.away_lineup, database_session)
-        update_pitcher_id(game.away_pitcher, database_session)
-        update_lineup_ids(game.home_lineup, database_session)
-        update_pitcher_id(game.home_pitcher, database_session)
+        update_lineup_ids(game.away_lineup)
+        update_pitcher_id(game.away_pitcher)
+        update_lineup_ids(game.home_lineup)
+        update_pitcher_id(game.home_pitcher)
 
 
 def get_name_from_id(rotowire_id):

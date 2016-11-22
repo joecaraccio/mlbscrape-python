@@ -16,9 +16,9 @@ class PitcherEntry(Base):
     team = Column(String)
     pitching_hand = Column(String)
 
-    game_entries = relationship("PregamePitcherGameEntry", backref="pitcher_entry")
+    """game_entries = relationship("PregamePitcherGameEntry", backref="pitcher_entry")
     postgame_entries = relationship("PostgamePitcherGameEntry", backref="pitcher_entry")
-
+"""
     def __init__(self, first_name, last_name, rotowire_id):
         """ Constructor
         :param pitcher: Pitcher object

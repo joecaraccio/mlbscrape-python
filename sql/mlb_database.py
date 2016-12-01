@@ -4,6 +4,7 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.engine import Engine
+import os
 
 # Base instance for managing all the objects
 Base = declarative_base()
@@ -35,7 +36,7 @@ class MlbDatabase(object):
         from sql.lineup import LineupEntry
 
         if path is None:
-            path = 'sqlite:////mlb_stats.db'
+            path = 'sqlite:///' + 'mlb_stats.db'
         else:
             path = 'sqlite:///' + path
 

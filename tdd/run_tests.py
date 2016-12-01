@@ -4,6 +4,8 @@ import baseball_reference_tdd
 import draftkings_tdd
 import rotowire_tdd
 import lineup_tdd
+import pitcher_tdd
+import hitter_tdd
 
 # Baseball reference
 baseball_reference_suite = baseball_reference_tdd.suite()
@@ -15,10 +17,14 @@ draftkings_suite = draftkings_tdd.suite()
 rotowire_suite = rotowire_tdd.suite()
 
 # SQL
-sql_suite = lineup_tdd.suite()
+lineup_sql_suite = lineup_tdd.suite()
+pitcher_sql_suite = pitcher_tdd.suite()
+hitter_sql_suite = hitter_tdd.suite()
 
 # Run the suite
-test_runner = unittest.TextTestRunner().run(unittest.TestSuite([draftkings_suite,
+test_runner = unittest.TextTestRunner().run(unittest.TestSuite([rotowire_suite,
+                                                                draftkings_suite,
                                                                 baseball_reference_suite,
-                                                                rotowire_suite,
-                                                                sql_suite]))
+                                                                lineup_sql_suite,
+                                                                pitcher_sql_suite,
+                                                                hitter_sql_suite]))

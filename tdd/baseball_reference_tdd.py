@@ -92,7 +92,7 @@ class GetHittingStats(unittest.TestCase):
         HTML_LOCATION = "career_stats_pedroia.html"
         ID = "pedrodu01"
         soup = get_soup_from_url(HTML_LOCATION)
-        career_stats = get_vs_hand_hitting_stats(ID, HandEnum.LHP, soup)
+        career_stats = get_vs_hand_hitting_stats(ID, "L", soup)
         self.assertEqual(int(career_stats["AB"]), 1394)
         self.assertEqual(int(career_stats["R"]), 232)
         self.assertEqual(int(career_stats["H"]), 425)

@@ -4,6 +4,46 @@ from mine.rotowire import *
 from mine.beautiful_soup_helper import *
 
 
+class GetGamesTest(unittest.TestCase):
+    HTML_LOCATION = "rotowire_lineups_partial.htm"
+    DB_PATH = "test_db.db"
+
+    def runTest(self):
+        db = MlbDatabase(GetGamesTest.DB_PATH).open_session()
+        games = get_game_lineups(GetGamesTest.DB_PATH, GetGamesTest.HTML_LOCATION)
+        player = games[0].away_lineup[0]
+        player_comparison = PlayerStruct('Logan Forsythe', 'TB', '10532', '2B', 'R')
+        self.assertEqual(player, player_comparison)
+
+        player = games[0].away_lineup[1]
+        player_comparison = PlayerStruct('Logan Morrison', 'TB', '10427', '1B', 'L')
+        self.assertEqual(player, player_comparison)
+
+        player = games[0].away_pitcher
+        player_comparison = PlayerStruct('Blake Snell', 'TB', '12189', 'P', 'L')
+        self.assertEqual(player, player_comparison)
+
+        player = games[0].home_lineup[0]
+        player_comparison = PlayerStruct('Jacoby Ellsbury', 'NYY', '8635', 'CF', 'L')
+        self.assertEqual(player, player_comparison)
+
+        player = games[0].home_lineup[8]
+        player_comparison = PlayerStruct('Didi Gregorius', 'NYY', '11257', 'SS', 'L')
+        self.assertEqual(player, player_comparison)
+
+        player = games[0].home_pitcher
+        player_comparison = PlayerStruct('Masahiro Tanaka', 'NYY', '10879', 'P', 'R')
+        self.assertEqual(player, player_comparison)
+
+        player = games[1].home_pitcher
+        player_comparison = PlayerStruct('Tanner Roark', 'WAS', '11929', 'P', 'R')
+        self.assertEqual(player, player_comparison)
+
+        player = games[1].home_lineup[0]
+        player_comparison = PlayerStruct('Chris Heisey', 'WAS', '10920', 'CF', 'R')
+        self.assertEqual(player, player_comparison)
+
+
 class GetWindSpeedTest(unittest.TestCase):
     """ Test case for testing the get_hitter_id function
     """
@@ -52,4 +92,5 @@ class GetUmpRunsTest(unittest.TestCase):
 def suite():
     test_suite = unittest.TestSuite([unittest.TestLoader().loadTestsFromTestCase(GetWindSpeedTest),
                                      unittest.TestLoader().loadTestsFromTestCase(GetUmpKsTest)])
+    test_suite.addTest(GetGamesTest())
     return test_suite

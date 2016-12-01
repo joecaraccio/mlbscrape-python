@@ -25,11 +25,6 @@ def get_pitcher_hand(boxscore_soup, players_soup, team_string):
     return players_soup.find("player", {"id": pitch_fx_id}).get("rl")
 
 
-class HandEnum(object):
-    LHP = 1
-    RHP = 2
-
-
 def get_hitter_id(full_name, team, year=None, soup=None):
     """ Get the BaseballReference ID from the players name and team
     :param full_name: the full name of the player
@@ -223,9 +218,9 @@ def get_vs_hand_hitting_stats(baseball_reference_id, hand_value, soup=None):
         soup = get_soup_from_url(BASE_URL + "/players/split.cgi?id=" +
                                                      str(baseball_reference_id) + "&year=Career&t=b")
 
-    if hand_value is HandEnum.LHP:
+    if hand_value == "L":
         hand = "vs LHP"
-    elif hand_value is HandEnum.RHP:
+    elif hand_value == "R":
         hand = "vs RHP"
     else:
         print "Invalid hand enum."

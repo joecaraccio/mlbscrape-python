@@ -1,7 +1,8 @@
 import os
 from sql.mlb_database import MlbDatabase
 from mine.rotowire import mine_pregame_stats
-from mine.draft_kings import save_daily_csv, get_csv_dict, update_salaries, predict_daily_points, get_optimal_lineup
+from mine.draft_kings import save_daily_csv, get_csv_dict, update_salaries
+from mine.stat_miner import predict_daily_points, get_optimal_lineup
 from datetime import date, timedelta, datetime
 from email_service import send_email
 import cProfile

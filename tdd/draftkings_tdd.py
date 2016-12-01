@@ -1,6 +1,7 @@
 
 import unittest
 from mine.draft_kings import *
+from mine.stat_miner import *
 from sql.pregame_hitter import PregameHitterGameEntry
 from sql.pregame_pitcher import PregamePitcherGameEntry
 import heapq

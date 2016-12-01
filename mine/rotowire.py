@@ -50,6 +50,10 @@ class PlayerStruct(object):
         self.position = position
         self.hand = hand
 
+    def __eq__(self, other):
+        return self.name == other.name and self.team == other.team and self.rotowire_id == other.rotowire_id and \
+               self.position == other.position and self.hand == other.hand
+
 
 class Game(object):
     def __init__(self, away_lineup, away_pitcher, home_lineup, home_pitcher):
@@ -65,7 +69,7 @@ class Game(object):
         return True
 
 
-class HomeAwayEnum:
+class HomeAwayEnum(object):
     AWAY = 0
     HOME = 1
 
@@ -75,19 +79,25 @@ def mine_pregame_stats():
     """
     games = get_game_lineups()
     update_ids(games)
-    get_pregame_hitting_stats(games)
-    get_pregame_pitching_stats(games)
+    get_pregame_hitting_stats_wrapper(games)
+    get_pregame_pitching_stats_wrapper(games)
 
 
-def get_game_lineups():
+def get_game_lineups(db_path=None, url=None):
     """ Mine the RotoWire daily lineups page and get the players' name, team, and RotoWire ID
-    Note: longer names are abbreviated by RotoWire and need to be resolved by another source
+    Commit the GameEntry objects to the database.
+    :param db_path: the relative path to the database (default is None)
+    :param url: the URL containing the daily lineups (default is None)
     :return: list of Game objects representing the lineups for the day
     """
-    database_session = MlbDatabase().open_session()
 
-    #TODO: add feature to look if it's going to rain
-    lineup_soup = get_soup_from_url(DAILY_LINEUPS_URL)
+    database_session = MlbDatabase(db_path).open_session()
+
+    if url is None:
+        url = DAILY_LINEUPS_URL
+
+    """TODO: add feature to look if it's going to rain"""
+    lineup_soup = get_soup_from_url(url)
     header_nodes = lineup_soup.findAll("div", {"class": TEAM_REGION_LABEL})
     games = list()
     for header_node in header_nodes:
@@ -154,7 +164,12 @@ def get_id(soup):
 
 
 def get_hitter(soup, team, database_session=None):
-    """ Get the hitter info from a BeautifulSoup node
+    """ Get a PlayerStruct representing a hitter
+    If a database session is not provided, open the player page to obtain the hitter info.
+    Otherwise, look for the hitter in the database. If not found, open the player page to obtain the hitter info.
+    :param soup: BeautifulSoup object of the hitter in the daily lineups page
+    :param team: team abbreviation of the hitter
+    :param database_session: SQLAlchemy database session (default is None)
     """
     rotowire_id = get_id(soup)
     if database_session is None:
@@ -168,11 +183,17 @@ def get_hitter(soup, team, database_session=None):
             name = get_name_from_id(rotowire_id)
             hand = get_hand(soup)
     position = soup.find("div", {"class": POSITION_CLASS_LABEL}).text
+
     return PlayerStruct(name, team, rotowire_id, position, hand)
 
 
 def get_pitcher(soup, team, database_session=None):
-    """ Get the hitter info from a BeautifulSoup node
+    """ Get a PlayerStruct representing a pitcher
+    If a database session is not provided, open the player page to obtain the pitcher info.
+    Otherwise, look for the pitcher in the database. If not found, open the player page to obtain the pitcher info.
+    :param soup: BeautifulSoup object of the pitcher in the daily lineups page
+    :param team: team abbreviation of the pitcher
+    :param database_session: SQLAlchemy database session (default is None)
     """
     rotowire_id = get_id(soup)
     if database_session is None:
@@ -290,9 +311,8 @@ def update_pitcher_id(pitcher):
 
 
 def update_ids(games):
-    """Cycle through the lineups and make sure every ID is located in the HitterEntry table of the MlbDatabasecreate_new_hitter
-    :param game_lineups: list of Game objects
-    :param database_session: SQLAlchemy database session
+    """ Check if each player is represented in the database. If not, commit a new entry
+    :param games: list of Game objects
     """
     for game in games:
         update_lineup_ids(game.away_lineup)
@@ -311,20 +331,22 @@ def get_name_from_id(rotowire_id):
     return player_soup.find("div", {"class": PLAYER_PAGE_LABEL}).find("h1").text.strip()
 
 
-def get_pregame_hitting_stats_wrapper(game):
+def get_pregame_hitting_stats(game):
+    """ Mine pregame stats for all hitters in a given game and commit them to the database.
+    :param game: Game struct containing the lineups
+    """
     database_session = MlbDatabase().open_session()
     for current_hitter in game.away_lineup:
         pitcher_hand = game.home_pitcher.hand
         print "Mining %s." % current_hitter.name
         try:
             pregame_hitter_entry = get_hitter_stats(current_hitter.rotowire_id,
-                                                             game.home_pitcher.rotowire_id,
-                                                             current_hitter.team,
-                                                             pitcher_hand,
-                                                             database_session)
+                                                    game.home_pitcher.rotowire_id,
+                                                    current_hitter.team,
+                                                    pitcher_hand,
+                                                    database_session)
             pregame_hitter_entry.game_date = date.today()
             pregame_hitter_entry.opposing_team = game.home_pitcher.team
-            predict_draftkings_points(pregame_hitter_entry)
             database_session.add(pregame_hitter_entry)
             database_session.commit()
         except HitterNotFound as e:
@@ -346,7 +368,6 @@ def get_pregame_hitting_stats_wrapper(game):
                                                              database_session)
             pregame_hitter_entry.game_date = date.today()
             pregame_hitter_entry.opposing_team = game.away_pitcher.team
-            predict_draftkings_points(pregame_hitter_entry)
             database_session.add(pregame_hitter_entry)
             database_session.commit()
         except HitterNotFound as e:
@@ -360,34 +381,38 @@ def get_pregame_hitting_stats_wrapper(game):
     database_session.close()
 
 
-def get_pregame_hitting_stats(games):
+def get_pregame_hitting_stats_wrapper(games):
+    """ Organize a thread pool to mine the hitting stats in parallel
+    :param games: list of Game structs containing the lineups
+    """
     thread_pool = Pool(6)
 
-    thread_pool.map(get_pregame_hitting_stats_wrapper, games)
+    thread_pool.map(get_pregame_hitting_stats, games)
 
 
-def predict_draftkings_points(pregame_hitter_entry):
-    return
-
-
-def get_pregame_pitching_stats(games):
+def get_pregame_pitching_stats_wrapper(games):
+    """ Organize a thread pool to mine the pitching stats in parallel
+    :param games: list of Game structs containing the pitchers
+    """
     thread_pool = Pool(6)
 
-    thread_pool.map(get_pregame_pitching_stats_wrapper, games)
+    thread_pool.map(get_pregame_pitching_stats, games)
 
 
-def get_pregame_pitching_stats_wrapper(game):
+def get_pregame_pitching_stats(game):
+    """ Mine pregame stats for both pitchers in a given game and commit them to the database.
+    :param game: Game struct containing the pitchers
+    """
     database_session = MlbDatabase().open_session()
 
     current_pitcher = game.away_pitcher
     print "Mining %s." % current_pitcher.name
     try:
         pregame_pitcher_entry = get_pitcher_stats(current_pitcher.rotowire_id,
-                                                           current_pitcher.team,
-                                                           game.home_pitcher.team,
-                                                           database_session)
+                                                  current_pitcher.team,
+                                                  game.home_pitcher.team,
+                                                  database_session)
 
-        predict_draftkings_points(pregame_pitcher_entry)
         database_session.add(pregame_pitcher_entry)
         database_session.commit()
     except IntegrityError:
@@ -402,11 +427,10 @@ def get_pregame_pitching_stats_wrapper(game):
     print "Mining %s." % current_pitcher.name
     try:
         pregame_pitcher_entry = get_pitcher_stats(current_pitcher.rotowire_id,
-                                                           current_pitcher.team,
-                                                           game.away_pitcher.team,
-                                                           database_session)
+                                                  current_pitcher.team,
+                                                  game.away_pitcher.team,
+                                                  database_session)
 
-        predict_draftkings_points(pregame_pitcher_entry)
         database_session.add(pregame_pitcher_entry)
         database_session.commit()
     except IntegrityError:
@@ -419,21 +443,24 @@ def get_pregame_pitching_stats_wrapper(game):
 
     database_session.close()
 
+
 class HitterNotFound(Exception):
     def __init__(self, id_str):
-        super(HitterNotFound, self).__init__("Hitter '%s' not found in the database" %
-                                                             id_str)
+        super(HitterNotFound, self).__init__("Hitter '%s' not found in the database" % id_str)
+
 
 class PitcherNotFound(Exception):
     def __init__(self, id_str):
-        super(PitcherNotFound, self).__init__("Pitcher '%s' not found in the database" %
-                                                             id_str)
+        super(PitcherNotFound, self).__init__("Pitcher '%s' not found in the database" % id_str)
 
 
 def get_hitter_stats(batter_id, pitcher_id, team, pitcher_hand, database_session):
-    """ Get the career, last 14 day, vs hand stats from the RotoWire player page, get t
-    :param rotowire_id: the RotoWire unique ID of this player
+    """ Get pregame stats for the given hitter
+    :param batter_id: unique Rotowire ID for the corresponding hitter
+    :param pitcher_id: unique Rotowire ID for the corresponing pitcher
+    :param team: team abbreviation for the corresponding hitter
     :param pitcher_hand: a str representation of the hand the pitcher throws with ("L" or "R")
+    :param database_session: SQLAlchemy database session
     :return: a PregameHitterGameEntry object without the predicted_draftkings_points field populated
     """
     pregame_hitter_entry = PregameHitterGameEntry()
@@ -463,16 +490,8 @@ def get_hitter_stats(batter_id, pitcher_id, team, pitcher_hand, database_session
     except (TableNotFound, TableRowNotFound) as e:
         print str(e), "with", str(hitter_entry.first_name), str(hitter_entry.last_name)
 
-    # Vs hand of the opposing pitcher
-    if pitcher_hand == "L":
-        pitcher_hand_lr = HandEnum.LHP
-    elif pitcher_hand == "R":
-        pitcher_hand_lr = HandEnum.RHP
-    else:
-        print "Invalid pitcher hand %i" % pitcher_hand
-        assert 0
     try:
-        vs_hand_stats = get_vs_hand_hitting_stats(hitter_entry.baseball_reference_id, pitcher_hand_lr, hitter_career_soup)
+        vs_hand_stats = get_vs_hand_hitting_stats(hitter_entry.baseball_reference_id, pitcher_hand, hitter_career_soup)
         pregame_hitter_entry.vs_hand_pa = int(vs_hand_stats["PA"])
         pregame_hitter_entry.vs_hand_ab = int(vs_hand_stats["AB"])
         pregame_hitter_entry.vs_hand_r = int(vs_hand_stats["R"])
@@ -502,7 +521,7 @@ def get_hitter_stats(batter_id, pitcher_id, team, pitcher_hand, database_session
     except (TableNotFound, TableRowNotFound) as e:
         print str(e), "with", str(hitter_entry.first_name), str(hitter_entry.last_name)
 
-    #Season stats
+    # Season stats
     try:
         season_stats = get_season_hitting_stats(hitter_entry.baseball_reference_id)
         pregame_hitter_entry.season_pa = int(season_stats["PA"])
@@ -541,10 +560,13 @@ def get_hitter_stats(batter_id, pitcher_id, team, pitcher_hand, database_session
 
 
 def get_pitcher_stats(pitcher_id, team, opposing_team, database_session, game_date=None):
-    """ Get the career, last 14 day, vs hand stats from the RotoWire player page, get t
-    :param rotowire_id: the RotoWire unique ID of this player
-    :param pitcher_hand: a str representation of the hand the pitcher throws with ("L" or "R")
-    :return: a PregameHitterGameEntry object without the predicted_draftkings_points field populated
+    """ Get pregame stats for the given pitcher
+    :param pitcher_id: unique Rotowire ID for the corresponing pitcher
+    :param team: team abbreviation for the corresponding pitcher
+    :param opposing_team: team abbreviation for the team the pitcher is facing
+    :param database_session: SQLAlchemy database session
+    :param game_date: the date of the game (in the following form yyyy-mm-dd)
+    :return: a PregamePitcherGameEntry object without the predicted_draftkings_points field populated
     """
     pregame_pitcher_entry = PregamePitcherGameEntry()
     pregame_pitcher_entry.rotowire_id = pitcher_id
@@ -618,24 +640,14 @@ def get_pitcher_stats(pitcher_id, team, opposing_team, database_session, game_da
     return pregame_pitcher_entry
 
 
-def get_game_id(away_team, home_team, game_date=None):
-    #TODO: this team naming convention doesn't match the mlb.com convention
-    if game_date is None:
-        game_date = date.today()
-
-    return "gid_" + str(game_date.year) + "_" + ("%02d" % (game_date.month,)) + "_" + ("%02d" % (game_date.day,)) + \
-           "_" + away_team.lower() + "mlb_" + home_team.lower() + "mlb_1"
-
-
 def table_entry_to_int(entry):
     return int(entry.replace(",", ""))
 
 
-def get_draftkings_link(daily_lineup_soup):
-    return daily_lineup_soup.find("div", {"class": DRAFTKINGS_LINK_LABEL}).find("a").get("href")
-
-
 def mine_yesterdays_results(database_session):
+    """ Mine the results of yesterday's game for all hitters and pitchers in the database
+    :param database_session: SQLAlchemy database object
+    """
     # Query the database for all hitter game entries from yesterday
     hitter_entries = database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.game_date == (date.today() - timedelta(days=1)))
     for pregame_hitter_entry in hitter_entries:
@@ -684,10 +696,12 @@ def mine_yesterdays_results(database_session):
         try:
             stat_row_dict = get_pitching_game_log(pitcher_entry.baseball_reference_id)
         except TableRowNotFound:
-            print "Player %s %s did not play yesterday. Deleting pregame entry %s %s" % (pitcher_entry.first_name,
-                                                                                         pitcher_entry.last_name,
-                                                                                         pregame_pitcher_entry.game_date,
-                                                                                         pregame_pitcher_entry.opposing_team)
+            print "Player %s %s did not play yesterday. Deleting pregame entry %s %s" % \
+                  (pitcher_entry.first_name,
+                   pitcher_entry.last_name,
+                   pregame_pitcher_entry.game_date,
+                   pregame_pitcher_entry.opposing_team)
+
             database_session.delete(pregame_pitcher_entry)
             database_session.commit()
             continue
@@ -723,6 +737,13 @@ def mine_yesterdays_results(database_session):
 
 
 def get_table_row_dict(soup, table_name, table_row_label, table_column_label):
+    """ Get a dictionary representation of the given row in the table
+    :param soup: BeautifulSoup object containing a single "table" HTML object
+    :param table_name: HTML "id" field for the table
+    :param table_row_label: HTML label for the row of the table
+    :param table_column_label: HTML label for the column
+    :return: dictionary representation of the given row
+    """
     results_table = soup.find("table", {"id": table_name})
     if results_table is None:
         raise TableNotFound(table_name)
@@ -732,7 +753,7 @@ def get_table_row_dict(soup, table_name, table_row_label, table_column_label):
     stat_rows = results_table.find("tbody").findAll("tr")
 
     for stat_row in stat_rows:
-        # Create a dictionary of the stat attributes
+        #Create a dictionary of the stat attributes
         stat_dict = dict()
         stat_entries = stat_row.findAll("td")
         for i in range(0, len(table_header_list)):
@@ -747,7 +768,7 @@ def get_table_row_dict(soup, table_name, table_row_label, table_column_label):
         except ValueError:
             break
 
-    #TODO: add a TableRowNotFound exception
+    # TODO: add a TableRowNotFound exception
     raise TableNotFound(table_name)
 
 
@@ -768,8 +789,8 @@ def get_wind_speed(soup):
 
 class UmpDataNotFound(Exception):
 
-    def __init__(self, invalid_soup):
-        super(UmpDataNotFound, self).__init__("The ump data was not found in the soup %s." % invalid_soup)
+    def __init__(self):
+        super(UmpDataNotFound, self).__init__("The ump data was not found in the soup")
 
 
 def get_ump_ks_per_game(soup):
@@ -788,7 +809,7 @@ def get_ump_ks_per_game(soup):
                     if ump_words[i] == "K/9:":
                         return float(ump_words[i+1])
 
-    raise UmpDataNotFound(soup)
+    raise UmpDataNotFound
 
 
 def get_ump_runs_per_game(soup):
@@ -807,7 +828,7 @@ def get_ump_runs_per_game(soup):
                     if ump_words[i] == "R/9:":
                         return float(ump_words[i+1].replace("&nbsp", ""))
 
-    raise UmpDataNotFound(soup)
+    raise UmpDataNotFound
 
 # Two-way dictionary
 team_dict = bidict.bidict(ARI="Arizona Diamondbacks",

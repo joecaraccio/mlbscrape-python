@@ -4,25 +4,7 @@ from datetime import date, timedelta
 import bidict
 
 
-class TeamInformation(object):
-    def __init__(self, team_abbreviation, hitter_factor, pitcher_factor):
-        self.team_abbreviation = team_abbreviation
-        self.hitter_factor = hitter_factor
-        self.pitcher_factor = pitcher_factor
-
 BASE_URL = "http://www.baseball-reference.com"
-
-
-def url_to_year(url):
-    date_members = url.split("/")
-    date_object = date_members[len(date_members)-2]
-
-    return int(date_object.split("_")[1])
-
-
-def get_pitcher_hand(boxscore_soup, players_soup, team_string):
-    pitch_fx_id = boxscore_soup.find("pitching", {"team_flag": team_string}).find("pitcher").get("id")
-    return players_soup.find("player", {"id": pitch_fx_id}).get("rl")
 
 
 def get_hitter_id(full_name, team, year=None, soup=None):
@@ -30,9 +12,9 @@ def get_hitter_id(full_name, team, year=None, soup=None):
     :param full_name: the full name of the player
     :param team: the BaseballReference team abbreviation
     :param year: an integer representing the year of interest (this is particularly useful because players may
-    change teams (if None, the method will use the current year)
+    change teams (default is the current year)
     :param soup: BeautifulSoup object of all players in the given year
-    :return: string representation of the player's ID
+    :return: string representation of the player's BaseballReference ID
     """
 
     if year is None:
@@ -65,7 +47,7 @@ def get_pitcher_id(full_name, team, year=None, soup=None):
     :param full_name: the full name of the player
     :param team: the BaseballReference team abbreviation
     :param year: an integer representing the year of interest (this is particularly useful because players may
-    change teams (if None, the method will use the current year)
+    change teams (default is the current year)
     :param soup: BeautifulSoup object of all players in the given year
     :return: string representation of the player's ID
     """
@@ -101,6 +83,10 @@ class NameNotFound(Exception):
 
 
 def get_hitter_soup(year=None):
+    """
+    :param year: integer representation of the year of interest (default is current year)
+    :return: BeautifulSoup object of the home page for this hitter
+    """
     if year is None:
         year = date.today().year
 
@@ -109,6 +95,10 @@ def get_hitter_soup(year=None):
 
 
 def get_pitcher_soup(year=None):
+    """
+    :param year: integer representation of the year of interest (default is current year)
+    :return: BeautifulSoup object of the home page for this pitcher
+    """
     if year is None:
         year = date.today().year
 
@@ -175,6 +165,13 @@ def get_vs_table_row_dict(soup, batter_id, pitcher_id):
 
 
 def get_table_row_dict(soup, table_name, table_row_label, table_column_label):
+    """ Get a dictionary representation of a Baseball Reference table of stats
+    :param soup: BeautifulSoup object containing the table HTML
+    :param table_name: HTML "id" tag for the table
+    :param table_row_label: bare text label for the row of interest
+    :param table_column_label: bare text label for the column of interest
+    :return: a dictionary representing the stats
+    """
     results_table = soup.find("table", {"id": table_name})
     if results_table is None:
         raise TableNotFound(table_name)
@@ -206,6 +203,11 @@ def get_table_row_dict(soup, table_name, table_row_label, table_column_label):
 
 
 def get_career_hitting_stats(baseball_reference_id, soup=None):
+    """ Get a dictionary representation of the hitter stats for the given hitter id
+    :param baseball_reference_id: unique BaseballReference ID for this hitter
+    :param soup: BeautifulSoup object of the hitter career stats page (default is the URL for the given hitter)
+    :return: dictionary representation of the hitter's stat home page
+    """
     if soup is None:
         soup = get_soup_from_url(BASE_URL + "/players/split.cgi?id=" +
                                                      str(baseball_reference_id) + "&year=Career&t=b")
@@ -214,6 +216,12 @@ def get_career_hitting_stats(baseball_reference_id, soup=None):
 
 
 def get_vs_hand_hitting_stats(baseball_reference_id, hand_value, soup=None):
+    """ Get a dictionary representation of the hitter stats against the given pitcher hand
+    :param baseball_reference_id: BaseballReference unique ID for this hitter
+    :param hand_value: "L" for left, "R" for right
+    :param soup: BeautifulSoup object of the hitter career stats page (default is the URL for the given hitter)
+    :return: dictionary representation of the hitter's stat home page
+    """
     if soup is None:
         soup = get_soup_from_url(BASE_URL + "/players/split.cgi?id=" +
                                                      str(baseball_reference_id) + "&year=Career&t=b")
@@ -230,6 +238,11 @@ def get_vs_hand_hitting_stats(baseball_reference_id, hand_value, soup=None):
 
 
 def get_recent_hitting_stats(baseball_reference_id, soup=None):
+    """ Get a dictionary representation of the hitter's stats from the last 7 days
+    :param baseball_reference_id: BaseballReference unique ID for this hitter
+    :param soup: BeautifulSoup object of the hitter's stat home page (default is the URL for the given hitter)
+    :return: dictionary representation of the hitter's stats
+    """
     if soup is None:
         soup = get_soup_from_url(BASE_URL + "/players/split.cgi?id=" +
                                                      str(baseball_reference_id) + "&year=Career&t=b")
@@ -238,6 +251,12 @@ def get_recent_hitting_stats(baseball_reference_id, soup=None):
 
 
 def get_season_hitting_stats(baseball_reference_id, year=None, soup=None):
+    """ Get a dictionary representation of the hitter's stats for the current season
+    :param baseball_reference_id: BaseballReference unique ID for the given hitter
+    :param year: integer representation of the year of interest (default is current year)
+    :param soup: BeautifulSoup representation of the hitter's stat home page (default is the URL for the given hitter)
+    :return: dictionary representation of the hitter's stats
+    """
     if year is None:
         year = date.today().year
     if soup is None:
@@ -250,6 +269,12 @@ def get_season_hitting_stats(baseball_reference_id, year=None, soup=None):
 
 
 def get_vs_pitcher_stats(batter_id, pitcher_id, soup=None):
+    """ Get a dictionary representation of the hitter's stats against the given pitcher
+    :param batter_id: BaseballReference unique ID for the hitter of interest
+    :param pitcher_id: BaseballReference unique ID for the pitcher of interest
+    :param soup: BeautifulSoup representation of the hitter's vs. pitcher home page (default is the URL for the given hitter)
+    :return: dictionary representation of the hitter's stats
+    """
     if soup is None:
         url = BASE_URL + "/play-index/batter_vs_pitcher.cgi?batter=" + str(batter_id)
         print url
@@ -259,11 +284,20 @@ def get_vs_pitcher_stats(batter_id, pitcher_id, soup=None):
 
 
 def get_hitter_page_career_soup(baseball_reference_id):
+    """ Get the BeautifulSoup object for the hitter stat home page
+    :param baseball_reference_id: BaseballReference unique ID for the hitter of interest
+    :return: BeautifulSoup for the hitter stat home page
+    """
     return get_soup_from_url(BASE_URL + "/players/split.cgi?id=" +
                                                  str(baseball_reference_id) + "&year=Career&t=b")
 
 
 def get_career_pitching_stats(baseball_reference_id, soup=None):
+    """ Get a dictionary representation of the career stats for the given pitcher
+    :param baseball_reference_id: BaseballReference unique ID for the pitcher of interest
+    :param soup: BeautifulSoup object of the pitcher's stat home page
+    :return: dictionary representation of the career stats
+    """
     if soup is None:
         soup = get_soup_from_url(BASE_URL + "/players/split.cgi?id=" +
                                                      str(baseball_reference_id) + "&year=Career&t=p")
@@ -272,12 +306,22 @@ def get_career_pitching_stats(baseball_reference_id, soup=None):
 
 
 def get_pitcher_page_career_soup(baseball_reference_id):
+    """ Get the career stats for the given pitcher
+    :param baseball_reference_id: BaseballReference ID of the pitcher of interest
+    :return: BeautifulSoup object of the pitcher's stat home page
+    """
     url = BASE_URL + "/players/split.cgi?id=" + str(baseball_reference_id) + "&year=Career&t=p"
     print url
     return get_soup_from_url(url)
 
 
 def get_season_pitcher_stats(baseball_reference_id, year=None, soup=None):
+    """ Get the season stats for the given pitcher
+    :param baseball_reference_id: BaseballReference unique ID for the pitcher of interest
+    :param year: integer representation of the year
+    :param soup: BeautifulSoup of the stat page for the given year (default is the URL for this year)
+    :return: dictionary representation of the pitcher's season stats
+    """
     if year is None:
         year = date.today().year
     if soup is None:
@@ -290,6 +334,11 @@ def get_season_pitcher_stats(baseball_reference_id, year=None, soup=None):
 
 
 def get_recent_pitcher_stats(baseball_reference_id, soup=None):
+    """ Get a dictionary representation of the pitcher stats for the last 14 days
+    :param baseball_reference_id: BaseballReference unique ID for the pitcher of interest
+    :param soup: BeautifulSoup object of the pitcher's stat home page (default is the URL for the given ID)
+    :return: dictionary representation of the pitcher stats
+    """
     if soup is None:
         soup = get_soup_from_url(BASE_URL + "/players/split.cgi?id=" +
                                                      str(baseball_reference_id) + "&year=Career&t=p")
@@ -298,6 +347,11 @@ def get_recent_pitcher_stats(baseball_reference_id, soup=None):
 
 
 def get_yesterdays_hitting_game_log(baseball_reference_id, soup=None):
+    """ Get a dictionary representation of yesterday's game log stats
+    :param baseball_reference_id: BaseballReference unique ID for the hitter of interest
+    :param soup: BeautifulSoup object of the hitter game log (default is the URL for the game log of the given ID)
+    :return: dictionary representation of the game log stats
+    """
     yesterdays_date = date.today() - timedelta(days=1)
     if soup is None:
         soup = get_soup_from_url(BASE_URL + "/players/gl.cgi?id=" +
@@ -314,6 +368,12 @@ def get_yesterdays_hitting_game_log(baseball_reference_id, soup=None):
 
 
 def get_pitching_game_log(baseball_reference_id, soup=None, game_date=None):
+    """ Get a dictionary representation of the game log stats from the given date
+    :param baseball_reference_id: BaseballReference unique ID for the pitcher of interest
+    :param soup: BeautifulSoup object of the pitcher game log (default is the URL for the game log of the given ID)
+    :param game_date: the game date of interest (in format yyyy-mm-dd)
+    :return: dictionary representation of the game log stats
+    """
     if game_date is None:
         game_date = date.today() - timedelta(days=1)
     if soup is None:
@@ -324,6 +384,12 @@ def get_pitching_game_log(baseball_reference_id, soup=None, game_date=None):
 
 
 def get_team_info(team_name, year_of_interest=None, team_soup=None):
+    """ Get the BaseballReference hitter/pitcher factors for the given team
+    :param team_name: name of the team of interest
+    :param year_of_interest: integer representation of the year of interest
+    :param team_soup: BeautifulSoup object for the team information page
+    :return: hitter factor, pitcher factor tuple for the given team
+    """
     url = "/about/parkadjust.shtml"
 
     team_abbreviation = team_dict.inv[team_name]

@@ -60,4 +60,3 @@ class PostgameHitterGameEntry(Base):
 
 
 
-

@@ -374,6 +374,44 @@ def predict_daily_points(day=None):
     database_session.close()
 
 
+def get_avg_hitter_points(player_id, year, database_session=None):
+    if database_session is None:
+        database_session = MlbDatabase().open_session()
+
+    player_entries = database_session.query(PostgameHitterGameEntry).filter(PostgameHitterGameEntry.rotowire_id ==
+                                                                            player_id)
+    counter = 0
+    total_points = 0
+    for entry in player_entries:
+        if entry.game_date.split("-")[0] == year:
+            counter += 1
+            total_points += entry.actual_draftkings_points
+
+    if counter == 0:
+        return 0
+
+    return float(total_points) / float(counter)
+
+
+def get_avg_pitcher_points(player_id, year, database_session=None):
+    if database_session is None:
+        database_session = MlbDatabase().open_session()
+
+    player_entries = database_session.query(PostgamePitcherGameEntry).filter(PostgamePitcherGameEntry.rotowire_id ==
+                                                                            player_id)
+    counter = 0
+    total_points = 0
+    for entry in player_entries:
+        if entry.game_date.split("-")[0] == year:
+            counter += 1
+            total_points += entry.actual_draftkings_points
+
+    if counter == 0:
+        return 0
+
+    return float(total_points) / float(counter)
+
+
 class StatMiner(object):
     def __init__(self, db_path=None):
         if db_path is None:

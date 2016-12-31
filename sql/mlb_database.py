@@ -34,6 +34,7 @@ class MlbDatabase(object):
         from sql.postgame_hitter import PostgameHitterGameEntry
         from sql.postgame_pitcher import PostgamePitcherGameEntry
         from sql.lineup import LineupEntry
+        #from sql.lineup_history import LineupHistoryEntry
 
         if path is None:
             path = 'sqlite:///' + 'mlb_stats.db'

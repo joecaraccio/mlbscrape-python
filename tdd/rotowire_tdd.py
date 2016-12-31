@@ -9,38 +9,37 @@ class GetGamesTest(unittest.TestCase):
     DB_PATH = "test_db.db"
 
     def runTest(self):
-        db = MlbDatabase(GetGamesTest.DB_PATH).open_session()
-        games = get_game_lineups(GetGamesTest.DB_PATH, GetGamesTest.HTML_LOCATION)
+        games = get_game_lineups(GetGamesTest.HTML_LOCATION)
         player = games[0].away_lineup[0]
-        player_comparison = PlayerStruct('Logan Forsythe', 'TB', '10532', '2B', 'R')
+        player_comparison = PlayerStruct('TB', '10532', '2B', 'R')
         self.assertEqual(player, player_comparison)
 
         player = games[0].away_lineup[1]
-        player_comparison = PlayerStruct('Logan Morrison', 'TB', '10427', '1B', 'L')
+        player_comparison = PlayerStruct('TB', '10427', '1B', 'L')
         self.assertEqual(player, player_comparison)
 
         player = games[0].away_pitcher
-        player_comparison = PlayerStruct('Blake Snell', 'TB', '12189', 'P', 'L')
+        player_comparison = PlayerStruct('TB', '12189', 'P', 'L')
         self.assertEqual(player, player_comparison)
 
         player = games[0].home_lineup[0]
-        player_comparison = PlayerStruct('Jacoby Ellsbury', 'NYY', '8635', 'CF', 'L')
+        player_comparison = PlayerStruct('NYY', '8635', 'CF', 'L')
         self.assertEqual(player, player_comparison)
 
         player = games[0].home_lineup[8]
-        player_comparison = PlayerStruct('Didi Gregorius', 'NYY', '11257', 'SS', 'L')
+        player_comparison = PlayerStruct('NYY', '11257', 'SS', 'L')
         self.assertEqual(player, player_comparison)
 
         player = games[0].home_pitcher
-        player_comparison = PlayerStruct('Masahiro Tanaka', 'NYY', '10879', 'P', 'R')
+        player_comparison = PlayerStruct('NYY', '10879', 'P', 'R')
         self.assertEqual(player, player_comparison)
 
         player = games[1].home_pitcher
-        player_comparison = PlayerStruct('Tanner Roark', 'WAS', '11929', 'P', 'R')
+        player_comparison = PlayerStruct('WAS', '11929', 'P', 'R')
         self.assertEqual(player, player_comparison)
 
         player = games[1].home_lineup[0]
-        player_comparison = PlayerStruct('Chris Heisey', 'WAS', '10920', 'CF', 'R')
+        player_comparison = PlayerStruct('WAS', '10920', 'CF', 'R')
         self.assertEqual(player, player_comparison)
 
 

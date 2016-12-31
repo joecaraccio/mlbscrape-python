@@ -64,56 +64,6 @@ def get_csv_dict(filename=None):
     return csv_dict
 
 
-#TODO: migrate to intermediary miner
-def update_salaries(csv_dict=None, game_date=None):
-    database_session = MlbDatabase().open_session()
-
-    if game_date is None:
-        game_date = date.today()
-    if csv_dict is None:
-        csv_dict = get_csv_dict()
-    #Hitters
-    pregame_hitters = PregameHitterGameEntry.get_all_daily_entries(database_session, game_date)
-    for pregame_entry in pregame_hitters:
-        # Lookup the player's name in the database
-        # Lookup the name in the dictionary
-        hitter_entry = database_session.query(HitterEntry).get(pregame_entry.rotowire_id)
-        if hitter_entry is None:
-            print "Player %s not found in the Draftkings CSV file. Deleting entry." % pregame_entry.rotowire_id
-        try:
-            csv_entry = csv_dict[(hitter_entry.first_name + " " + hitter_entry.last_name + hitter_entry.team).lower()]
-            pregame_entry.draftkings_salary = int(csv_entry["Salary"])
-            positions = csv_entry["Position"].split("/")
-            pregame_entry.primary_position = positions[0]
-            pregame_entry.secondary_position = positions[len(positions) - 1]
-            pregame_entry.avg_points = float(csv_entry["AvgPointsPerGame"])
-            database_session.commit()
-        except KeyError:
-            print "Player %s not found in the Draftkings CSV file. Deleting entry." % (hitter_entry.first_name + " " + hitter_entry.last_name)
-            database_session.delete(pregame_entry)
-            database_session.commit()
-
-    # Pitchers
-    pregame_pitchers = PregamePitcherGameEntry.get_all_daily_entries(database_session, game_date)
-    for pregame_entry in pregame_pitchers:
-        # Lookup the player's name in the database
-        # Lookup the name in the dictionary
-        pitcher_entry = database_session.query(PitcherEntry).get(pregame_entry.rotowire_id)
-        if pitcher_entry is None:
-            print "Player %s not found in the Draftkings CSV file. Deleting entry." % pregame_entry.rotowire_id
-        try:
-            csv_entry = csv_dict[(pitcher_entry.first_name + " " + pitcher_entry.last_name + pitcher_entry.team).lower()]
-            pregame_entry.draftkings_salary = int(csv_entry["Salary"])
-            pregame_entry.avg_points = float(csv_entry["AvgPointsPerGame"])
-            database_session.commit()
-        except KeyError:
-            print "Player %s not found in the Draftkings CSV file. Deleting entry." % (pitcher_entry.first_name + " " + pitcher_entry.last_name)
-            database_session.delete(pregame_entry)
-            database_session.commit()
-
-    database_session.close()
-
-
 def get_hitter_points(postgame_hitter):
     points = float()
     points += 3*postgame_hitter.game_1b

@@ -552,7 +552,7 @@ def update_salaries(csv_dict=None, game_date=None):
 
 
 class LineupMiner(object):
-    def __init__(self, lineup, opposing_pitcher, db_path=None):
+    def __init__(self, lineup, opposing_pitcher, game_date, game_time, db_path=None):
         self._lineup = lineup
         self._opposing_pitcher = opposing_pitcher
         if db_path is None:
@@ -560,6 +560,8 @@ class LineupMiner(object):
         else:
             db_path = 'sqlite:///' + db_path
         self._database_session = MlbDatabase(db_path).open_session()
+        self._game_date = game_date
+        self._game_time = game_time
 
     def __del__(self):
         self._database_session.close()
@@ -575,6 +577,12 @@ class LineupMiner(object):
         else:
             pitcher_hand = None
         for current_hitter in self._lineup:
+            db_hitter = self._database_session.query(PregameHitterGameEntry).get((current_hitter.rotowire_id,
+                                                                                  self._game_date,
+                                                                                  self._game_time))
+            if db_hitter is not None:
+                print "'%s' has already been mined today." % current_hitter.rotowire_id
+                continue
             pregame_hitter_entry = PregameHitterGameEntry()
             pregame_hitter_entry.rotowire_id = current_hitter.rotowire_id
             pregame_hitter_entry.pitcher_id = self._opposing_pitcher.rotowire_id
@@ -811,7 +819,7 @@ class LineupMiner(object):
 
 
 class PitcherMiner(object):
-    def __init__(self, lineup, pitcher, game_date, db_path=None):
+    def __init__(self, lineup, pitcher, game_date, game_time, db_path=None):
         self._lineup = lineup
         self._pitcher = pitcher
         if db_path is None:
@@ -820,6 +828,7 @@ class PitcherMiner(object):
             db_path = 'sqlite:///' + db_path
         self._database_session = MlbDatabase(db_path).open_session()
         self._game_date = game_date
+        self._game_time = game_time
 
     def __del__(self):
         self._database_session.close()
@@ -833,6 +842,13 @@ class PitcherMiner(object):
         :param game_date: the date of the game (in the following form yyyy-mm-dd)
         :return: a PregamePitcherGameEntry object without the predicted_draftkings_points field populated
         """
+        db_pitcher = self._database_session.query(PregameHitterGameEntry).get((self._pitcher.rotowire_id,
+                                                                               self._game_date,
+                                                                               self._game_time))
+        if db_pitcher is not None:
+            print "'%s' has already been mined today." % db_pitcher.rotowire_id
+            return
+
         pregame_pitcher_entry = PregamePitcherGameEntry()
         pregame_pitcher_entry.rotowire_id = self._pitcher.rotowire_id
         pregame_pitcher_entry.team = self._pitcher.team
@@ -1015,10 +1031,14 @@ class GameMiner(object):
 
         self._database_session = MlbDatabase(db_path).open_session()
         self._game = game
-        self._home_lineup_miner = LineupMiner(game.home_lineup, game.away_pitcher, db_path)
-        self._home_pitcher_miner = PitcherMiner(game.away_lineup, game.home_pitcher, game.game_date, db_path)
-        self._away_lineup_miner = LineupMiner(game.away_lineup, game.home_pitcher, db_path)
-        self._away_pitcher_miner = PitcherMiner(game.home_lineup, game.away_pitcher, game.game_date, db_path)
+        self._home_lineup_miner = LineupMiner(game.home_lineup, game.away_pitcher, game.game_date,
+                                              game.game_time, db_path)
+        self._home_pitcher_miner = PitcherMiner(game.away_lineup, game.home_pitcher, game.game_date,
+                                                game.game_time, db_path)
+        self._away_lineup_miner = LineupMiner(game.away_lineup, game.home_pitcher, game.game_date,
+                                              game.game_time, db_path)
+        self._away_pitcher_miner = PitcherMiner(game.home_lineup, game.away_pitcher, game.game_date,
+                                                game.game_time, db_path)
 
     def __del__(self):
         self._database_session.close()

@@ -10,7 +10,7 @@ import cProfile
 os.chdir("/home/cameron/workspaces/MlbDatabase/mlb_scrape/Released/mlbscrape_python")
 
 try:
-    mine_pregame_stats()
+    ()
     save_daily_csv()
     csv_dict = get_csv_dict()
     update_salaries(csv_dict)

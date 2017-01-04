@@ -9,14 +9,7 @@ import cProfile
 os.chdir("/home/cameron/workspaces/MlbDatabase/mlb_scrape/Released/mlbscrape_python")
 
 try:
-    mine_pregame_stats()
-    save_daily_csv()
-    csv_dict = get_csv_dict()
-    update_salaries(csv_dict)
-    predict_daily_points(date.today())
-    optimal_lineup = get_optimal_lineup(date.today())
-    print optimal_lineup
-    send_email(optimal_lineup.__str__())
+    prefetch_pregame_stats()
 except Exception as e:
     print e
     send_email("The predictor generated an exception: {0}".format(e))

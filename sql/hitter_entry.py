@@ -18,7 +18,6 @@ class HitterEntry(Base):
 
     game_entries = relationship("PregameHitterGameEntry", backref="hitter_entry")
     postgame_entries = relationship("PostgameHitterGameEntry", backref="hitter_entry")
-    #lineup_entries = relationship("LineupHistoryEntry", backref="hitter_entry")
 
     def __init__(self, first_name, last_name, rotowire_id):
         """ Constructor

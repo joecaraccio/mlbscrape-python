@@ -66,6 +66,8 @@ class GameMatchup(object):
         self.home_pitcher = None
         self.home_team = None
         self.away_team = None
+        self.game_date = None
+        self.game_time = None
 
 
 class GameFactors(object):
@@ -132,6 +134,7 @@ def get_game_lineups(url=None, game_date=None):
             print "Game between %s and %s is not valid." % (away_team_abbreviation, home_team_abbreviation)
 
     return games
+
 
 def get_external_game_factors(game_node):
     """
@@ -326,7 +329,9 @@ def get_game_matchups(url=None, game_date=None):
         game_node = header_node.parent
         matchup.away_team = game_node.find("div", {"class": AWAY_TEAM_REGION_LABEL}).text.split()[0]
         matchup.home_team = game_node.find("div", {"class": HOME_TEAM_REGION_LABEL}).text.split()[0]
-
+        game_time = game_node.find("div", {"class": TIME_REGION_LABEL}).find("a").text.replace("ET", "").strip()
+        matchup.game_time = datetime.strptime(game_time, '%I:%M %p').strftime("%H:%M")
+        matchup.game_date = str(game_date)
         try:
             pitchers = game_node.find("div", PITCHERS_REGION_LABEL).findAll("div")
             matchup.away_pitcher = get_pitcher(pitchers[0], matchup.away_team)

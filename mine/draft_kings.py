@@ -6,19 +6,6 @@ from selenium.webdriver.common.by import By
 from urlparse import urljoin
 from urllib import urlretrieve
 import csv
-from datetime import date, datetime
-from sql.pregame_hitter import PregameHitterGameEntry
-from sql.pregame_pitcher import PregamePitcherGameEntry
-from sql.hitter_entry import HitterEntry
-from sql.pitcher_entry import PitcherEntry
-from sqlalchemy import desc, or_
-import heapq
-from learn.train_regression import HitterRegressionForestTrainer, PitcherRegressionForestTrainer, HitterRegressionTrainer, PitcherRegressionTrainer
-from sql.lineup import LineupEntry
-import numpy as np
-from email_service import send_email
-from sql.mlb_database import MlbDatabase
-
 
 ROTOWIRE_DAILY_LINEUPS_URL = "http://www.rotowire.com/baseball/daily_lineups.htm"
 ROTOWIRE_LINK_TEXT = "See daily player values on DraftKings"

@@ -6,6 +6,7 @@ from sql.postgame_hitter import PostgameHitterGameEntry
 from sql.postgame_pitcher import PostgamePitcherGameEntry
 from sql.hitter_entry import HitterEntry
 from sql.pitcher_entry import PitcherEntry
+from sql.lineup_history import LineupHistoryEntry
 from sqlalchemy import desc, or_
 import heapq
 from learn.train_regression import HitterRegressionForestTrainer, PitcherRegressionForestTrainer, HitterRegressionTrainer, PitcherRegressionTrainer
@@ -16,6 +17,8 @@ from sql.mlb_database import MlbDatabase
 from draft_kings import CONTEST_SALARY, get_csv_dict
 from rotowire import *
 from multiprocessing import Pool
+from sqlalchemy.exc import IntegrityError
+from mine.draft_kings import *
 
 
 class Position(object):
@@ -437,6 +440,68 @@ def mine_pregame_stats():
     get_pregame_stats_wrapper(games)
 
 
+def prefetch_pregame_stats_atomic(game_matchup):
+    """ Lookup the lineup the two teams last used this year and mine the stats
+    :param game_matchup:
+    :return:
+    """
+    database_session = MlbDatabase().open_session()
+    away_lineup_query = database_session.query(LineupHistoryEntry).get((game_matchup.year, game_matchup.away_team))
+    home_lineup_query = database_session.query(LineupHistoryEntry).get((game_matchup.year, game_matchup.home_team))
+    away_lineup = list()
+    home_lineup = list()
+    if away_lineup_query is not None and home_lineup_query is not None:
+        hand = away_lineup_query.catcher_entry.batting_hand
+        away_lineup.append(PlayerStruct(game_matchup.away_team, away_lineup_query.catcher, "C", hand))
+        hand = away_lineup_query.first_baseman_entry.batting_hand
+        away_lineup.append(PlayerStruct(game_matchup.away_team, away_lineup_query.first_baseman, "1B", hand))
+        hand = away_lineup_query.second_baseman_entry.batting_hand
+        away_lineup.append(PlayerStruct(game_matchup.away_team, away_lineup_query.second_baseman, "2B", hand))
+        hand = away_lineup_query.third_baseman_entry.batting_hand
+        away_lineup.append(PlayerStruct(game_matchup.away_team, away_lineup_query.third_baseman, "3B", hand))
+        hand = away_lineup_query.shortstop_entry.batting_hand
+        away_lineup.append(PlayerStruct(game_matchup.away_team, away_lineup_query.shortstop, "SS", hand))
+        hand = away_lineup_query.left_fielder_entry.batting_hand
+        away_lineup.append(PlayerStruct(game_matchup.away_team, away_lineup_query.left_fielder, "LF", hand))
+        hand = away_lineup_query.center_fielder_entry.batting_hand
+        away_lineup.append(PlayerStruct(game_matchup.away_team, away_lineup_query.center_fielder, "CF", hand))
+        hand = away_lineup_query.right_fielder_entry.batting_hand
+        away_lineup.append(PlayerStruct(game_matchup.away_team, away_lineup_query.right_fielder, "RF", hand))
+
+        hand = home_lineup_query.catcher_entry.batting_hand
+        home_lineup.append(PlayerStruct(game_matchup.home_team, home_lineup_query.catcher, "C", hand))
+        hand = home_lineup_query.first_baseman_entry.batting_hand
+        home_lineup.append(PlayerStruct(game_matchup.home_team, home_lineup_query.first_baseman, "1B", hand))
+        hand = home_lineup_query.second_baseman_entry.batting_hand
+        home_lineup.append(PlayerStruct(game_matchup.home_team, home_lineup_query.second_baseman, "2B", hand))
+        hand = home_lineup_query.third_baseman_entry.batting_hand
+        home_lineup.append(PlayerStruct(game_matchup.home_team, home_lineup_query.third_baseman, "3B", hand))
+        hand = home_lineup_query.shortstop_entry.batting_hand
+        home_lineup.append(PlayerStruct(game_matchup.home_team, home_lineup_query.shortstop, "SS", hand))
+        hand = home_lineup_query.left_fielder_entry.batting_hand
+        home_lineup.append(PlayerStruct(game_matchup.home_team, home_lineup_query.left_fielder, "LF", hand))
+        hand = home_lineup_query.center_fielder_entry.batting_hand
+        home_lineup.append(PlayerStruct(game_matchup.home_team, home_lineup_query.center_fielder, "CF", hand))
+        hand = home_lineup_query.right_fielder_entry.batting_hand
+        home_lineup.append(PlayerStruct(game_matchup.home_team, home_lineup_query.right_fielder, "RF", hand))
+        game = Game(away_lineup, game_matchup.away_pitcher, home_lineup, game_matchup.home_pitcher,
+                    game_matchup.game_date, game_matchup.game_time)
+        get_pregame_stats(game)
+
+    database_session.close()
+
+
+def prefetch_pregame_stats_wrapper(game_matchups):
+    thread_pool = Pool(6)
+
+    thread_pool.map(prefetch_pregame_stats_atomic, game_matchups)
+
+
+def prefetch_pregame_stats():
+    game_matchups = get_game_matchups()
+    prefetch_pregame_stats_wrapper(game_matchups)
+
+
 def update_salaries(csv_dict=None, game_date=None):
     if game_date is None:
         game_date = date.today()
@@ -495,6 +560,9 @@ class LineupMiner(object):
         else:
             db_path = 'sqlite:///' + db_path
         self._database_session = MlbDatabase(db_path).open_session()
+
+    def __del__(self):
+        self._database_session.close()
 
     def get_pregame_stats(self):
         """ Fetch the pregame hitting stats from the web
@@ -647,7 +715,8 @@ class LineupMiner(object):
                     continue
 
                 self.create_new_hitter_entry(current_player, baseball_reference_id)
-                #update_lineup_history(lineup, database_session)
+
+        self.update_lineup_history()
 
     def create_new_hitter_entry(self, player_struct, baseball_reference_id):
         name = player_struct.name.split()
@@ -702,6 +771,44 @@ class LineupMiner(object):
                                                                                      hitter_entry.team,
                                                                                      pregame_hitter_entry.game_date)
 
+    def update_lineup_history(self):
+        """ Update the lineup history object for this team and year
+        :param lineup: list of PlayerStruct objects
+        :param database_session: SQLAlchemy session object
+        """
+        lineup_history = LineupHistoryEntry()
+        lineup_history.team = self._lineup[0].team
+        lineup_history.year = date.today().year
+        for player in self._lineup:
+            if player.position == "C":
+                lineup_history.catcher = player.rotowire_id
+            elif player.position == "1B":
+                lineup_history.first_baseman = player.rotowire_id
+            elif player.position == "2B":
+                lineup_history.second_baseman = player.rotowire_id
+            elif player.position == "3B":
+                lineup_history.third_baseman = player.rotowire_id
+            elif player.position == "SS":
+                lineup_history.shortstop = player.rotowire_id
+            elif player.position == "LF":
+                lineup_history.left_fielder = player.rotowire_id
+            elif player.position == "CF":
+                lineup_history.center_fielder = player.rotowire_id
+            elif player.position == "RF":
+                lineup_history.shortstop = player.rotowire_id
+
+        self._database_session.add(lineup_history)
+        self._database_session.commit()
+
+    def correct_prefetched_lineup(self, db_lineup_query):
+        for player in self._lineup:
+            for game_player in db_lineup_query:
+                if game_player.rotowire_id == player.rotowire_id:
+                    break
+                if game_player == db_lineup_query[db_lineup_query.count()-1]:
+                    self._database_session.delete(player)
+                    self._database_session.commit()
+
 
 class PitcherMiner(object):
     def __init__(self, lineup, pitcher, game_date, db_path=None):
@@ -713,6 +820,9 @@ class PitcherMiner(object):
             db_path = 'sqlite:///' + db_path
         self._database_session = MlbDatabase(db_path).open_session()
         self._game_date = game_date
+
+    def __del__(self):
+        self._database_session.close()
 
     def get_pregame_stats(self):
         """ Get pregame stats for the given pitcher
@@ -910,6 +1020,9 @@ class GameMiner(object):
         self._away_lineup_miner = LineupMiner(game.away_lineup, game.home_pitcher, db_path)
         self._away_pitcher_miner = PitcherMiner(game.home_lineup, game.away_pitcher, game.game_date, db_path)
 
+    def __del__(self):
+        self._database_session.close()
+
     def update_ids(self):
         """ Check if each player is represented in the database. If not, commit a new entry
         :param games: list of Game objects
@@ -920,36 +1033,29 @@ class GameMiner(object):
         self._home_pitcher_miner.update_ids()
 
     def get_pregame_hitting_stats(self):
-        self._lineup_miner.get_pregame_stats()
+        away_lineup = self._database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.team == self._game.away_pitcher.team,
+                                                                                  PregameHitterGameEntry.game_date == self._game.game_date,
+                                                                                  PregameHitterGameEntry.game_time == self._game.game_time)
+        self._away_lineup_miner.correct_prefetched_lineup(away_lineup)
+        home_lineup = self._database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.team == self._game.home_pitcher.team,
+                                                                                  PregameHitterGameEntry.game_date == self._game.game_date,
+                                                                                  PregameHitterGameEntry.game_time == self._game.game_time)
+        self._home_lineup_miner.correct_prefetched_lineup(home_lineup)
+        self._away_lineup_miner.get_pregame_stats()
+        self._home_lineup_miner.get_pregame_stats()
 
     def get_pregame_pitching_stats(self):
-        self._pitcher_miner.get_pregame_stats()
-
-    def update_lineup_history(self, lineup):
-        """ Update the lineup history object for this team and year
-        :param lineup: list of PlayerStruct objects
-        :param database_session: SQLAlchemy session object
-        """
-        lineup_history = LineupHistoryEntry()
-        lineup_history.team = lineup[0].team
-        lineup_history.year = date.today().year
-        for player in lineup:
-            if player.position == "C":
-                lineup_history.catcher = player.rotowire_id
-            elif player.position == "1B":
-                lineup_history.first_baseman = player.rotowire_id
-            elif player.position == "2B":
-                lineup_history.second_baseman = player.rotowire_id
-            elif player.position == "3B":
-                lineup_history.third_baseman = player.rotowire_id
-            elif player.position == "SS":
-                lineup_history.shortstop = player.rotowire_id
-            elif player.position == "LF":
-                lineup_history.left_fielder = player.rotowire_id
-            elif player.position == "CF":
-                lineup_history.center_fielder = player.rotowire_id
-            elif player.position == "RF":
-                lineup_history.shortstop = player.rotowire_id
-
-        self._database_session.add(lineup_history)
-        self._database_session.commit()
+        home_pitcher = self._database_session.query(PregamePitcherGameEntry).filter(PregameHitterGameEntry.team == self._game.home_pitcher.team,
+                                                                                  PregameHitterGameEntry.game_date == self._game.game_date,
+                                                                                  PregameHitterGameEntry.game_time == self._game.game_time)[0]
+        if home_pitcher.rotowire_id != self._game.home_pitcher.rotowire_id:
+            self._database_session.delete(home_pitcher)
+            self._database_session.commit()
+        self._home_pitcher_miner.get_pregame_stats()
+        away_pitcher = self._database_session.query(PregamePitcherGameEntry).get((self._game.away_pitcher.rotowire_id,
+                                                                                  self._game.game_date,
+                                                                                  self._game.game_time))
+        if away_pitcher.rotowire_id != self._game.away_pitcher.rotowire_id:
+            self._database_session.delete(away_pitcher)
+            self._database_session.commit()
+        self._away_pitcher_miner.get_pregame_stats()

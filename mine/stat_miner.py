@@ -20,6 +20,9 @@ from multiprocessing import Pool
 from sqlalchemy.exc import IntegrityError
 from mine.draft_kings import *
 
+class NoGamesFound(Exception):
+    def __init__(self):
+        super(NoGamesFound, self).__init__("No games found.")
 
 class Position(object):
     def __init__(self, position_string):
@@ -437,6 +440,8 @@ def mine_pregame_stats():
     """ Mine the hitter/pitcher stats and predict the outcomes and commit to the database session
     """
     games = get_game_lineups()
+    if len(games) == 0:
+        raise NoGamesFound
     get_pregame_stats_wrapper(games)
 
 
@@ -499,6 +504,8 @@ def prefetch_pregame_stats_wrapper(game_matchups):
 
 def prefetch_pregame_stats():
     game_matchups = get_game_matchups()
+    if len(game_matchups) == 0:
+        raise NoGamesFound
     prefetch_pregame_stats_wrapper(game_matchups)
 
 
@@ -980,7 +987,8 @@ class PitcherMiner(object):
             pitcher_entry = self._database_session.query(PitcherEntry).get(pregame_pitcher_entry.rotowire_id)
             print "Mining yesterday for %s %s" % (pitcher_entry.first_name, pitcher_entry.last_name)
             try:
-                stat_row_dict = get_pitching_game_log(pitcher_entry.baseball_reference_id)
+                stat_row_dict = get_pitching_game_log(pitcher_entry.baseball_reference_id,
+                                                      game_date=date.today()-timedelta(days=1))
             except TableRowNotFound:
                 print "Player %s %s did not play yesterday. Deleting pregame entry %s %s" % \
                       (pitcher_entry.first_name,

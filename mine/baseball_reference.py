@@ -375,10 +375,10 @@ def get_pitching_game_log(baseball_reference_id, soup=None, game_date=None):
     :return: dictionary representation of the game log stats
     """
     if game_date is None:
-        game_date = date.today() - timedelta(days=1)
+        game_date = date.today()
     if soup is None:
         soup = get_soup_from_url(BASE_URL + "/players/gl.cgi?id=" +
-                                                     str(baseball_reference_id) + "&t=p&year=" + str(game_date.year))
+                                 str(baseball_reference_id) + "&t=p&year=" + str(game_date.year))
     return get_table_row_dict(soup, "pitching_gamelogs", date_abbreviations[game_date.month] + " " +
                               str(game_date.day), "Date")
 
@@ -399,7 +399,7 @@ def get_team_info(team_name, year_of_interest=None, team_soup=None):
 
     if team_soup is None:
         team_soup = get_soup_from_url(BASE_URL + "/teams/" +
-                                                          team_abbreviation + "/" + str(year_of_interest) + ".shtml")
+                                      team_abbreviation + "/" + str(year_of_interest) + ".shtml")
 
     sub_nodes = team_soup.find("a", {"href": url}).parent.parent.findAll("strong")
     for sub_node in sub_nodes:

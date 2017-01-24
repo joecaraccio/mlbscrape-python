@@ -5,8 +5,6 @@ from datetime import date, timedelta, datetime
 from email_service import send_email
 import cProfile
 
-os.chdir("/home/cameron/workspaces/MlbDatabase/mlb_scrape/Released/mlbscrape_python")
-
 try:
     mine_pregame_stats()
     save_daily_csv()

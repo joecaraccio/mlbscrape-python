@@ -58,14 +58,14 @@ class OptimalLineupTest(unittest.TestCase):
 
     def setUp(self):
         self.optimal_lineup = OptimalLineupDict()
-        player1 = PregameHitterGameEntry()
+        player1 = PregamePitcherGameEntry()
         player1.rotowire_id = OptimalLineupTest.OPTIMAL_LINEUP_SP1_ID
         player1.draftkings_salary = OptimalLineupTest.OPTIMAL_LINEUP_SP1_SALARY
         player1.predicted_draftkings_points = OptimalLineupTest.OPTIMAL_LINEUP_SP1_POINTS
         player1.primary_position = "SP"
         self.optimal_lineup.add(player1)
 
-        player2 = PregameHitterGameEntry()
+        player2 = PregamePitcherGameEntry()
         player2.rotowire_id = OptimalLineupTest.OPTIMAL_LINEUP_SP2_ID
         player2.draftkings_salary = OptimalLineupTest.OPTIMAL_LINEUP_SP2_SALARY
         player2.predicted_draftkings_points = OptimalLineupTest.OPTIMAL_LINEUP_SP2_POINTS
@@ -101,7 +101,7 @@ class OptimalLineupTest(unittest.TestCase):
         player6.draftkings_salary = OptimalLineupTest.OPTIMAL_LINEUP_3B_SALARY
         player6.predicted_draftkings_points = OptimalLineupTest.OPTIMAL_LINEUP_3B_POINTS
         player6.primary_position = "3B"
-        player6.primary_position = "3B"
+        player6.secondary_position = "3B"
         self.optimal_lineup.add(player6)
 
         player7 = PregameHitterGameEntry()
@@ -125,7 +125,7 @@ class OptimalLineupTest(unittest.TestCase):
         player9.draftkings_salary = OptimalLineupTest.OPTIMAL_LINEUP_OF2_SALARY
         player9.predicted_draftkings_points = OptimalLineupTest.OPTIMAL_LINEUP_OF2_POINTS
         player9.primary_position = "OF"
-        player9.primary_position = "OF"
+        player9.secondary_position = "OF"
         self.optimal_lineup.add(player9)
 
         player10 = PregameHitterGameEntry()
@@ -162,7 +162,7 @@ class TestAddPlayer(OptimalLineupTest):
         player.predicted_draftkings_points = TestAddPlayer.CANDIDATE_POINTS
         player.draftkings_salary = TestAddPlayer.CANDIDATE_SALARY
         self.optimal_lineup.add(player)
-        self.assertEqual(self.optimal_lineup.position_map[TestAddPlayer.CANDIDATE_PRIMARY_POS]._player.rotowire_id,
+        self.assertEqual(self.optimal_lineup.position_map[TestAddPlayer.CANDIDATE_PRIMARY_POS].get_ids()[0],
                          TestAddPlayer.CANDIDATE_ID)
         self.assertEqual(self.optimal_lineup.get_total_salary(),
                          OptimalLineupTest.OPTIMAL_LINEUP_TOTAL_SALARY -
@@ -188,9 +188,9 @@ class TestAddPlayerWorse(OptimalLineupTest):
         player.predicted_draftkings_points = TestAddPlayerWorse.CANDIDATE_POINTS
         player.draftkings_salary = TestAddPlayerWorse.CANDIDATE_SALARY
         self.optimal_lineup.add(player)
-        self.assertEqual(self.optimal_lineup.position_map[TestAddPlayerWorse.CANDIDATE_PRIMARY_POS]._player.rotowire_id,
+        self.assertEqual(self.optimal_lineup.position_map[TestAddPlayerWorse.CANDIDATE_PRIMARY_POS].get_ids()[0],
                          OptimalLineupTest.OPTIMAL_LINEUP_SS_ID)
-        self.assertEqual(self.optimal_lineup.position_map[TestAddPlayerWorse.CANDIDATE_SECONDARY_POS]._player.rotowire_id,
+        self.assertEqual(self.optimal_lineup.position_map[TestAddPlayerWorse.CANDIDATE_SECONDARY_POS].get_ids()[0],
                          OptimalLineupTest.OPTIMAL_LINEUP_3B_ID)
 
         self.assertEqual(self.optimal_lineup.get_total_salary(), OptimalLineupTest.OPTIMAL_LINEUP_TOTAL_SALARY)
@@ -222,9 +222,9 @@ class TestAddPlayerSecondary(OptimalLineupTest):
         player.predicted_draftkings_points = TestAddPlayerSecondary.CANDIDATE_POINTS
         player.draftkings_salary = TestAddPlayerSecondary.CANDIDATE_SALARY
         self.optimal_lineup.add(player)
-        self.assertEqual(self.optimal_lineup.position_map[TestAddPlayerSecondary.CANDIDATE_PRIMARY_POS]._player.rotowire_id,
+        self.assertEqual(self.optimal_lineup.position_map[TestAddPlayerSecondary.CANDIDATE_PRIMARY_POS].get_ids()[0],
                          OptimalLineupTest.OPTIMAL_LINEUP_SS_ID)
-        self.assertEqual(self.optimal_lineup.position_map[TestAddPlayerSecondary.CANDIDATE_SECONDARY_POS]._player.rotowire_id,
+        self.assertEqual(self.optimal_lineup.position_map[TestAddPlayerSecondary.CANDIDATE_SECONDARY_POS].get_ids()[0],
                          TestAddPlayerSecondary.CANDIDATE_ID)
 
         self.assertEqual(self.optimal_lineup.get_total_salary(),

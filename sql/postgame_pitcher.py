@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float
+from sqlalchemy import Column, Integer, String, Float, Boolean
 from mlb_database import Base
 from sqlalchemy import ForeignKey, ForeignKeyConstraint
 
@@ -12,11 +12,11 @@ class PostgamePitcherGameEntry(Base):
     rotowire_id = Column(String, ForeignKey('pitcher_entries.rotowire_id'), primary_key=True)
     game_date = Column(String, primary_key=True)
     game_time = Column(String, primary_key=True)
-    __table_args__ = (ForeignKeyConstraint([game_date, game_time],
-                                           ['game_entries.game_date', 'game_entries.game_time']), {})
+    home_team = Column(String)
+    is_home_team = Column(Boolean)
+    __table_args__ = (ForeignKeyConstraint([game_date, game_time, home_team],
+                                           ['game_entries.game_date', 'game_entries.game_time', 'game_entries.home_team']), {})
 
-    team = Column(String)
-    opposing_team = Column(String)
     actual_draftkings_points = Column(Float)
 
     # Game stats

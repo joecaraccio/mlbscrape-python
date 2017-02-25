@@ -26,6 +26,8 @@ class MlbDatabase(object):
         Create/open a local database.
         """
         # Import all the metadata
+        from sql.umpire import UmpireCareerEntry
+        from sql.team_park import ParkEntry
         from sql.game import GameEntry
         from sql.hitter_entry import HitterEntry
         from sql.pitcher_entry import PitcherEntry

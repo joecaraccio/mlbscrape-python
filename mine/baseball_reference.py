@@ -1,3 +1,4 @@
+from types import NoneType
 
 from beautiful_soup_helper import *
 from datetime import date, timedelta
@@ -404,13 +405,17 @@ def get_team_info(team_name, year_of_interest=None, team_soup=None):
     sub_nodes = team_soup.find("a", {"href": url}).parent.parent.findAll("strong")
     for sub_node in sub_nodes:
         for content in sub_node.contents:
-            if "multi-year:" in content:
-                factor_string = sub_node.next_sibling.split(",")
+            if content is not None:
+                try:
+                    if "multi-year:" in content.lower():
+                        factor_string = sub_node.next_sibling.split(",")
 
-                hitter_factor = int(factor_string[0].split("-")[1].strip().split(" ")[0])
-                pitcher_factor = int(factor_string[1].split("-")[1].strip().split(" ")[0])
+                        hitter_factor = int(factor_string[0].split("-")[1].strip().split(" ")[0])
+                        pitcher_factor = int(factor_string[1].split("-")[1].strip().split(" ")[0])
 
-                return hitter_factor, pitcher_factor
+                        return hitter_factor, pitcher_factor
+                except TypeError:
+                    continue
 
     return None
 
@@ -427,7 +432,7 @@ team_dict = bidict.bidict(ARI="Arizona Diamondbacks",
                           DET="Detroit Tigers",
                           HOU="Houston Astros",
                           KCR="Kansas City Royals",
-                          LAA="Los Angeles Angels",
+                          LAA="Los Angeles Angels of Anaheim",
                           LAD="Los Angeles Dodgers",
                           MIA="Miami Marlins",
                           MIL="Milwaukee Brewers",

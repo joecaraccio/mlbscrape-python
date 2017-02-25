@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, ForeignKeyConstraint
 from sqlalchemy.orm import relationship
 from mlb_database import Base
 
@@ -9,14 +9,13 @@ class GameEntry(Base):
 
     game_date = Column(String, primary_key=True)
     game_time = Column(String, primary_key=True)
-    home_team = Column(String)
+    home_team = Column(String, primary_key=True)
     away_team = Column(String)
 
-    ump_ks_per_game = Column(Float)
-    ump_runs_per_game = Column(Float)
-    park_hitter_score = Column(Float)
-    park_pitcher_score = Column(Float)
+    umpire = Column(String, ForeignKey('umpire_entries.full_name'))
+    umpire_object = relationship("UmpireCareerEntry")
     wind_speed = Column(Integer)
+    temperature = Column(Float)
 
     pitcher_pregame_entries = relationship('PregamePitcherGameEntry', backref='game_entry')
     pitcher_postgame_entries = relationship('PostgamePitcherGameEntry', backref='game_entry')

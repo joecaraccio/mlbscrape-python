@@ -14,11 +14,10 @@ class PregamePitcherGameEntry(Base):
     rotowire_id = Column(String, ForeignKey('pitcher_entries.rotowire_id'), primary_key=True)
     game_date = Column(String, primary_key=True)
     game_time = Column(String, primary_key=True)
-    __table_args__ = (ForeignKeyConstraint([game_date, game_time],
-                                           ['game_entries.game_date', 'game_entries.game_time']), {})
-
-    team = Column(String)
-    opposing_team = Column(String)
+    home_team = Column(String)
+    is_home_team = Column(Boolean)
+    __table_args__ = (ForeignKeyConstraint([game_date, game_time, home_team],
+                                           ['game_entries.game_date', 'game_entries.game_time', 'game_entries.home_team']), {})
     predicted_draftkings_points = Column(Float)
     draftkings_salary = Column(Integer)
     avg_points = Column(Float)

@@ -19,7 +19,7 @@ from rotowire import *
 from multiprocessing import Pool
 from sqlalchemy.exc import IntegrityError
 from mine.draft_kings import *
-
+from sql.umpire import UmpireCareerEntry
 
 class NoGamesFound(Exception):
     def __init__(self):
@@ -1220,3 +1220,50 @@ class GameMiner(object):
             self._database_session.delete(away_pitcher)
             self._database_session.commit()
         self._away_pitcher_miner.get_pregame_stats()
+
+
+class UmpireMiner(object):
+    def __init__(self, db_path=None):
+        if db_path is None:
+            db_path = 'sqlite:///mlb_stats.db'
+        else:
+            db_path = 'sqlite:///' + db_path
+
+        self._database_session = MlbDatabase(db_path).open_session()
+
+    def __del__(self):
+        self._database_session.close()
+
+    def get_umpire_data(self):
+        url = "https://swishanalytics.com/mlb/mlb-umpire-factors"
+        umpire_soup = get_soup_from_url(url)
+
+        stat_table = umpire_soup.find("table", {"id": "ump-table"}).find("tbody")
+
+        if stat_table is not None:
+            ump_rows = stat_table.findAll("tr")
+            for ump_row in ump_rows:
+                ump_data = ump_row.findAll("td")
+                ump_entry = self._database_session.query(UmpireCareerEntry).get(str(ump_data[0].text.strip()))
+                if ump_entry is None:
+                    ump_entry = UmpireCareerEntry(str(ump_data[0].text.strip()))
+
+                ump_entry.ks_pct = float(ump_data[3].text.strip().replace("%", "")) / 100
+                ump_entry.walks_pct = float(ump_data[4].text.strip().replace("%", "")) / 100
+                ump_entry.runs_per_game = float(ump_data[5].text.strip())
+                ump_entry.batting_average = float(ump_data[6].text.strip())
+                ump_entry.on_base_pct = float(ump_data[7].text.strip())
+                ump_entry.slugging_pct = float(ump_data[8].text.strip())
+
+                ump_entry.ks_boost = float(ump_data[9].text.strip().replace("x", ""))
+                ump_entry.walks_boost = float(ump_data[10].text.strip().replace("x", ""))
+                ump_entry.runs_boost = float(ump_data[11].text.strip().replace("x", ""))
+                ump_entry.batting_average_boost = float(ump_data[12].text.strip().replace("x", ""))
+                ump_entry.on_base_pct_boost = float(ump_data[13].text.strip().replace("x", ""))
+                ump_entry.slugging_pct_boost = float(ump_data[14].text.strip().replace("x", ""))
+
+                try:
+                    self._database_session.add(ump_entry)
+                    self._database_session.commit()
+                except IntegrityError:
+                    self._database_session.rollback()

@@ -98,6 +98,8 @@ def get_game_lineups(url=None, game_date=None):
     if game_date is None:
         game_date = date.today()
 
+    #TODO: need to implement the game time here
+
     """TODO: add feature to look if it's going to rain"""
     lineup_soup = get_soup_from_url(url)
     header_nodes = lineup_soup.findAll("div", {"class": TEAM_REGION_LABEL})

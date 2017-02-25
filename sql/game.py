@@ -19,6 +19,8 @@ class GameEntry(Base):
 
     pitcher_pregame_entries = relationship('PregamePitcherGameEntry', backref='game_entry')
     pitcher_postgame_entries = relationship('PostgamePitcherGameEntry', backref='game_entry')
+    hitter_pregame_entries = relationship('PregameHitterGameEntry', backref='game_entry')
+    hitter_postgame_entries = relationship('PostgameHitterGameEntry', backref='game_entry')
 
     def __init__(self, game_date, game_time, home_team, away_team):
         self.game_date = game_date

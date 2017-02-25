@@ -142,7 +142,8 @@ class PregamePitcherGameEntry(Base):
         database_session = MlbDatabase().open_session()
         # Get the hitters he is facing as well
         hitter_postgame_entries = database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.team == self.opposing_team,
-                                                                                         PregameHitterGameEntry.game_date == self.game_date)
+                                                                                        PregameHitterGameEntry.game_date == self.game_date,
+                                                                                        PregameHitterGameEntry.game_time == self.game_time)
 
         hitter_array = np.array(np.zeros(31))
         for hitter_entry in hitter_postgame_entries:
@@ -190,7 +191,14 @@ class PregamePitcherGameEntry(Base):
 
         return float(self.draftkings_salary) / float(self.predicted_draftkings_points)
 
+    def get_team(self):
+        if self.is_home_team:
+            return self.game_entry.home_team
+        else:
+            return self.game_entry.away_team
 
-
-
-
+    def get_opposing_team(self):
+        if self.is_home_team:
+            return self.game_entry.away_team
+        else:
+            return self.game_entry.home_team

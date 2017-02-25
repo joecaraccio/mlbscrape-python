@@ -41,14 +41,11 @@ class Player(object):
     def __str__(self):
         return "%s: %s\n" % (self._position_string, self._player)
 
-    def get_opponent_team(self):
-        return self._player.opposing_team
-
     def get_team(self):
-        return self._player.team
+        return self._player.get_team()
 
     def get_opposing_team(self):
-        return self._player.opposing_team
+        return self._player.get_opposing_team()
 
     def get_points(self):
         return self._player.predicted_draftkings_points
@@ -84,7 +81,7 @@ class PositionHeap(object):
         """
         is_added = False
         if self._blacklisted_opposing_team is not None:
-            if self._blacklisted_opposing_team == sql_player.opposing_team:
+            if self._blacklisted_opposing_team == sql_player.get_opposing_team():
                 return is_added
 
         if len(self._position_heap) < self._max_players:
@@ -138,7 +135,7 @@ class PositionHeap(object):
         self._blacklisted_opposing_team = opposing_team
         idx = 0
         for player in self._position_heap:
-            if player.opposing_team == opposing_team:
+            if player.get_opposing_team() == opposing_team:
                 self._position_heap.pop(idx)
                 is_removed = True
             else:
@@ -193,7 +190,7 @@ class PositionHeap(object):
         """
         team_list = list()
         for player in self._position_heap:
-            team_list.append(player.team)
+            team_list.append(player.get_team())
 
         return team_list
 
@@ -203,7 +200,7 @@ class PositionHeap(object):
         """
         team_list = list()
         for player in self._position_heap:
-            team_list.append(player.opposing_team)
+            team_list.append(player.get_opposing_team())
 
         return team_list
 
@@ -214,7 +211,7 @@ class PositionHeap(object):
         """
         points = 0.0
         for player in self._position_heap:
-            if player.team == team:
+            if player.get_team() == team:
                 points += player.predicted_draftkings_points
 
         return points
@@ -692,7 +689,7 @@ def update_salaries(csv_dict=None, game_date=None):
 
 
 class LineupMiner(object):
-    def __init__(self, lineup, opposing_pitcher, game_date, game_time, db_path=None):
+    def __init__(self, lineup, opposing_pitcher, game_date, game_time, is_home, db_path=None):
         self._lineup = lineup
         self._opposing_pitcher = opposing_pitcher
         if db_path is None:
@@ -702,13 +699,13 @@ class LineupMiner(object):
         self._database_session = MlbDatabase(db_path).open_session()
         self._game_date = game_date
         self._game_time = game_time
+        self._is_home = is_home
 
     def __del__(self):
         self._database_session.close()
 
     def get_pregame_stats(self):
         """ Fetch the pregame hitting stats from the web
-        :param game: Game object
         :return:
         """
         pitcher_entry = self._database_session.query(PitcherEntry).get(self._opposing_pitcher.rotowire_id)
@@ -726,7 +723,11 @@ class LineupMiner(object):
             pregame_hitter_entry = PregameHitterGameEntry()
             pregame_hitter_entry.rotowire_id = current_hitter.rotowire_id
             pregame_hitter_entry.pitcher_id = self._opposing_pitcher.rotowire_id
-            pregame_hitter_entry.team = current_hitter.team
+            pregame_hitter_entry.is_home_team = self._is_home
+            if self._is_home:
+                pregame_hitter_entry.home_team = self._lineup[0].team
+            else:
+                pregame_hitter_entry.home_team = self._opposing_pitcher.team
             hitter_entry = self._database_session.query(HitterEntry).get(current_hitter.rotowire_id)
             if hitter_entry is None:
                 print "Hitter %s not found" % current_hitter.name
@@ -739,16 +740,16 @@ class LineupMiner(object):
 
             if pitcher_entry is not None:
                 pregame_hitter_entry = self.mine_vs_pitcher_hitting_stats(hitter_entry, pregame_hitter_entry, pitcher_entry)
-                pregame_hitter_entry.opposing_team = pitcher_entry.team
 
-            pregame_hitter_entry.game_date = date.today()
+            pregame_hitter_entry.game_date = self._game_date
+            pregame_hitter_entry.game_time = self._game_time
             try:
                 self._database_session.add(pregame_hitter_entry)
                 self._database_session.commit()
             except IntegrityError:
                 print "Attempt to duplicate hitter entry: %s %s %s" % (current_hitter.name,
-                                                                       pregame_hitter_entry.team,
-                                                                       pregame_hitter_entry.opposing_team)
+                                                                       pregame_hitter_entry.get_team(),
+                                                                       pregame_hitter_entry.get_opposing_team())
                 self._database_session.rollback()
 
     def mine_career_stats(self, hitter_entry, pregame_hitter_entry, hitter_career_soup):
@@ -888,7 +889,7 @@ class LineupMiner(object):
                 print "Player %s %s did not play yesterday. Deleting pregame entry %s %s" % (hitter_entry.first_name,
                                                                                              hitter_entry.last_name,
                                                                                              pregame_hitter_entry.game_date,
-                                                                                             pregame_hitter_entry.opposing_team)
+                                                                                             pregame_hitter_entry.get_opposing_team())
                 self._database_session.delete(pregame_hitter_entry)
                 self._database_session.commit()
                 continue
@@ -957,9 +958,12 @@ class LineupMiner(object):
                     self._database_session.delete(player)
                     self._database_session.commit()
 
+    def get_team(self):
+        return self._lineup[0].team
+
 
 class PitcherMiner(object):
-    def __init__(self, lineup, pitcher, game_date, game_time, db_path=None):
+    def __init__(self, lineup, pitcher, game_date, game_time, is_home, db_path=None):
         self._lineup = lineup
         self._pitcher = pitcher
         if db_path is None:
@@ -969,6 +973,7 @@ class PitcherMiner(object):
         self._database_session = MlbDatabase(db_path).open_session()
         self._game_date = game_date
         self._game_time = game_time
+        self._is_home = is_home
 
     def __del__(self):
         self._database_session.close()
@@ -992,8 +997,12 @@ class PitcherMiner(object):
         pregame_pitcher_entry = PregamePitcherGameEntry()
         pregame_pitcher_entry.rotowire_id = self._pitcher.rotowire_id
         pregame_pitcher_entry.team = self._pitcher.team
-        pregame_pitcher_entry.opposing_team = self._lineup[0].team
         pregame_pitcher_entry.game_date = self._game_date
+        pregame_pitcher_entry.is_home_team = self._is_home
+        if self._is_home:
+            pregame_pitcher_entry.home_team = self._pitcher.team
+        else:
+            pregame_pitcher_entry.home_team = self._lineup[0].team
 
         pitcher_entry = self._database_session.query(PitcherEntry).get(self._pitcher.rotowire_id)
         if pitcher_entry is None:
@@ -1011,7 +1020,7 @@ class PitcherMiner(object):
         except IntegrityError:
             print "Attempt to duplicate hitter entry: %s %s %s" % (self._pitcher.name,
                                                                    self._pitcher.rotowire_id.team,
-                                                                   pregame_pitcher_entry.opposing_team)
+                                                                   pregame_pitcher_entry.get_opposing_team())
             self._database_session.rollback()
 
     def mine_career_stats(self, pregame_pitcher_entry, pitcher_entry, pitcher_career_soup):
@@ -1032,9 +1041,12 @@ class PitcherMiner(object):
         return pregame_pitcher_entry
 
     def mine_vs_stats(self, pregame_pitcher_entry):
-        opposing_lineup = self._database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.game_date == self._game_date,
-                                                                                      PregameHitterGameEntry.opposing_team == opposing_team)
-        for hitter in opposing_lineup:
+        sql_opposing_lineup=list()
+        for lineup_player in self._lineup:
+            sql_opposing_lineup.append(self._database_session.query(PregameHitterGameEntry).get(lineup_player.rotowire_id,
+                                                                                                self._game_date,
+                                                                                                self._game_time))
+        for hitter in sql_opposing_lineup:
             pregame_pitcher_entry.vs_h += hitter.vs_h
             pregame_pitcher_entry.vs_bb += hitter.vs_bb
             pregame_pitcher_entry.vs_so += hitter.vs_so
@@ -1127,7 +1139,7 @@ class PitcherMiner(object):
                       (pitcher_entry.first_name,
                        pitcher_entry.last_name,
                        pregame_pitcher_entry.game_date,
-                       pregame_pitcher_entry.opposing_team)
+                       pregame_pitcher_entry.get_opposing_team())
 
                 self._database_session.delete(pregame_pitcher_entry)
                 self._database_session.commit()
@@ -1159,7 +1171,7 @@ class PitcherMiner(object):
                 self._database_session.rollback()
                 print "Attempt to duplicate pitcher postgame results: %s %s %s %s" % (pitcher_entry.first_name,
                                                                                       pitcher_entry.last_name,
-                                                                                      pregame_pitcher_entry.opposing_team,
+                                                                                      pregame_pitcher_entry.get_opposing_team(),
                                                                                       postgame_pitcher_entry.game_date)
 
 
@@ -1173,13 +1185,13 @@ class GameMiner(object):
         self._database_session = MlbDatabase(db_path).open_session()
         self._game = game
         self._home_lineup_miner = LineupMiner(game.home_lineup, game.away_pitcher, game.game_date,
-                                              game.game_time, db_path)
+                                              game.game_time, is_home=True, db_path)
         self._home_pitcher_miner = PitcherMiner(game.away_lineup, game.home_pitcher, game.game_date,
-                                                game.game_time, db_path)
+                                                game.game_time, is_home=True, db_path)
         self._away_lineup_miner = LineupMiner(game.away_lineup, game.home_pitcher, game.game_date,
-                                              game.game_time, db_path)
+                                              game.game_time, is_home=False, db_path)
         self._away_pitcher_miner = PitcherMiner(game.home_lineup, game.away_pitcher, game.game_date,
-                                                game.game_time, db_path)
+                                                game.game_time, is_home=False, db_path)
 
     def __del__(self):
         self._database_session.close()

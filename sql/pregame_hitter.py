@@ -301,3 +301,14 @@ class PregameHitterGameEntry(Base):
 
         return float(self.draftkings_salary) / float(self.predicted_draftkings_points)
 
+    def get_team(self):
+        if self.is_home_team:
+            return self.game_entry.home_team
+        else:
+            return self.game_entry.away_team
+
+    def get_opposing_team(self):
+        if self.is_home_team:
+            return self.game_entry.away_team
+        else:
+            return self.game_entry.home_team

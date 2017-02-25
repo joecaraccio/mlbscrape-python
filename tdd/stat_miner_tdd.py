@@ -20,7 +20,7 @@ def add_pitcher_entry():
 
     starting_pitcher_1 = PitcherEntry('Andrew', 'Cashner', '10468')
     starting_pitcher_1.baseball_reference_id = 'cashnan01'
-    starting_pitcher_1.team = 'MIA'
+    starting_pitcher_1.home_team = 'MIA'
     starting_pitcher_1.pitching_hand = 'R'
 
     database_session.add(starting_pitcher_1)

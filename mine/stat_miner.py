@@ -7,6 +7,7 @@ from sql.postgame_pitcher import PostgamePitcherGameEntry
 from sql.hitter_entry import HitterEntry
 from sql.pitcher_entry import PitcherEntry
 from sql.lineup_history import LineupHistoryEntry
+from sql.game import GameEntry
 from sqlalchemy import desc, or_
 import heapq
 from learn.train_regression import HitterRegressionForestTrainer, PitcherRegressionForestTrainer, HitterRegressionTrainer, PitcherRegressionTrainer
@@ -714,6 +715,10 @@ class LineupMiner(object):
         else:
             pitcher_hand = None
         for current_hitter in self._lineup:
+            home_team = self._opposing_pitcher.team
+            if self._is_home:
+                home_team = self._lineup[0].team
+
             db_hitter = self._database_session.query(PregameHitterGameEntry).get((current_hitter.rotowire_id,
                                                                                   self._game_date,
                                                                                   self._game_time))
@@ -724,10 +729,7 @@ class LineupMiner(object):
             pregame_hitter_entry.rotowire_id = current_hitter.rotowire_id
             pregame_hitter_entry.pitcher_id = self._opposing_pitcher.rotowire_id
             pregame_hitter_entry.is_home_team = self._is_home
-            if self._is_home:
-                pregame_hitter_entry.home_team = self._lineup[0].team
-            else:
-                pregame_hitter_entry.home_team = self._opposing_pitcher.team
+            pregame_hitter_entry.home_team = home_team
             hitter_entry = self._database_session.query(HitterEntry).get(current_hitter.rotowire_id)
             if hitter_entry is None:
                 print "Hitter %s not found" % current_hitter.name
@@ -883,21 +885,23 @@ class LineupMiner(object):
         hitter_entries = self._database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.game_date == (date.today() - timedelta(days=1)))
         for pregame_hitter_entry in hitter_entries:
             hitter_entry = self._database_session.query(HitterEntry).get(pregame_hitter_entry.rotowire_id)
-            try:
+            if hitter_entry is not None:
                 stat_row_dict = get_yesterdays_hitting_game_log(hitter_entry.baseball_reference_id)
-            except TableRowNotFound:
+            else:
                 print "Player %s %s did not play yesterday. Deleting pregame entry %s %s" % (hitter_entry.first_name,
                                                                                              hitter_entry.last_name,
                                                                                              pregame_hitter_entry.game_date,
-                                                                                             pregame_hitter_entry.get_opposing_team())
+                                                                                             pregame_hitter_entry.get_team())
                 self._database_session.delete(pregame_hitter_entry)
                 self._database_session.commit()
                 continue
 
-            # TODO: add a __eq__ method so these chunks are contained within the class
             postgame_hitter_entry = PostgameHitterGameEntry()
             postgame_hitter_entry.rotowire_id = hitter_entry.rotowire_id
             postgame_hitter_entry.game_date = pregame_hitter_entry.game_date
+            postgame_hitter_entry.game_time = pregame_hitter_entry.game_time
+            postgame_hitter_entry.home_team = pregame_hitter_entry.home_team
+            postgame_hitter_entry.is_home_team = pregame_hitter_entry.is_home_team
             postgame_hitter_entry.game_h = int(stat_row_dict["H"])
             postgame_hitter_entry.game_bb = int(stat_row_dict["BB"])
             postgame_hitter_entry.game_hbp = int(stat_row_dict["HBP"])
@@ -987,6 +991,9 @@ class PitcherMiner(object):
         :param game_date: the date of the game (in the following form yyyy-mm-dd)
         :return: a PregamePitcherGameEntry object without the predicted_draftkings_points field populated
         """
+        home_team = self._lineup[0].team
+        if self._is_home:
+            home_team = self._pitcher.team
         db_pitcher = self._database_session.query(PregameHitterGameEntry).get((self._pitcher.rotowire_id,
                                                                                self._game_date,
                                                                                self._game_time))
@@ -999,10 +1006,7 @@ class PitcherMiner(object):
         pregame_pitcher_entry.team = self._pitcher.team
         pregame_pitcher_entry.game_date = self._game_date
         pregame_pitcher_entry.is_home_team = self._is_home
-        if self._is_home:
-            pregame_pitcher_entry.home_team = self._pitcher.team
-        else:
-            pregame_pitcher_entry.home_team = self._lineup[0].team
+        pregame_pitcher_entry.home_team = home_team
 
         pitcher_entry = self._database_session.query(PitcherEntry).get(self._pitcher.rotowire_id)
         if pitcher_entry is None:
@@ -1041,11 +1045,14 @@ class PitcherMiner(object):
         return pregame_pitcher_entry
 
     def mine_vs_stats(self, pregame_pitcher_entry):
-        sql_opposing_lineup=list()
+        sql_opposing_lineup = list()
+        home_team = self._pitcher.team
+        if not self._is_home:
+            home_team = self._lineup[0].team
         for lineup_player in self._lineup:
-            sql_opposing_lineup.append(self._database_session.query(PregameHitterGameEntry).get(lineup_player.rotowire_id,
-                                                                                                self._game_date,
-                                                                                                self._game_time))
+            sql_opposing_lineup.append(self._database_session.query(PregameHitterGameEntry).get((lineup_player.rotowire_id,
+                                                                                                 self._game_date,
+                                                                                                 self._game_time)))
         for hitter in sql_opposing_lineup:
             pregame_pitcher_entry.vs_h += hitter.vs_h
             pregame_pitcher_entry.vs_bb += hitter.vs_bb
@@ -1148,6 +1155,9 @@ class PitcherMiner(object):
             postgame_pitcher_entry = PostgamePitcherGameEntry()
             postgame_pitcher_entry.rotowire_id = pitcher_entry.rotowire_id
             postgame_pitcher_entry.game_date = pregame_pitcher_entry.game_date
+            postgame_pitcher_entry.game_time = pregame_pitcher_entry.game_time
+            postgame_pitcher_entry.home_team = pregame_pitcher_entry.home_team
+            postgame_pitcher_entry.is_home_team = pregame_pitcher_entry.is_home_team
             postgame_pitcher_entry.game_ip = float(stat_row_dict["IP"])
             postgame_pitcher_entry.game_so = int(stat_row_dict["SO"])
             if str(stat_row_dict["Dec"])[0] == "W":
@@ -1185,13 +1195,13 @@ class GameMiner(object):
         self._database_session = MlbDatabase(db_path).open_session()
         self._game = game
         self._home_lineup_miner = LineupMiner(game.home_lineup, game.away_pitcher, game.game_date,
-                                              game.game_time, is_home=True, db_path)
+                                              game.game_time, is_home=True, db_path=db_path)
         self._home_pitcher_miner = PitcherMiner(game.away_lineup, game.home_pitcher, game.game_date,
-                                                game.game_time, is_home=True, db_path)
+                                                game.game_time, is_home=True, db_path=db_path)
         self._away_lineup_miner = LineupMiner(game.away_lineup, game.home_pitcher, game.game_date,
-                                              game.game_time, is_home=False, db_path)
+                                              game.game_time, is_home=False, db_path=db_path)
         self._away_pitcher_miner = PitcherMiner(game.home_lineup, game.away_pitcher, game.game_date,
-                                                game.game_time, is_home=False, db_path)
+                                                game.game_time, is_home=False, db_path=db_path)
 
     def __del__(self):
         self._database_session.close()
@@ -1208,19 +1218,22 @@ class GameMiner(object):
     def get_pregame_hitting_stats(self):
         away_lineup = self._database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.team == self._game.away_pitcher.team,
                                                                                   PregameHitterGameEntry.game_date == self._game.game_date,
-                                                                                  PregameHitterGameEntry.game_time == self._game.game_time)
+                                                                                  PregameHitterGameEntry.game_time == self._game.game_time,
+                                                                                  PregameHitterGameEntry.home_team == self._game.home_pitcher.team)
         self._away_lineup_miner.correct_prefetched_lineup(away_lineup)
         home_lineup = self._database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.team == self._game.home_pitcher.team,
                                                                                   PregameHitterGameEntry.game_date == self._game.game_date,
-                                                                                  PregameHitterGameEntry.game_time == self._game.game_time)
+                                                                                  PregameHitterGameEntry.game_time == self._game.game_time,
+                                                                                  PregameHitterGameEntry.home_team == self._game.home_pitcher.team)
         self._home_lineup_miner.correct_prefetched_lineup(home_lineup)
         self._away_lineup_miner.get_pregame_stats()
         self._home_lineup_miner.get_pregame_stats()
 
     def get_pregame_pitching_stats(self):
         home_pitcher = self._database_session.query(PregamePitcherGameEntry).filter(PregameHitterGameEntry.team == self._game.home_pitcher.team,
-                                                                                  PregameHitterGameEntry.game_date == self._game.game_date,
-                                                                                  PregameHitterGameEntry.game_time == self._game.game_time)[0]
+                                                                                    PregameHitterGameEntry.game_date == self._game.game_date,
+                                                                                    PregameHitterGameEntry.game_time == self._game.game_time,
+                                                                                    PregameHitterGameEntry.home_team == self._game.home_pitcher.team)[0]
         if home_pitcher.rotowire_id != self._game.home_pitcher.rotowire_id:
             self._database_session.delete(home_pitcher)
             self._database_session.commit()
@@ -1246,7 +1259,7 @@ class UmpireMiner(object):
     def __del__(self):
         self._database_session.close()
 
-    def get_umpire_data(self):
+    def mine_umpire_data(self):
         url = "https://swishanalytics.com/mlb/mlb-umpire-factors"
         umpire_soup = get_soup_from_url(url)
 

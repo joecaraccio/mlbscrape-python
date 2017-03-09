@@ -67,8 +67,9 @@ class HitterNetworkTrainer(NetworkTrainer):
         y = list()
         for item in player_samples:
             input_vector = item.to_input_vector()
-            postgame_entry = self._database_session.query(PostgameHitterGameEntry).get(item.rotowire_id,
-                                                                                           item.game_date)
+            postgame_entry = self._database_session.query(PostgameHitterGameEntry).get((item.rotowire_id,
+                                                                                        item.game_date,
+                                                                                        item.game_time))
             if postgame_entry is None:
                 continue
 
@@ -131,8 +132,9 @@ class HitterNetworkTrainer(NetworkTrainer):
         test_data_input = list()
         test_data_output = list()
         for data in mlb_evaluation_data:
-            postgame_entry = self._database_session.query(PostgameHitterGameEntry).get(data.rotowire_id,
-                                                                                           data.game_date)
+            postgame_entry = self._database_session.query(PostgameHitterGameEntry).get((data.rotowire_id,
+                                                                                        data.game_date,
+                                                                                        data.game_time))
             if postgame_entry is None:
                 print "Ignoring hitter %s since his postgame stats were not found." % data.rotowire_id
                 continue
@@ -192,8 +194,9 @@ class PitcherNetworkTrainer(NetworkTrainer):
         y = list()
         for item in player_samples:
             input_vector = item.to_input_vector()
-            postgame_entry = self._database_session.query(PostgamePitcherGameEntry).get(item.rotowire_id,
-                                                                                        item.game_date)
+            postgame_entry = self._database_session.query(PostgamePitcherGameEntry).get((item.rotowire_id,
+                                                                                         item.game_date,
+                                                                                         item.game_time))
             if postgame_entry is None:
                 continue
 
@@ -245,8 +248,9 @@ class PitcherNetworkTrainer(NetworkTrainer):
         test_data_output = list()
         for data in mlb_evaluation_data:
             test_data_input.append(data.to_input_vector())
-            postgame_entry = self._database_session.query(PostgamePitcherGameEntry).get(data.rotowire_id,
-                                                                                        data.game_date)
+            postgame_entry = self._database_session.query(PostgamePitcherGameEntry).get((data.rotowire_id,
+                                                                                         data.game_date,
+                                                                                         data.game_time))
             if postgame_entry is None:
                 continue
 

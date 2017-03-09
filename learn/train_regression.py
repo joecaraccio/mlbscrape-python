@@ -75,7 +75,8 @@ class HitterRegressionTrainer(RegressionTree):
         for item in player_samples:
             input_vector = item.to_input_vector()
             postgame_entry = self._database_session.query(PostgameHitterGameEntry).get((item.rotowire_id,
-                                                                                       item.game_date))
+                                                                                        item.game_date,
+                                                                                        item.game_time))
             if postgame_entry is None:
                 continue
 
@@ -100,7 +101,8 @@ class HitterRegressionTrainer(RegressionTree):
         y_test_actual = list()
         for data in mlb_evaluation_data:
             postgame_entry = self._database_session.query(PostgameHitterGameEntry).get((data.rotowire_id,
-                                                                                       data.game_date))
+                                                                                       data.game_date,
+                                                                                       data.game_time))
             if postgame_entry is None:
                 print "Ignoring hitter %s since his postgame stats were not found." % data.rotowire_id
                 continue
@@ -125,9 +127,10 @@ class HitterRegressionForestTrainer(RegressionForest):
         for item in player_samples:
             input_vector = item.to_input_vector()
             try:
-                postgame_entry = self._database_session.query(PostgameHitterGameEntry).\
-                                 filter(PostgameHitterGameEntry.rotowire_id == item.rotowire_id,
-                                        PostgameHitterGameEntry.game_date == item.game_date).one()
+                postgame_entry = self._database_session.get((item.rotowire_id,
+                                                             item.game_date,
+                                                             item.game_time,
+                                                             item.home_team))
             except NoResultFound:
                 continue
 
@@ -160,7 +163,8 @@ class PitcherRegressionTrainer(RegressionTree):
         for item in player_samples:
             input_vector = item.to_input_vector()
             postgame_entry = self._database_session.query(PostgamePitcherGameEntry).get((item.rotowire_id,
-                                                                                         item.game_date))
+                                                                                         item.game_date,
+                                                                                         item.game_time))
             if postgame_entry is None:
                 continue
 
@@ -190,7 +194,8 @@ class PitcherRegressionTrainer(RegressionTree):
         y_test_actual = list()
         for data in mlb_evaluation_data:
             postgame_entry = self._database_session.query(PostgamePitcherGameEntry).get((data.rotowire_id,
-                                                                                         data.game_date))
+                                                                                         data.game_date,
+                                                                                         data.game_time))
 
             if postgame_entry is None:
                 print "Ignoring hitter %s since his postgame stats were not found." % data.rotowire_id
@@ -216,7 +221,8 @@ class PitcherRegressionForestTrainer(RegressionForest):
         for item in player_samples:
             input_vector = item.to_input_vector()
             postgame_entry = self._database_session.query(PostgamePitcherGameEntry).get((item.rotowire_id,
-                                                                                        item.game_date))
+                                                                                         item.game_date,
+                                                                                         item.game_time))
             if postgame_entry is None:
                 continue
 

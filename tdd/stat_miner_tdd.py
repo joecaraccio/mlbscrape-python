@@ -31,9 +31,11 @@ def add_pitcher_entry():
 
 def add_hitter_postgame_entry():
 
+    home_team = 'TOR'
+
     database_session = MlbDatabase(DB_PATH).open_session()
 
-    entry = GameEntry('2016-08-21', '15:00', 'TOR', 'MIA')
+    entry = GameEntry('2016-08-21', '15:00', home_team, 'MIA')
     database_session.add(entry)
     database_session.commit()
 
@@ -48,12 +50,13 @@ def add_hitter_postgame_entry():
     catcher_postgame_entry.pitcher_id = '10468'
     catcher_postgame_entry.game_date = "2016-08-21"
     catcher_postgame_entry.game_time = "15:00"
+    catcher_postgame_entry.home_team = home_team
     catcher_postgame_entry.actual_draftkings_points = 10
 
     database_session.add(catcher_postgame_entry)
     database_session.commit()
 
-    entry = GameEntry('2016-07-21', '15:00', 'TOR', 'MIA')
+    entry = GameEntry('2016-07-21', '15:00', home_team, 'MIA')
     database_session.add(entry)
     database_session.commit()
 
@@ -62,6 +65,7 @@ def add_hitter_postgame_entry():
     catcher_postgame_entry.pitcher_id = '10468'
     catcher_postgame_entry.game_date = "2016-07-21"
     catcher_postgame_entry.game_time = "15:00"
+    catcher_postgame_entry.home_team = home_team
     catcher_postgame_entry.actual_draftkings_points = 2
 
     database_session.add(catcher_postgame_entry)
@@ -72,9 +76,11 @@ def add_hitter_postgame_entry():
 
 def add_pitcher_postgame_entry():
 
+    home_team = 'TOR'
+
     database_session = MlbDatabase(DB_PATH).open_session()
 
-    entry = GameEntry('2016-08-21', '15:00', 'TOR', 'MIA')
+    entry = GameEntry('2016-08-21', '15:00', home_team, 'MIA')
     database_session.add(entry)
     database_session.commit()
 
@@ -84,12 +90,13 @@ def add_pitcher_postgame_entry():
     pitcher_postgame_entry.rotowire_id = '10468'
     pitcher_postgame_entry.game_date = "2016-08-21"
     pitcher_postgame_entry.game_time = "15:00"
+    pitcher_postgame_entry.home_team = home_team
     pitcher_postgame_entry.actual_draftkings_points = 10
 
     database_session.add(pitcher_postgame_entry)
     database_session.commit()
 
-    entry = GameEntry('2016-07-18', '15:00', 'TOR', 'MIA')
+    entry = GameEntry('2016-07-18', '15:00', home_team, 'MIA')
     database_session.add(entry)
     database_session.commit()
 
@@ -97,6 +104,7 @@ def add_pitcher_postgame_entry():
     pitcher_postgame_entry.rotowire_id = '10468'
     pitcher_postgame_entry.game_date = "2016-07-18"
     pitcher_postgame_entry.game_time = "15:00"
+    pitcher_postgame_entry.home_team = home_team
     pitcher_postgame_entry.actual_draftkings_points = 4
 
     database_session.add(pitcher_postgame_entry)

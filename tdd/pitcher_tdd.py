@@ -47,10 +47,12 @@ class CommitNewPitcherTest(unittest.TestCase):
 
 class CommitNewPregamePitcherTest(unittest.TestCase):
 
+    HOME_TEAM = 'BOS'
+
     def setUp(self):
         add_pitcher_entry()
         database_session = MlbDatabase(DB_PATH).open_session()
-        entry = GameEntry(date.today(), date.today().ctime(), 'BOS', 'MIA')
+        entry = GameEntry(date.today(), date.today().ctime(), CommitNewPregamePitcherTest.HOME_TEAM, 'MIA')
         database_session.add(entry)
         database_session.commit()
 
@@ -63,6 +65,7 @@ class CommitNewPregamePitcherTest(unittest.TestCase):
         entry.rotowire_id = '10468'
         entry.game_date = date.today()
         entry.game_time = date.today().ctime()
+        entry.home_team = CommitNewPregamePitcherTest.HOME_TEAM
 
         database_session.add(entry)
         database_session.commit()
@@ -79,7 +82,7 @@ class CommitNewPostgamePitcherTest(unittest.TestCase):
         add_pitcher_entry()
         database_session = MlbDatabase(DB_PATH).open_session()
 
-        entry = GameEntry(date.today(), date.today().ctime(), 'BOS', 'MIA')
+        entry = GameEntry(date.today(), date.today().ctime(), CommitNewPregamePitcherTest.HOME_TEAM, 'MIA')
         database_session.add(entry)
         database_session.commit()
 
@@ -90,6 +93,9 @@ class CommitNewPostgamePitcherTest(unittest.TestCase):
 
         entry = PostgamePitcherGameEntry()
         entry.rotowire_id = '10468'
+        entry.game_date = date.today()
+        entry.game_time = date.today().ctime()
+        entry.home_team = CommitNewPregamePitcherTest.HOME_TEAM
 
         database_session.close()
 

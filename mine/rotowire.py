@@ -7,6 +7,7 @@ GAME_REGION_LABEL = "offset1 span15"
 TEAM_REGION_LABEL = "span15 dlineups-topbox"
 AWAY_TEAM_REGION_LABEL = "span5 dlineups-topboxleft"
 HOME_TEAM_REGION_LABEL = "span5 dlineups-topboxright"
+GAME_INFO_LABEL = "dlineups-topboxcenter"
 TIME_REGION_LABEL = "dlineups-topboxcenter-topline"
 AWAY_TEAM_PLAYER_LABEL = "dlineups-vplayer"
 HOME_TEAM_PLAYER_LABEL = "dlineups-hplayer"
@@ -97,8 +98,6 @@ def get_game_lineups(url=None, game_date=None):
 
     if game_date is None:
         game_date = date.today()
-
-    #TODO: need to implement the game time here
 
     """TODO: add feature to look if it's going to rain"""
     lineup_soup = get_soup_from_url(url)
@@ -281,6 +280,7 @@ def get_ump_ks_per_game(soup):
     :param soup: Rotowire soup for the individual game
     :return: float representation of the strikeouts per game
     """
+    #TODO: move this to stat miner and lookup in database
     span15s = soup.findAll("div", {"class": "span15"})
     for span15 in span15s:
         node = span15.find("b")

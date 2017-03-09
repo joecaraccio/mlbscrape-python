@@ -18,6 +18,8 @@ lineup_actual_vector = list()
 lineup_predicted_vector = list()
 for query_result in query_results:
     try:
+        #TODO: fix these gets by using the GameEntry to get the game time and such
+        # TODO: this needs to be altered to accommodate double headers, but is not a big priority
         lineup_actual_salary += database_session.query(PostgameHitterGameEntry).get((query_result.catcher, query_result.game_date)).actual_draftkings_points
         lineup_actual_salary += database_session.query(PostgamePitcherGameEntry).get((query_result.starting_pitcher_1, query_result.game_date)).actual_draftkings_points
         lineup_actual_salary += database_session.query(PostgamePitcherGameEntry).get((query_result.starting_pitcher_2, query_result.game_date)).actual_draftkings_points

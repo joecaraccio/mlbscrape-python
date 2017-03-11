@@ -1216,24 +1216,23 @@ class GameMiner(object):
         self._home_pitcher_miner.update_ids()
 
     def get_pregame_hitting_stats(self):
-        away_lineup = self._database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.team == self._game.away_pitcher.team,
-                                                                                  PregameHitterGameEntry.game_date == self._game.game_date,
+        away_lineup = self._database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.game_date == self._game.game_date,
                                                                                   PregameHitterGameEntry.game_time == self._game.game_time,
-                                                                                  PregameHitterGameEntry.home_team == self._game.home_pitcher.team)
+                                                                                  PregameHitterGameEntry.home_team == self._game.home_pitcher.team,
+                                                                                  PregameHitterGameEntry.is_home_team == False)
         self._away_lineup_miner.correct_prefetched_lineup(away_lineup)
-        home_lineup = self._database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.team == self._game.home_pitcher.team,
-                                                                                  PregameHitterGameEntry.game_date == self._game.game_date,
+        home_lineup = self._database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.game_date == self._game.game_date,
                                                                                   PregameHitterGameEntry.game_time == self._game.game_time,
-                                                                                  PregameHitterGameEntry.home_team == self._game.home_pitcher.team)
+                                                                                  PregameHitterGameEntry.home_team == self._game.home_pitcher.team,
+                                                                                  PregameHitterGameEntry.is_home_team == True)
         self._home_lineup_miner.correct_prefetched_lineup(home_lineup)
         self._away_lineup_miner.get_pregame_stats()
         self._home_lineup_miner.get_pregame_stats()
 
     def get_pregame_pitching_stats(self):
-        home_pitcher = self._database_session.query(PregamePitcherGameEntry).filter(PregameHitterGameEntry.team == self._game.home_pitcher.team,
-                                                                                    PregameHitterGameEntry.game_date == self._game.game_date,
-                                                                                    PregameHitterGameEntry.game_time == self._game.game_time,
-                                                                                    PregameHitterGameEntry.home_team == self._game.home_pitcher.team)[0]
+        home_pitcher = self._database_session.query(PregamePitcherGameEntry).get((self._game.home_pitcher.rotowire_id,
+                                                                                  self._game.game_date,
+                                                                                  self._game.game_time))
         if home_pitcher.rotowire_id != self._game.home_pitcher.rotowire_id:
             self._database_session.delete(home_pitcher)
             self._database_session.commit()

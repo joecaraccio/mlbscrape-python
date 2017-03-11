@@ -141,10 +141,10 @@ class PregamePitcherGameEntry(Base):
 
         database_session = MlbDatabase().open_session()
         # Get the hitters he is facing as well
-        hitter_postgame_entries = database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.team == self.opposing_team,
-                                                                                        PregameHitterGameEntry.game_date == self.game_date,
+        hitter_postgame_entries = database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.game_date == self.game_date,
                                                                                         PregameHitterGameEntry.game_time == self.game_time,
-                                                                                        PregameHitterGameEntry.home_team == self.home_team)
+                                                                                        PregameHitterGameEntry.home_team == self.home_team,
+                                                                                        PregameHitterGameEntry.is_home_team != self.is_home_team)
 
         hitter_array = np.array(np.zeros(31))
         for hitter_entry in hitter_postgame_entries:

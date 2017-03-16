@@ -24,7 +24,6 @@ class PregameHitterGameEntry(Base):
     draftkings_salary = Column(Integer)
     primary_position = Column(String)
     secondary_position = Column(String)
-    avg_points = Column(Float)
 
     season_pa = Column(Integer)
     season_ab = Column(Integer)
@@ -255,15 +254,14 @@ class PregameHitterGameEntry(Base):
         """
         :return: string representation identifying the Hitter entry
         """
-        return "<Hitter PreGame Entry(name=%s %s, team='%s', id='%s', salary=%i, $/point=%f, points=%f, avg_points=%f)>" % \
+        return "<Hitter PreGame Entry(name=%s %s, team='%s', id='%s', salary=%i, $/point=%f, points=%f)>" % \
                (self.hitter_entry.first_name,
                 self.hitter_entry.last_name,
                 self.hitter_entry.team,
                 self.rotowire_id,
                 self.draftkings_salary,
                 self.dollars_per_point(),
-                self.predicted_draftkings_points,
-                self.avg_points)
+                self.predicted_draftkings_points)
 
     @staticmethod
     def get_all_daily_entries(database_session, game_date=None):

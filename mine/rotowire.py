@@ -53,6 +53,9 @@ class Game(object):
         self.home_pitcher = home_pitcher
         self.game_date = game_date
         self.game_time = game_time
+        self.umpire_name = None
+        self.wind_speed = 0
+        self.temperature = 70
 
     def is_valid(self):
         if len(self.away_lineup) != 9 or len(self.home_lineup) != 9:
@@ -130,6 +133,8 @@ def get_game_lineups(url=None, game_date=None):
         current_game = Game(away_team_lineup, away_team_pitcher, home_team_lineup, home_team_pitcher, game_date, game_time)
 
         if current_game.is_valid():
+            game_factors = get_external_game_factors(game_node)
+            current_game.wind_speed = game_factors.wind_speed
             games.append(current_game)
         else:
             print "Game between %s and %s is not valid." % (away_team_abbreviation, home_team_abbreviation)
@@ -144,6 +149,9 @@ def get_external_game_factors(game_node):
     """
     home_team_abbreviation = game_node.find("div", {"class": HOME_TEAM_REGION_LABEL}).text.split()[0]
     wind_speed = get_wind_speed(game_node)
+    """TODO: add temperature and umpire name
+    For now, we will use nominal temperature and umpire readings
+    """
     ump_ks_per_game = get_ump_ks_per_game(game_node)
     ump_runs_per_game = get_ump_runs_per_game(game_node)
     park_hitter_score, park_pitcher_score = get_team_info(team_dict[home_team_abbreviation])

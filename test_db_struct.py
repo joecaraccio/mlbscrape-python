@@ -2,7 +2,10 @@
  It was only used for fixing the previous implementation of the database."""
 
 from sql.hitter_entry import HitterEntry
+from sql.pregame_hitter import PregameHitterGameEntry
 from sql.postgame_hitter import PostgameHitterGameEntry
+from sql.postgame_pitcher import PostgamePitcherGameEntry
+from sql.pitcher_entry import PitcherEntry
 from sql.mlb_database import MlbDatabase
 from sql.game import GameEntry
 from mine.beautiful_soup_helper import get_soup_from_url
@@ -11,9 +14,11 @@ from sqlalchemy.exc import IntegrityError
 import datetime
 from sql.umpire import UmpireCareerEntry
 from mine.baseball_reference import team_dict, get_team_info
+from mine.rotowire import rotowire_team_dict
 import re
 from bs4 import Comment
 from sql.team_park import ParkEntry
+from sqlalchemy import or_, and_
 
 base_url = "http://gd2.mlb.com/components/game/mlb/year_2017/month_"
 
@@ -72,6 +77,11 @@ def get_umpire_data():
 
 def get_game_data(current_date):
     for team_key in team_dict:
+        game_entries = database_session.query(GameEntry).filter(GameEntry.game_date == str(current_date),
+                                                                or_(GameEntry.home_team == rotowire_team_dict.inv[team_dict[team_key]],
+                                                                    GameEntry.away_team == rotowire_team_dict.inv[team_dict[team_key]]))
+        if game_entries.count() != 0:
+            continue
         team_abbrev = team_key
         day_url = "http://www.baseball-reference.com/boxes/" + team_abbrev + "/" + team_abbrev + \
                   str(current_date.year) + ("%02d" % current_date.month) + ("%02d" % current_date.day) + "0.shtml"
@@ -127,39 +137,66 @@ def get_game_data(current_date):
                                 elif re.search(r"\bout\b", wind_match.group(0)):
                                     wind_mulitplier = 1
                                 wind_int = wind_mulitplier*int(wind_text)
-                            print current_date, game_time_final, team_dict.inv[home_team], umpire_name, temperature_text, wind_int
-                            game_entry = database_session.query(GameEntry).get((str(current_date), game_time_final, team_dict.inv[home_team]))
+                            print current_date, game_time_final.strip(), rotowire_team_dict.inv[home_team], umpire_name, temperature_text, wind_int
+                            game_entry = database_session.query(GameEntry).get((str(current_date), game_time_final.strip(), rotowire_team_dict.inv[home_team]))
                             if game_entry is None:
-                                game_entry = GameEntry(str(current_date), game_time_final, team_dict.inv[home_team], team_dict.inv[away_team])
+                                game_entry = GameEntry(str(current_date), game_time_final.strip(), rotowire_team_dict.inv[home_team], rotowire_team_dict.inv[away_team])
                                 game_entry.umpire = umpire_name
                                 game_entry.temperature = float(temperature_text)
                                 game_entry.wind_speed = wind_int
-                                try:
-                                    database_session.add(game_entry)
-                                    database_session.commit()
-                                except IntegrityError:
-                                    database_session.rollback()
+                                #try:
+                                database_session.add(game_entry)
+                                database_session.commit()
+                                #except IntegrityError:
+                                #    print "Cannot find %s" % umpire_name
+                                #    database_session.rollback()
                             else:
+                                game_entry.game_date = str(current_date)
+                                game_entry.game_time = game_time_final.strip()
                                 game_entry.umpire = umpire_name
                                 game_entry.temperature = float(temperature_text)
                                 game_entry.wind_speed = wind_int
                                 database_session.commit()
 
-for team_key in team_dict:
+# TODO: need to lookup the home team so we can isolate the entries
+"""itr=1
+pregame_hitter_entries = database_session.query(PostgameHitterGameEntry).filter()
+itr = pregame_hitter_entries.count()
+for pregame_hitter_entry in pregame_hitter_entries:
+    #pregame_hitter_entries = database_session.query(PostgamePitcherGameEntry).filter(PostgamePitcherGameEntry.game_date == game_entry.game_date,
+    ###                                                                                   PostgamePitcherGameEntry.home_team == game_entry.home_team)
+    print itr
+    itr -= 1
+    print pregame_hitter_entry.rotowire_id
+    game_entry_query = database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.game_date == pregame_hitter_entry.game_date,
+                                                                             PregameHitterGameEntry.rotowire_id == pregame_hitter_entry.rotowire_id)
+    if game_entry_query.count() > 0:
+        pregame_hitter_entry.game_date = game_entry_query[0].game_date
+        pregame_hitter_entry.game_time = game_entry_query[0].game_time
+        pregame_hitter_entry.home_team = game_entry_query[0].home_team
+        pregame_hitter_entry.is_home_team = game_entry_query[0].is_home_team
+    else:
+        continue
+database_session.commit()
+"""
+
+
+for team_key in rotowire_team_dict:
     team_abbrev = team_key
-    hitter_factor, pitcher_factor = get_team_info(team_dict[team_key], 2016)
-    park_entry = ParkEntry(team_key, 2016)
-    park_entry.park_hitter_score = hitter_factor
-    park_entry.park_pitcher_score = pitcher_factor
-    try:
-        database_session.add(park_entry)
-        database_session.commit()
-    except IntegrityError:
-        database_session.rollback()
+    team_info = get_team_info(rotowire_team_dict[team_key], 2016)
+    if team_info is not None:
+        park_entry = ParkEntry(team_key, 2016)
+        park_entry.park_hitter_score = team_info[0]
+        park_entry.park_pitcher_score = team_info[1]
+        try:
+            database_session.add(park_entry)
+            database_session.commit()
+        except IntegrityError:
+            database_session.rollback()
 
 """
-start_date = date(day=04, month=04, year=2016)
-end_date = date(day=02, month=11, year=2016)
+start_date = date(day=2, month=4, year=2016)
+end_date = date(day=1, month=11, year=2016)
 current_date = start_date
 while current_date <= end_date:
     get_game_data(current_date)
@@ -180,7 +217,8 @@ while current_date <= end_date:
             database_session.rollback()
             print home_team_abbr, away_team_abbr, game_time, str(current_date)
     current_date += timedelta(days=1)
-"""
+    """
+
 """
 database_session = MlbDatabase().open_session()
 

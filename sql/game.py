@@ -12,13 +12,12 @@ class GameEntry(Base):
     home_team = Column(String, primary_key=True)
     away_team = Column(String)
 
-    umpire = Column(String, ForeignKey('umpire_entries.full_name'))
-    umpire_object = relationship("UmpireCareerEntry")
+    umpire = Column(String)
     wind_speed = Column(Integer)
     temperature = Column(Float)
 
-    pitcher_pregame_entries = relationship('PregamePitcherGameEntry', backref='game_entry')
-    pitcher_postgame_entries = relationship('PostgamePitcherGameEntry', backref='game_entry')
+    #pitcher_pregame_entries = relationship('PregamePitcherGameEntry', backref='game_entry')
+    #pitcher_postgame_entries = relationship('PostgamePitcherGameEntry', backref='game_entry')
     hitter_pregame_entries = relationship('PregameHitterGameEntry', backref='game_entry')
     hitter_postgame_entries = relationship('PostgameHitterGameEntry', backref='game_entry')
 

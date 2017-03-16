@@ -8,6 +8,7 @@ from sql.hitter_entry import HitterEntry
 from sql.pitcher_entry import PitcherEntry
 from sql.lineup_history import LineupHistoryEntry
 from sql.game import GameEntry
+from sql.team_park import ParkEntry
 from sqlalchemy import desc, or_
 import heapq
 from learn.train_regression import HitterRegressionForestTrainer, PitcherRegressionForestTrainer, HitterRegressionTrainer, PitcherRegressionTrainer
@@ -563,6 +564,7 @@ def get_pregame_stats_wrapper(games):
 def get_pregame_stats(game):
     game_miner = GameMiner(game)
     game_miner.update_ids()
+    game_miner.update_park_factors()
     game_miner.get_pregame_hitting_stats()
     game_miner.get_pregame_pitching_stats()
 
@@ -627,6 +629,22 @@ def prefetch_pregame_stats_atomic(game_matchup):
     database_session.close()
 
 
+def add_game_entries(game_matchups):
+    """ Add the bare minimum game info to the database.
+    The weather and umpire data will be resolved when the prefetch data is resolved (i.e. right before gametime)
+    :param game_matchups: GameMatchup objects
+    """
+    database_session = MlbDatabase().open_session()
+    for game_matchup in game_matchups:
+        game_entry = GameEntry(game_matchup.game_date, game_matchup.game_time, game_matchup.home_team,
+                               game_matchup.away_team)
+        try:
+            database_session.add(game_entry)
+            database_session.commit()
+        except IntegrityError:
+            database_session.rollback()
+
+
 def prefetch_pregame_stats_wrapper(game_matchups):
     thread_pool = Pool(6)
 
@@ -637,6 +655,7 @@ def prefetch_pregame_stats():
     game_matchups = get_game_matchups()
     if len(game_matchups) == 0:
         raise NoGamesFound
+    add_game_entries(game_matchups)
     prefetch_pregame_stats_wrapper(game_matchups)
 
 
@@ -1184,6 +1203,9 @@ class PitcherMiner(object):
                                                                                       pregame_pitcher_entry.get_opposing_team(),
                                                                                       postgame_pitcher_entry.game_date)
 
+    def get_team(self):
+        return self._pitcher.team
+
 
 class GameMiner(object):
     def __init__(self, game, db_path=None):
@@ -1244,6 +1266,26 @@ class GameMiner(object):
             self._database_session.delete(away_pitcher)
             self._database_session.commit()
         self._away_pitcher_miner.get_pregame_stats()
+
+    def add_team_park_factors(self):
+        team_abbrev = self._home_pitcher_miner.get_team()
+        year = self._game.game_date.year
+        # Use the Rotowire team dict so Baseball Reference can work with it
+        hitter_factor, pitcher_factor = get_team_info(team_dict[team_abbrev], year)
+        park_entry = ParkEntry(team_abbrev, year)
+        park_entry.park_hitter_score = hitter_factor
+        park_entry.park_pitcher_score = pitcher_factor
+        try:
+            self._database_session.add(park_entry)
+            self._database_session.commit()
+        except IntegrityError:
+            self._database_session.rollback()
+
+    def update_park_factors(self):
+        park_factors = self._database_session.query(ParkEntry).get((self._home_pitcher_miner.get_team(),
+                                                                    self._game.game_date.year))
+        if park_factors is None:
+            self.add_team_park_factors()
 
 
 class UmpireMiner(object):

@@ -8,10 +8,15 @@ from sql.pregame_pitcher import PregamePitcherGameEntry
 from sql.postgame_hitter import PostgameHitterGameEntry
 from sql.postgame_pitcher import PostgamePitcherGameEntry
 from sql.mlb_database import MlbDatabase
+from sql.umpire import UmpireCareerEntry
 from sqlalchemy.orm.exc import NoResultFound
 from sklearn.externals.six import StringIO
 import pydotplus
 import numpy as np
+#from mine.stat_miner import UmpireMiner
+from sql.team_park import ParkEntry
+import datetime
+from sklearn.metrics import mean_squared_error
 
 
 class RegressionTree(object):
@@ -80,7 +85,17 @@ class HitterRegressionTrainer(RegressionTree):
             if postgame_entry is None:
                 continue
 
-            x.append(input_vector)
+            if postgame_entry.game_entry.umpire is None:
+                umpire_vector = UmpireCareerEntry.get_nominal_data(self._database_session)
+            else:
+                umpire_vector = postgame_entry.game_entry.umpire_object.to_input_vector()
+
+            game_datetime = datetime.strptime(item.game_date, "yyyy-mm-dd")
+            park_factors = self._database_session.query(ParkEntry).get((item.home_team, game_datetime.year))
+            park_vector = park_factors.to_input_vector()
+
+            final_hitter_array = np.concatenate([input_vector, park_vector, umpire_vector])
+            x.append(final_hitter_array.tolist())
             y.append([postgame_entry.actual_draftkings_points])
 
         return x, y
@@ -118,23 +133,46 @@ class HitterRegressionTrainer(RegressionTree):
 
 class HitterRegressionForestTrainer(RegressionForest):
 
-    SIZE_TRAINING_BATCH = 4000
+    SIZE_TRAINING_BATCH = 7000
 
-    def get_stochastic_batch(self, input_query, num_samples):
+    def get_stochastic_batch(self, input_query, num_samples=None):
+        if num_samples is None:
+            num_samples = len(input_query)
         player_samples = random.sample([itm for itm in input_query], num_samples)
         x = list()
         y = list()
         for item in player_samples:
             input_vector = item.to_input_vector()
-            try:
-                postgame_entry = self._database_session.get((item.rotowire_id,
-                                                             item.game_date,
-                                                             item.game_time,
-                                                             item.home_team))
-            except NoResultFound:
+            postgame_entry = self._database_session.query(PostgameHitterGameEntry).get((item.rotowire_id,
+                                                                                        item.game_date,
+                                                                                        item.game_time))
+            if postgame_entry is None:
                 continue
 
-            x.append(input_vector)
+            # TODO: debug why this would be the case
+            if postgame_entry.game_entry is None:
+                continue
+
+            if postgame_entry.game_entry.umpire is None:
+                umpire_vector = UmpireCareerEntry.get_nominal_data(self._database_session)
+            else:
+                ump_entry = self._database_session.query(UmpireCareerEntry).get(postgame_entry.game_entry.umpire)
+
+                if ump_entry is None:
+                    umpire_vector = UmpireCareerEntry.get_nominal_data(self._database_session)
+                else:
+                    umpire_vector = ump_entry.to_input_vector()
+
+            game_datetime = datetime.datetime.strptime(item.game_date, "%Y-%m-%d")
+            park_factors = self._database_session.query(ParkEntry).get((item.home_team, game_datetime.year))
+            if park_factors is None:
+                print "Could not find %s from %i" % (item.home_team, game_datetime.year)
+                park_vector = np.array([100, 100])
+            else:
+                park_vector = park_factors.to_input_vector()
+
+            final_hitter_array = np.concatenate([input_vector, park_vector, umpire_vector])
+            x.append(final_hitter_array.tolist())
             y.append([postgame_entry.actual_draftkings_points])
 
         return x, y
@@ -144,8 +182,13 @@ class HitterRegressionForestTrainer(RegressionForest):
         """
         db_query = self._database_session.query(PregameHitterGameEntry)
         mlb_training_data, mlb_evaluation_data = self.get_train_eval_data(db_query, 0.8)
-        x_train, y_train = self.get_stochastic_batch(mlb_training_data, self.SIZE_TRAINING_BATCH)
+        x_train, y_train = self.get_stochastic_batch(mlb_training_data)
         self._decision_tree.fit(x_train, np.ravel(y_train))
+        x_eval, y_eval = self.get_stochastic_batch(mlb_evaluation_data)
+        y_eval_predictions = self._decision_tree.predict(x_eval)
+        y_eval_predictions = np.array(y_eval_predictions)
+        print "Hitter Training Size: %i | Hitter Evaluation Size: %i" % (len(x_train), len(x_eval))
+        print "Hitter mean squared error: %f" % mean_squared_error(y_eval, y_eval_predictions)
         self._database_session.close()
 
     def get_prediction(self, input_data):
@@ -218,6 +261,7 @@ class PitcherRegressionForestTrainer(RegressionForest):
         player_samples = random.sample([itm for itm in input_query], num_samples)
         x = list()
         y = list()
+        #ump_miner = UmpireMiner()
         for item in player_samples:
             input_vector = item.to_input_vector()
             postgame_entry = self._database_session.query(PostgamePitcherGameEntry).get((item.rotowire_id,
@@ -226,8 +270,17 @@ class PitcherRegressionForestTrainer(RegressionForest):
             if postgame_entry is None:
                 continue
 
+            #if postgame_entry.game_entry.umpire is None:
+            #    umpire_vector = ump_miner.get_nominal_data()
+            #else:
+            #    umpire_vector = postgame_entry.game_entry.umpire_object.to_input_vector()
+
+            game_datetime = datetime.strptime(item.game_date, "yyyy-mm-dd")
+            park_factors = self._database_session.query(ParkEntry).get((item.home_team, game_datetime.year))
+            park_vector = park_factors.to_input_vector()
+
             hitter_array = item.get_opponent_vector()
-            final_hitter_array = np.concatenate([input_vector, hitter_array])
+            final_hitter_array = np.concatenate([input_vector, hitter_array, park_vector])
             x.append(final_hitter_array.tolist())
             y.append(postgame_entry.actual_draftkings_points)
 

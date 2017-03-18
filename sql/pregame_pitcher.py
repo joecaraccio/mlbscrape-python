@@ -20,7 +20,6 @@ class PregamePitcherGameEntry(Base):
                                            ['game_entries.game_date', 'game_entries.game_time', 'game_entries.home_team']), {})
     predicted_draftkings_points = Column(Float)
     draftkings_salary = Column(Integer)
-    avg_points = Column(Float)
 
     # Season stats
     season_bf = Column(Integer)

@@ -6,11 +6,13 @@ from sql.pregame_hitter import PregameHitterGameEntry
 from sql.postgame_hitter import PostgameHitterGameEntry
 from sql.postgame_pitcher import PostgamePitcherGameEntry
 from sql.pitcher_entry import PitcherEntry
+from sql.pregame_pitcher import PregamePitcherGameEntry
 from sql.mlb_database import MlbDatabase
 from sql.game import GameEntry
 from mine.beautiful_soup_helper import get_soup_from_url
 from datetime import date, timedelta
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm.exc import FlushError
 import datetime
 from sql.umpire import UmpireCareerEntry
 from mine.baseball_reference import team_dict, get_team_info
@@ -76,7 +78,8 @@ def get_umpire_data():
 
 
 def get_game_data(current_date):
-    for team_key in team_dict:
+    teams = ['SDN', 'SLN']
+    for team_key in teams:
         game_entries = database_session.query(GameEntry).filter(GameEntry.game_date == str(current_date),
                                                                 or_(GameEntry.home_team == rotowire_team_dict.inv[team_dict[team_key]],
                                                                     GameEntry.away_team == rotowire_team_dict.inv[team_dict[team_key]]))
@@ -144,12 +147,12 @@ def get_game_data(current_date):
                                 game_entry.umpire = umpire_name
                                 game_entry.temperature = float(temperature_text)
                                 game_entry.wind_speed = wind_int
-                                #try:
-                                database_session.add(game_entry)
-                                database_session.commit()
-                                #except IntegrityError:
-                                #    print "Cannot find %s" % umpire_name
-                                #    database_session.rollback()
+                                try:
+                                    database_session.add(game_entry)
+                                    database_session.commit()
+                                except IntegrityError:
+                                    print "Cannot find %s" % umpire_name
+                                    database_session.rollback()
                             else:
                                 game_entry.game_date = str(current_date)
                                 game_entry.game_time = game_time_final.strip()
@@ -158,29 +161,47 @@ def get_game_data(current_date):
                                 game_entry.wind_speed = wind_int
                                 database_session.commit()
 
+
+def correct_postgame_pitcher_time():
+    pregame_pitcher_entries = database_session.query(PregameHitterGameEntry)
+    for pregame_pitcher_entry in pregame_pitcher_entries:
+        game_entries = database_session.query(PostgameHitterGameEntry).filter(PostgameHitterGameEntry.game_date == pregame_pitcher_entry.game_date,
+                                                                              PostgameHitterGameEntry.rotowire_id == pregame_pitcher_entry.rotowire_id)
+        if game_entries.count() == 1:
+            game_entries[0].game_time = pregame_pitcher_entry.game_time
+            game_entries[0].home_team = pregame_pitcher_entry.home_team
+            database_session.commit()
+
+correct_postgame_pitcher_time()
 # TODO: need to lookup the home team so we can isolate the entries
 """itr=1
-pregame_hitter_entries = database_session.query(PostgameHitterGameEntry).filter()
-itr = pregame_hitter_entries.count()
-for pregame_hitter_entry in pregame_hitter_entries:
+pregame_pitcher_entries = database_session.query(PregamePitcherGameEntry).filter()
+itr = pregame_pitcher_entries.count()
+for pregame_pitcher_entry in pregame_pitcher_entries:
     #pregame_hitter_entries = database_session.query(PostgamePitcherGameEntry).filter(PostgamePitcherGameEntry.game_date == game_entry.game_date,
     ###                                                                                   PostgamePitcherGameEntry.home_team == game_entry.home_team)
-    print itr
+    print itr, pregame_pitcher_entry.rotowire_id
     itr -= 1
-    print pregame_hitter_entry.rotowire_id
-    game_entry_query = database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.game_date == pregame_hitter_entry.game_date,
-                                                                             PregameHitterGameEntry.rotowire_id == pregame_hitter_entry.rotowire_id)
+    game_entry_query = database_session.query(GameEntry).filter(GameEntry.game_date == pregame_pitcher_entry.game_date,
+                                                                or_(GameEntry.home_team == pregame_pitcher_entry.team,
+                                                                    GameEntry.home_team == pregame_pitcher_entry.opposing_team))
     if game_entry_query.count() > 0:
-        pregame_hitter_entry.game_date = game_entry_query[0].game_date
-        pregame_hitter_entry.game_time = game_entry_query[0].game_time
-        pregame_hitter_entry.home_team = game_entry_query[0].home_team
-        pregame_hitter_entry.is_home_team = game_entry_query[0].is_home_team
+        pregame_pitcher_entry.game_date = game_entry_query[0].game_date
+        pregame_pitcher_entry.game_time = game_entry_query[0].game_time
+        pregame_pitcher_entry.home_team = game_entry_query[0].home_team
+        #except FlushError:
+        #    database_session.rollback()
+        #    continue
+        if pregame_pitcher_entry.team == game_entry_query[0].home_team:
+            pregame_pitcher_entry.is_home_team = True
+        else:
+            pregame_pitcher_entry.is_home_team = False
+        database_session.commit()
     else:
         continue
-database_session.commit()
 """
 
-
+"""
 for team_key in rotowire_team_dict:
     team_abbrev = team_key
     team_info = get_team_info(rotowire_team_dict[team_key], 2016)
@@ -193,7 +214,7 @@ for team_key in rotowire_team_dict:
             database_session.commit()
         except IntegrityError:
             database_session.rollback()
-
+"""
 """
 start_date = date(day=2, month=4, year=2016)
 end_date = date(day=1, month=11, year=2016)
@@ -201,24 +222,7 @@ current_date = start_date
 while current_date <= end_date:
     get_game_data(current_date)
     current_date += timedelta(days=1)
-    game_urls = get_game_day_urls(current_date)
-    for game_url in game_urls:
-        game_soup = get_soup_from_url(game_url)
-        game_time = datetime.datetime.strptime(game_soup.find("game").get("away_time") + " " + \
-                                               game_soup.find("game").get("home_ampm"), '%I:%M %p').time()
-        game_time = game_time.strftime('%H:%M')
-        away_team_abbr = game_soup.find("game").get("away_name_abbrev")
-        home_team_abbr = game_soup.find("game").get("home_name_abbrev")
-        game_entry = GameEntry(str(current_date), game_time, home_team_abbr, away_team_abbr)
-        try:
-            database_session.add(game_entry)
-            database_session.commit()
-        except IntegrityError:
-            database_session.rollback()
-            print home_team_abbr, away_team_abbr, game_time, str(current_date)
-    current_date += timedelta(days=1)
-    """
-
+"""
 """
 database_session = MlbDatabase().open_session()
 

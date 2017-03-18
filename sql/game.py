@@ -16,8 +16,8 @@ class GameEntry(Base):
     wind_speed = Column(Integer)
     temperature = Column(Float)
 
-    #pitcher_pregame_entries = relationship('PregamePitcherGameEntry', backref='game_entry')
-    #pitcher_postgame_entries = relationship('PostgamePitcherGameEntry', backref='game_entry')
+    pitcher_pregame_entries = relationship('PregamePitcherGameEntry', backref='game_entry')
+    pitcher_postgame_entries = relationship('PostgamePitcherGameEntry', backref='game_entry')
     hitter_pregame_entries = relationship('PregameHitterGameEntry', backref='game_entry')
     hitter_postgame_entries = relationship('PostgameHitterGameEntry', backref='game_entry')
 

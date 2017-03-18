@@ -7,3 +7,6 @@ databaseSession = MlbDatabase().open_session()
 hitter_regression_trainer = HitterRegressionForestTrainer()
 hitter_regression_trainer.train_network()
 
+pitcher_regression_trainer = PitcherRegressionForestTrainer()
+pitcher_regression_trainer.train_network()
+

@@ -88,8 +88,20 @@ class GetUmpRunsTest(unittest.TestCase):
         self.assertEqual(ump_runs, 10.98)
 
 
+class GetUmpNameTest(unittest.TestCase):
+    """ Test case for testing the get_hitter_id function
+    """
+    HTML_LOCATION = "cubs_phillies_lineup.htm"
+
+    def test_typical_zero(self):
+        soup = get_soup_from_url(GetUmpRunsTest.HTML_LOCATION)
+        ump_name = get_ump_name(soup)
+        self.assertEqual(ump_name, "Mark Wegner")
+
+
 def suite():
     test_suite = unittest.TestSuite([unittest.TestLoader().loadTestsFromTestCase(GetWindSpeedTest),
-                                     unittest.TestLoader().loadTestsFromTestCase(GetUmpKsTest)])
+                                     unittest.TestLoader().loadTestsFromTestCase(GetUmpKsTest),
+                                     unittest.TestLoader().loadTestsFromTestCase(GetUmpNameTest)])
     test_suite.addTest(GetGamesTest())
     return test_suite

@@ -75,10 +75,9 @@ class GameMatchup(object):
 
 
 class GameFactors(object):
-    def __init__(self, wind_speed, ump_ks_per_game, ump_runs_per_game, pitcher_park_score, hitter_park_score):
+    def __init__(self, wind_speed, ump_name, pitcher_park_score, hitter_park_score):
         self.wind_speed = wind_speed
-        self.ump_ks_per_game = ump_ks_per_game
-        self.ump_runs_per_game = ump_runs_per_game
+        self.ump_name = ump_name
         self.pitcher_park_score = pitcher_park_score
         self.hitter_park_score = hitter_park_score
 
@@ -135,6 +134,7 @@ def get_game_lineups(url=None, game_date=None):
         if current_game.is_valid():
             game_factors = get_external_game_factors(game_node)
             current_game.wind_speed = game_factors.wind_speed
+            current_game.umpire_name = game_factors.ump_name
             games.append(current_game)
         else:
             print "Game between %s and %s is not valid." % (away_team_abbreviation, home_team_abbreviation)
@@ -149,13 +149,16 @@ def get_external_game_factors(game_node):
     """
     home_team_abbreviation = game_node.find("div", {"class": HOME_TEAM_REGION_LABEL}).text.split()[0]
     wind_speed = get_wind_speed(game_node)
-    """TODO: add temperature and umpire name
+    """TODO: add temperature
     For now, we will use nominal temperature and umpire readings
     """
-    ump_ks_per_game = get_ump_ks_per_game(game_node)
-    ump_runs_per_game = get_ump_runs_per_game(game_node)
+    ump_name = None
+    try:
+        ump_name = get_ump_name(game_node)
+    except UmpDataNotFound:
+        print "Ump data not found."
     park_hitter_score, park_pitcher_score = get_team_info(team_dict[home_team_abbreviation])
-    game_factors = GameFactors(wind_speed, ump_ks_per_game, ump_runs_per_game, park_pitcher_score, park_hitter_score)
+    game_factors = GameFactors(wind_speed, ump_name, park_pitcher_score, park_hitter_score)
 
     return game_factors
 
@@ -281,6 +284,24 @@ class UmpDataNotFound(Exception):
 
     def __init__(self):
         super(UmpDataNotFound, self).__init__("The ump data was not found in the soup")
+
+
+def get_ump_name(soup):
+    """ Extract the strikeouts per 9 innings for the ump for a given game
+    :param soup: Rotowire soup for the individual game
+    :return: float representation of the strikeouts per game
+    """
+    span15s = soup.findAll("div", {"class": "span15"})
+    for span15 in span15s:
+        node = span15.find("b")
+        if node is not None:
+            if node.text.strip() == "Ump:":
+                ump_text = span15.text
+                ump_words = ump_text.strip().split()
+                if len(ump_words) >= 3:
+                    return ump_words[1].strip() + " " + ump_words[2].strip()
+
+    raise UmpDataNotFound
 
 
 def get_ump_ks_per_game(soup):

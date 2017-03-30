@@ -1,5 +1,5 @@
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Comment
 import urllib
 from datetime import date
 
@@ -20,6 +20,27 @@ def str_to_date(date_string):
     return date_object
 
 
+def url_to_comment_soup(url):
+    """ In order to mine JavaScript, mine the comments
+    :param url: the absolute URL string
+    :return: the BeautifulSoup object containing the comments, return None if the object was not
+    successfully created
+    """
+    xml = urllib.urlopen(url)
+
+    if xml.code == 404:
+        print "Attempt to access invalid URL: " + xml.url
+        raise Http404Exception(url)
+
+    soup_initial = BeautifulSoup(xml, "lxml")
+    soup_comments = soup_initial.findAll(text=lambda text: isinstance(text, Comment))
+    soup = str()
+    for soup_comment in soup_comments:
+        soup += soup_comment
+
+    return BeautifulSoup(soup, "lxml")
+
+
 def url_to_soup(url):
     """ Take a URL and get the BeautifulSoup object
     :param url: the absolute URL string
@@ -38,6 +59,22 @@ def get_soup_from_url(url):
     for i in range(5):
         try:
             soup = url_to_soup(url)
+        except IOError:
+            print "Socket error. Trying to obtain soup again."
+            continue
+        except Http404Exception:
+            return None
+
+        return soup
+
+    print "Exhausted all attempts to get the soup. Check your internet connection."
+    assert 0
+
+
+def get_comment_soup_from_url(url):
+    for i in range(5):
+        try:
+            soup = url_to_comment_soup(url)
         except IOError:
             print "Socket error. Trying to obtain soup again."
             continue

@@ -584,8 +584,9 @@ def prefetch_pregame_stats_atomic(game_matchup):
     :return:
     """
     database_session = MlbDatabase().open_session()
-    away_lineup_query = database_session.query(LineupHistoryEntry).get((game_matchup.year, game_matchup.away_team))
-    home_lineup_query = database_session.query(LineupHistoryEntry).get((game_matchup.year, game_matchup.home_team))
+    game_date = datetime.strptime(game_matchup.game_date, '%Y-%M-%d')
+    away_lineup_query = database_session.query(LineupHistoryEntry).get((game_date.year, game_matchup.away_team))
+    home_lineup_query = database_session.query(LineupHistoryEntry).get((game_date.year, game_matchup.home_team))
     away_lineup = list()
     home_lineup = list()
     if away_lineup_query is not None and home_lineup_query is not None:
@@ -712,10 +713,6 @@ class LineupMiner(object):
     def __init__(self, lineup, opposing_pitcher, game_date, game_time, is_home, db_path=None):
         self._lineup = lineup
         self._opposing_pitcher = opposing_pitcher
-        if db_path is None:
-            db_path = 'sqlite:////mlb_stats.db'
-        else:
-            db_path = 'sqlite:///' + db_path
         self._database_session = MlbDatabase(db_path).open_session()
         self._game_date = game_date
         self._game_time = game_time
@@ -755,12 +752,13 @@ class LineupMiner(object):
                 continue
             print "Mining %s." % current_hitter.name
             hitter_career_soup = get_hitter_page_career_soup(hitter_entry.baseball_reference_id)
-            pregame_hitter_entry = self.mine_career_hitting_stats(hitter_entry, pregame_hitter_entry, hitter_career_soup)
-            pregame_hitter_entry = self.mine_vs_hand_hitting_stats(hitter_entry, pregame_hitter_entry, hitter_career_soup, pitcher_hand)
-            pregame_hitter_entry = self.mine_recent_hitting_stats(hitter_entry, pregame_hitter_entry, hitter_career_soup, pitcher_hand)
+            pregame_hitter_entry = self.mine_career_stats(hitter_entry, pregame_hitter_entry, hitter_career_soup)
+            pregame_hitter_entry = self.mine_vs_hand_stats(hitter_entry, pregame_hitter_entry, hitter_career_soup,
+                                                           pitcher_hand)
+            pregame_hitter_entry = self.mine_recent_stats(hitter_entry, pregame_hitter_entry, hitter_career_soup)
 
             if pitcher_entry is not None:
-                pregame_hitter_entry = self.mine_vs_pitcher_hitting_stats(hitter_entry, pregame_hitter_entry, pitcher_entry)
+                pregame_hitter_entry = self.mine_vs_pitcher_stats(hitter_entry, pregame_hitter_entry, pitcher_entry)
 
             pregame_hitter_entry.game_date = self._game_date
             pregame_hitter_entry.game_time = self._game_time
@@ -969,16 +967,20 @@ class LineupMiner(object):
             elif player.position == "RF":
                 lineup_history.shortstop = player.rotowire_id
 
-        self._database_session.add(lineup_history)
-        self._database_session.commit()
+        try:
+            self._database_session.add(lineup_history)
+            self._database_session.commit()
+        except IntegrityError:
+            self._database_session.rollback()
 
     def correct_prefetched_lineup(self, db_lineup_query):
         for player in self._lineup:
             for game_player in db_lineup_query:
                 if game_player.rotowire_id == player.rotowire_id:
                     break
+                #TODO: fix this deletion
                 if game_player == db_lineup_query[db_lineup_query.count()-1]:
-                    self._database_session.delete(player)
+                    self._database_session.delete(game_player)
                     self._database_session.commit()
 
     def get_team(self):
@@ -989,10 +991,6 @@ class PitcherMiner(object):
     def __init__(self, lineup, pitcher, game_date, game_time, is_home, db_path=None):
         self._lineup = lineup
         self._pitcher = pitcher
-        if db_path is None:
-            db_path = 'sqlite:////mlb_stats.db'
-        else:
-            db_path = 'sqlite:///' + db_path
         self._database_session = MlbDatabase(db_path).open_session()
         self._game_date = game_date
         self._game_time = game_time
@@ -1024,6 +1022,7 @@ class PitcherMiner(object):
         pregame_pitcher_entry.rotowire_id = self._pitcher.rotowire_id
         pregame_pitcher_entry.team = self._pitcher.team
         pregame_pitcher_entry.game_date = self._game_date
+        pregame_pitcher_entry.game_time = self._game_time
         pregame_pitcher_entry.is_home_team = self._is_home
         pregame_pitcher_entry.home_team = home_team
 
@@ -1209,10 +1208,6 @@ class PitcherMiner(object):
 
 class GameMiner(object):
     def __init__(self, game, db_path=None):
-        if db_path is None:
-            db_path = 'sqlite:////mlb_stats.db'
-        else:
-            db_path = 'sqlite:///' + db_path
 
         self._database_session = MlbDatabase(db_path).open_session()
         self._game = game
@@ -1233,9 +1228,9 @@ class GameMiner(object):
         :param games: list of Game objects
         """
         self._away_lineup_miner.update_ids()
-        self._away_pitcher_miner.update_ids()
+        self._away_pitcher_miner.update_id()
         self._home_lineup_miner.update_ids()
-        self._home_pitcher_miner.update_ids()
+        self._home_pitcher_miner.update_id()
 
     def get_pregame_hitting_stats(self):
         away_lineup = self._database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.game_date == self._game.game_date,
@@ -1255,21 +1250,23 @@ class GameMiner(object):
         home_pitcher = self._database_session.query(PregamePitcherGameEntry).get((self._game.home_pitcher.rotowire_id,
                                                                                   self._game.game_date,
                                                                                   self._game.game_time))
-        if home_pitcher.rotowire_id != self._game.home_pitcher.rotowire_id:
-            self._database_session.delete(home_pitcher)
-            self._database_session.commit()
+        if home_pitcher is not None:
+            if home_pitcher.rotowire_id != self._game.home_pitcher.rotowire_id:
+                self._database_session.delete(home_pitcher)
+                self._database_session.commit()
         self._home_pitcher_miner.get_pregame_stats()
         away_pitcher = self._database_session.query(PregamePitcherGameEntry).get((self._game.away_pitcher.rotowire_id,
                                                                                   self._game.game_date,
                                                                                   self._game.game_time))
-        if away_pitcher.rotowire_id != self._game.away_pitcher.rotowire_id:
-            self._database_session.delete(away_pitcher)
-            self._database_session.commit()
+        if away_pitcher is not None:
+            if away_pitcher.rotowire_id != self._game.away_pitcher.rotowire_id:
+                self._database_session.delete(away_pitcher)
+                self._database_session.commit()
         self._away_pitcher_miner.get_pregame_stats()
 
     def add_team_park_factors(self):
         team_abbrev = self._home_pitcher_miner.get_team()
-        year = self._game.game_date.year
+        year = datetime.strptime(self._game.game_date,'%Y-%M-%d').year
         # Use the Rotowire team dict so Baseball Reference can work with it
         hitter_factor, pitcher_factor = get_team_info(team_dict[team_abbrev], year)
         park_entry = ParkEntry(team_abbrev, year)
@@ -1282,8 +1279,9 @@ class GameMiner(object):
             self._database_session.rollback()
 
     def update_park_factors(self):
+        game_date = datetime.strptime(self._game.game_date, '%Y-%M-%d')
         park_factors = self._database_session.query(ParkEntry).get((self._home_pitcher_miner.get_team(),
-                                                                    self._game.game_date.year))
+                                                                    game_date.year))
         if park_factors is None:
             self.add_team_park_factors()
 

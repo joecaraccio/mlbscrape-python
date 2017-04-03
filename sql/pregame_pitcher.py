@@ -1,24 +1,23 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKeyConstraint, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKeyConstraint, ForeignKey, desc
 from sqlalchemy.orm import relationship
-from datetime import date
+from datetime import date, datetime
 from mlb_database import Base
 from pregame_hitter import PregameHitterGameEntry
 import numpy as np
 from sql.mlb_database import MlbDatabase
 
+
 class PregamePitcherGameEntry(Base):
 
     __tablename__ = 'pregame_pitcher_entries'
 
-    rotowire_id = Column(String, ForeignKey("pitcher_entries.rotowire_id"), primary_key=True)
-    team = Column(String)
+    rotowire_id = Column(String, ForeignKey('pitcher_entries.rotowire_id'), primary_key=True)
     game_date = Column(String, primary_key=True)
-    #game = Column(Integer, ForeignKeyConstraint([GameEntry.game_date, GameEntry.game_time]), primary_key=True)
-    #home_team = Column(String)
-    team = Column(String)
-    #away_team = Column(String)
-    opposing_team = Column(String)
-    #is_home = Column(Boolean)
+    game_time = Column(String, primary_key=True)
+    home_team = Column(String)
+    is_home_team = Column(Boolean)
+    __table_args__ = (ForeignKeyConstraint([game_date, game_time, home_team],
+                                           ['game_entries.game_date', 'game_entries.game_time', 'game_entries.home_team']), {})
     predicted_draftkings_points = Column(Float)
     draftkings_salary = Column(Integer)
 
@@ -70,6 +69,7 @@ class PregamePitcherGameEntry(Base):
 
         self.predicted_draftkings_points = 0
         self.draftkings_salary = 0
+        self.avg_points = 0
 
         # Season stats
         self.season_bf = 0
@@ -139,8 +139,10 @@ class PregamePitcherGameEntry(Base):
 
         database_session = MlbDatabase().open_session()
         # Get the hitters he is facing as well
-        hitter_postgame_entries = database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.team == self.opposing_team,
-                                                                                         PregameHitterGameEntry.game_date == self.game_date)
+        hitter_postgame_entries = database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.game_date == self.game_date,
+                                                                                        PregameHitterGameEntry.game_time == self.game_time,
+                                                                                        PregameHitterGameEntry.home_team == self.home_team,
+                                                                                        PregameHitterGameEntry.is_home_team != self.is_home_team)
 
         hitter_array = np.array(np.zeros(31))
         for hitter_entry in hitter_postgame_entries:
@@ -161,10 +163,19 @@ class PregamePitcherGameEntry(Base):
                 "Recent HR"]
 
     @staticmethod
-    def get_all_daily_entries(database_session, game_date=None):
-        if game_date is None:
-            game_date = date.today()
-        return database_session.query(PregamePitcherGameEntry).filter(PregamePitcherGameEntry.game_date == game_date)
+    def get_all_daily_entries(database_session, game_datetime=None):
+        if game_datetime is None:
+            game_datetime = datetime.now()
+            game_datetime = game_datetime.replace(hour=23, minute=0, second=0)
+        query = database_session.query(PregamePitcherGameEntry).filter(PregamePitcherGameEntry.game_date == str(game_datetime.date()))
+        if query.count() > 0:
+            query = query.order_by(desc(PregamePitcherGameEntry.predicted_draftkings_points))
+        items = list()
+        for item in query:
+            if datetime.strptime(item.game_time, '%H:%M') <= game_datetime:
+                items.append(item)
+
+        return items
 
     def points_per_dollar(self):
         """ Calculate the predicted points per dollar for this player.
@@ -188,7 +199,14 @@ class PregamePitcherGameEntry(Base):
 
         return float(self.draftkings_salary) / float(self.predicted_draftkings_points)
 
+    def get_team(self):
+        if self.is_home_team:
+            return self.game_entry.home_team
+        else:
+            return self.game_entry.away_team
 
-
-
-
+    def get_opposing_team(self):
+        if self.is_home_team:
+            return self.game_entry.away_team
+        else:
+            return self.game_entry.home_team

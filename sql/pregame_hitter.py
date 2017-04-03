@@ -1,7 +1,7 @@
 
 from mlb_database import Base
-from sqlalchemy import Column, Integer, String, Float, or_, ForeignKeyConstraint, ForeignKey, Boolean
-from datetime import date
+from sqlalchemy import Column, Integer, String, Float, or_, ForeignKeyConstraint, ForeignKey, Boolean, desc
+from datetime import date, datetime
 import numpy as np
 
 
@@ -264,18 +264,42 @@ class PregameHitterGameEntry(Base):
                 self.predicted_draftkings_points)
 
     @staticmethod
-    def get_all_daily_entries(database_session, game_date=None):
-        if game_date is None:
-            game_date = date.today()
-        return database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.game_date == game_date)
+    def get_all_daily_entries(database_session, game_datetime=None):
+        if game_datetime is None:
+            game_datetime = datetime.now()
+            game_datetime = game_datetime.replace(hour=23, minute=0, second=0)
+        query = database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.game_date == str(game_datetime.date()))
+        if query.count() > 0:
+            query = query.order_by(desc(PregameHitterGameEntry.predicted_draftkings_points))
+        items = list()
+        for item in query:
+            if datetime.strptime(item.game_time, '%H:%M') <= game_datetime:
+                items.append(item)
+
+        return items
 
     @staticmethod
-    def get_daily_entries_by_position(database_session, position, game_date=None):
-        if game_date is None:
-            game_date = date.today()
-        return database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.game_date == game_date,
-                                                                     or_(PregameHitterGameEntry.primary_position == position,
-                                                                     PregameHitterGameEntry.secondary_position == position))
+    def get_daily_entries_by_position(database_session, position, game_datetime=None):
+        """ Get the daily pregame hitter entries by position before a certain cutoff time
+        :param database_session: SQLAlchemy database session
+        :param position: position abbreviation
+        :param game_date: datetime object housing the day of the game and the cutoff time
+        :return: SQLAlchemy query of PregameHitterGameEntry
+        """
+        if game_datetime is None:
+            game_datetime = datetime.now()
+            game_datetime = game_datetime.replace(hour=23, minute=0, second=0)
+        query = database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.game_date == str(game_datetime.date()),
+                                                                      or_(PregameHitterGameEntry.primary_position == position,
+                                                                      PregameHitterGameEntry.secondary_position == position))
+        if query.count() > 0:
+            query = query.order_by(desc(PregameHitterGameEntry.predicted_draftkings_points))
+        items = list()
+        for item in query:
+            if datetime.strptime(item.game_time, '%H:%M') <= game_datetime:
+                items.append(item)
+
+        return items
 
     def points_per_dollar(self):
         """ Calculate the predicted points per dollar for this player.

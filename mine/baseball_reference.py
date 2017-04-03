@@ -24,7 +24,12 @@ def get_hitter_id(full_name, team, year=None, soup=None):
     if soup is None:
         soup = get_hitter_soup(year)
 
-    hitter_table = soup.find("table", {"id": "players_standard_batting"}).find("tbody")
+    if soup is None:
+        raise NameNotFound(full_name)
+    hitter_table = soup.find("table", {"id": "players_standard_batting"})
+    if hitter_table is None:
+        raise NameNotFound(full_name)
+    hitter_table = hitter_table.find("tbody")
     hitter_table_rows = hitter_table.findAll("tr")
     for hitter_table_row in hitter_table_rows:
         if hitter_table_row.get("class")[0] != "thead":
@@ -402,10 +407,13 @@ def get_team_info(team_name, year_of_interest=None, team_soup=None):
         year_of_interest = date.today().year
 
     if team_soup is None:
-        team_soup = get_soup_from_url(BASE_URL + "/teams/" +
-                                      team_abbreviation + "/" + str(year_of_interest) + ".shtml")
+        url = BASE_URL + "/teams/" + team_abbreviation + "/" + str(year_of_interest) + ".shtml"
+        team_soup = get_soup_from_url(url)
 
-    sub_nodes = team_soup.find("a", {"href": url}).parent.parent.findAll("strong")
+    try:
+        sub_nodes = team_soup.find("a", {"href": url}).parent.parent.findAll("strong")
+    except AttributeError:
+        return None, None
     for sub_node in sub_nodes:
         for content in sub_node.contents:
             if content is not None:
@@ -420,7 +428,7 @@ def get_team_info(team_name, year_of_interest=None, team_soup=None):
                 except TypeError:
                     continue
 
-    return None
+    return None, None
 
 # Two-way dictionary
 team_dict = bidict.bidict(ARI="Arizona Diamondbacks",

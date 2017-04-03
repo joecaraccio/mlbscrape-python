@@ -1,6 +1,6 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKeyConstraint, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKeyConstraint, ForeignKey, desc
 from sqlalchemy.orm import relationship
-from datetime import date
+from datetime import date, datetime
 from mlb_database import Base
 from pregame_hitter import PregameHitterGameEntry
 import numpy as np
@@ -114,15 +114,14 @@ class PregamePitcherGameEntry(Base):
         """
         :return: string representation identifying the Pitcher entry
         """
-        return "<Pitcher PreGame Entry(name=%s %s, team='%s', id='%s', salary=%i, $/point=%f, points=%f, avg_points=%f)>" %\
+        return "<Pitcher PreGame Entry(name=%s %s, team='%s', id='%s', salary=%i, $/point=%f, points=%f)>" %\
                (self.pitcher_entry.first_name,
                 self.pitcher_entry.last_name,
                 self.pitcher_entry.team,
                 self.rotowire_id,
                 self.draftkings_salary,
                 self.dollars_per_point(),
-                self.predicted_draftkings_points,
-                self.avg_points)
+                self.predicted_draftkings_points)
 
     def to_input_vector(self):
         """ Convert the entry to a vector
@@ -164,10 +163,19 @@ class PregamePitcherGameEntry(Base):
                 "Recent HR"]
 
     @staticmethod
-    def get_all_daily_entries(database_session, game_date=None):
-        if game_date is None:
-            game_date = date.today()
-        return database_session.query(PregamePitcherGameEntry).filter(PregamePitcherGameEntry.game_date == game_date)
+    def get_all_daily_entries(database_session, game_datetime=None):
+        if game_datetime is None:
+            game_datetime = datetime.now()
+            game_datetime = game_datetime.replace(hour=23, minute=0, second=0)
+        query = database_session.query(PregamePitcherGameEntry).filter(PregamePitcherGameEntry.game_date == str(game_datetime.date()))
+        if query.count() > 0:
+            query = query.order_by(desc(PregamePitcherGameEntry.predicted_draftkings_points))
+        items = list()
+        for item in query:
+            if datetime.strptime(item.game_time, '%H:%M') <= game_datetime:
+                items.append(item)
+
+        return items
 
     def points_per_dollar(self):
         """ Calculate the predicted points per dollar for this player.

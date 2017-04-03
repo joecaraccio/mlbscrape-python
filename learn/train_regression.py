@@ -310,7 +310,7 @@ class PitcherRegressionForestTrainer(RegressionForest):
             else:
                 park_vector = park_factors.to_input_vector()
 
-            final_pitcher_array = np.concatenate([input_vector, park_vector, umpire_vector])
+            final_pitcher_array = np.concatenate([input_vector, pregame_entry.get_opponent_vector(), park_vector, umpire_vector])
             x.append(final_pitcher_array.tolist())
             y.append([postgame_entry.actual_draftkings_points])
 

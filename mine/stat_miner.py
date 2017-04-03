@@ -9,7 +9,7 @@ from sql.pitcher_entry import PitcherEntry
 from sql.lineup_history import LineupHistoryEntry
 from sql.game import GameEntry
 from sql.team_park import ParkEntry
-from sqlalchemy import desc, or_
+from sqlalchemy import or_
 import heapq
 from learn.train_regression import HitterRegressionForestTrainer, PitcherRegressionForestTrainer, HitterRegressionTrainer, PitcherRegressionTrainer
 from sql.lineup import LineupEntry
@@ -41,7 +41,7 @@ class Player(object):
         return self._player.draftkings_salary
 
     def __str__(self):
-        return "%s: %s\n" % (self._position_string, self._player)
+        return "%s: %s\n" % (self._position_string, str(self._player))
 
     def get_team(self):
         return self._player.get_team()
@@ -121,12 +121,18 @@ class PositionHeap(object):
         """
         idx = 0
         for player in self._position_heap:
-            if player.rotowire_id == rotowire_id:
+            if player[1].get_id() == rotowire_id:
                 self._position_heap.pop(idx)
                 heapq.heapify(self._position_heap)
                 break
             else:
                 idx += 1
+
+    def get_player(self, idx):
+        if idx >= len(self._position_heap):
+            return None
+        else:
+            return self._position_heap[idx][1]
 
     def remove_opposing_team(self, opposing_team):
         """ Remove all the players at this position facing the given team
@@ -137,7 +143,7 @@ class PositionHeap(object):
         self._blacklisted_opposing_team = opposing_team
         idx = 0
         for player in self._position_heap:
-            if player.get_opposing_team() == opposing_team:
+            if player[1].get_opposing_team() == opposing_team:
                 self._position_heap.pop(idx)
                 is_removed = True
             else:
@@ -161,7 +167,13 @@ class PositionHeap(object):
         """ Get the player with the least amount of projected points
         :return: Player object with the least amount of projected points
         """
-        return self._position_heap[0][0]
+        points = 0.0
+        try:
+            points = self._position_heap[0][0]
+        except IndexError:
+            pass
+
+        return points
 
     def is_player_assigned(self, sql_player):
         """ Check if the given player is already on the heap
@@ -169,7 +181,7 @@ class PositionHeap(object):
         :return: True if the given player is already on the heap, False otherwise
         """
         for player in self._position_heap:
-            if player == sql_player:
+            if player[1]._player == sql_player:
                 return True
 
         return False
@@ -192,7 +204,7 @@ class PositionHeap(object):
         """
         team_list = list()
         for player in self._position_heap:
-            team_list.append(player.get_team())
+            team_list.append(player[1].get_team())
 
         return team_list
 
@@ -202,7 +214,7 @@ class PositionHeap(object):
         """
         team_list = list()
         for player in self._position_heap:
-            team_list.append(player.get_opposing_team())
+            team_list.append(player[1].get_opposing_team())
 
         return team_list
 
@@ -213,8 +225,8 @@ class PositionHeap(object):
         """
         points = 0.0
         for player in self._position_heap:
-            if player.get_team() == team:
-                points += player.predicted_draftkings_points
+            if player[1].get_team() == team:
+                points += player[1].get_points()
 
         return points
 
@@ -370,14 +382,14 @@ class OptimalLineupDict(dict):
         team_points_dict = self.get_opposing_team_points_dict()
 
         pitcher_heap = self.position_map["SP"]
-        for pitcher in pitcher_heap:
+        for pitcher in pitcher_heap._position_heap:
             try:
                 # Hitters are projected to do better, delete the pitcher
-                if pitcher.get_points() < team_points_dict[pitcher.get_team()]:
-                    pitcher.remove_opposing_team(pitcher.get_opposing_team())
+                if pitcher[1].get_points() < team_points_dict[pitcher[1].get_team()]:
+                    pitcher[1].remove_opposing_team(pitcher[1].get_opposing_team())
                 # Pitchers are projected to do better, delete the hitters
                 else:
-                    self.remove_opposing_hitters(pitcher.get_team())
+                    self.remove_opposing_hitters(pitcher[1].get_team())
 
             # Pitcher is not facing any of the hitters, move on
             except KeyError:
@@ -393,14 +405,14 @@ def get_optimal_lineup(day=None):
     database_session = MlbDatabase().open_session()
 
     if day is None:
-        day = date.today()
+        day = datetime.now()
+        day.replace(hour=23, minute=0, second=0)
     optimal_lineup = OptimalLineupDict()
     player_heap = dict()
 
     # Look for the hitter entries
     for fielding_position in OptimalLineupDict.FieldingPositions:
         query_results = PregameHitterGameEntry.get_daily_entries_by_position(database_session, fielding_position, day)
-        query_results = list(query_results.order_by(desc(PregameHitterGameEntry.predicted_draftkings_points)))
         query_result_heap = list()
         for query_result in query_results:
             heapq.heappush(query_result_heap, (-query_result.predicted_draftkings_points, query_result))
@@ -415,7 +427,6 @@ def get_optimal_lineup(day=None):
 
     # Look for pitchers
     query_results = PregamePitcherGameEntry.get_all_daily_entries(database_session, day)
-    query_results = list(query_results.order_by(desc(PregamePitcherGameEntry.predicted_draftkings_points)))
     for query_result in query_results:
         heapq.heappush(query_result_heap, (-query_result.predicted_draftkings_points, query_result))
     while not optimal_lineup.position_map["SP"].is_valid() and len(query_results) > 0:
@@ -437,15 +448,16 @@ def get_optimal_lineup(day=None):
         optimal_lineup.add(next_player)
 
     # Delete the players facing one another who are predicted to do worse, blacklist that team at that position
-    optimal_lineup.delete_bad_opponents()
+    #optimal_lineup.delete_bad_opponents()
 
     # Add players in the same manner, but with the blacklisted team enforced
-    while (optimal_lineup.get_total_salary() > CONTEST_SALARY and len(player_heap_copy) > 0) or \
+    """while (optimal_lineup.get_total_salary() > CONTEST_SALARY and len(player_heap_copy) > 0) or \
             not optimal_lineup.is_valid():
         worst_position = optimal_lineup.get_worst_position()
+        print len(player_heap_copy), worst_position, player_heap_copy[worst_position]
         next_player = heapq.heappop(player_heap_copy[worst_position])[1]
         optimal_lineup.add(next_player)
-
+    """
     # Print out all the remaining players in order of their value
     runner_up_text = "Runner-up players\n"
     for fielding_position in OptimalLineupDict.FieldingPositions:
@@ -465,20 +477,23 @@ def get_optimal_lineup(day=None):
 
     # Commit the prediction to the database
     lineup_db_entry = LineupEntry()
-    lineup_db_entry.game_date = date.today()
+    lineup_db_entry.game_date = str(date.today())
     lineup_db_entry.game_time = datetime.now().strftime("%H:%M:%S")
-    lineup_db_entry.starting_pitcher_1 = optimal_lineup.position_map["SP"]._position_heap[0][1].rotowire_id
-    lineup_db_entry.starting_pitcher_2 = optimal_lineup.position_map["SP"]._position_heap[1][1].rotowire_id
-    lineup_db_entry.catcher = optimal_lineup.position_map["C"]._player.rotowire_id
-    lineup_db_entry.first_baseman = optimal_lineup.position_map["1B"]._player.rotowire_id
-    lineup_db_entry.second_baseman = optimal_lineup.position_map["2B"]._player.rotowire_id
-    lineup_db_entry.third_baseman = optimal_lineup.position_map["3B"]._player.rotowire_id
-    lineup_db_entry.shortstop = optimal_lineup.position_map["SS"]._player.rotowire_id
-    lineup_db_entry.outfielder_1 = optimal_lineup.position_map["OF"]._position_heap[0][1].rotowire_id
-    lineup_db_entry.outfielder_2 = optimal_lineup.position_map["OF"]._position_heap[1][1].rotowire_id
-    lineup_db_entry.outfielder_3 = optimal_lineup.position_map["OF"]._position_heap[2][1].rotowire_id
+    lineup_db_entry.starting_pitcher_1 = optimal_lineup.position_map["SP"].get_player(0).get_id()
+    lineup_db_entry.starting_pitcher_2 = optimal_lineup.position_map["SP"].get_player(1).get_id()
+    lineup_db_entry.catcher = optimal_lineup.position_map["C"].get_player(0).get_id()
+    lineup_db_entry.first_baseman = optimal_lineup.position_map["1B"].get_player(0).get_id()
+    lineup_db_entry.second_baseman = optimal_lineup.position_map["2B"].get_player(0).get_id()
+    lineup_db_entry.third_baseman = optimal_lineup.position_map["3B"].get_player(0).get_id()
+    lineup_db_entry.shortstop = optimal_lineup.position_map["SS"].get_player(0).get_id()
+    lineup_db_entry.outfielder_1 = optimal_lineup.position_map["OF"].get_player(0).get_id()
+    lineup_db_entry.outfielder_2 = optimal_lineup.position_map["OF"].get_player(1).get_id()
+    lineup_db_entry.outfielder_3 = optimal_lineup.position_map["OF"].get_player(2).get_id()
     database_session.add(lineup_db_entry)
     database_session.commit()
+
+    print optimal_lineup
+    send_email(optimal_lineup.__str__())
 
     database_session.close()
 
@@ -489,7 +504,8 @@ def predict_daily_points(day=None):
     database_session = MlbDatabase().open_session()
 
     if day is None:
-        day = date.today()
+        day = datetime.now()
+        day = day.replace(hour=23, minute=0, second=0)
 
     hitter_regression = HitterRegressionForestTrainer()
     hitter_regression.train_network()
@@ -497,7 +513,31 @@ def predict_daily_points(day=None):
     pitcher_regression.train_network()
     daily_entries = PregameHitterGameEntry.get_all_daily_entries(database_session, day)
     for daily_entry in daily_entries:
-        predicted_points = hitter_regression.get_prediction(daily_entry.to_input_vector())
+        if daily_entry.game_entry is None:
+            print "NoneType game entry for %s %s %s %s" % (daily_entry.rotowire_id, daily_entry.home_team,
+                                                           daily_entry.game_date, daily_entry.game_time)
+            continue
+
+        if daily_entry.game_entry.umpire is None:
+            umpire_vector = UmpireCareerEntry.get_nominal_data(database_session)
+        else:
+            ump_entry = database_session.query(UmpireCareerEntry).get(daily_entry.game_entry.umpire)
+
+            if ump_entry is None:
+                umpire_vector = UmpireCareerEntry.get_nominal_data(database_session)
+            else:
+                umpire_vector = ump_entry.to_input_vector()
+
+        game_datetime = datetime.strptime(daily_entry.game_date, "%Y-%m-%d")
+        park_factors = database_session.query(ParkEntry).get((daily_entry.home_team, game_datetime.year))
+        if park_factors is None:
+            print "Could not find %s from %i" % (daily_entry.home_team, game_datetime.year)
+            park_vector = np.array([100, 100])
+        else:
+            park_vector = park_factors.to_input_vector()
+
+        final_pitcher_array = np.concatenate([daily_entry.to_input_vector(), park_vector, umpire_vector])
+        predicted_points = hitter_regression.get_prediction(final_pitcher_array)
 
         if predicted_points < 0:
             predicted_points = 0
@@ -506,9 +546,33 @@ def predict_daily_points(day=None):
 
     daily_entries = PregamePitcherGameEntry.get_all_daily_entries(database_session, day)
     for daily_entry in daily_entries:
-        hitter_array = daily_entry.get_opponent_vector(database_session)
-        final_array = np.concatenate([daily_entry.to_input_vector(), hitter_array])
-        predicted_points = pitcher_regression.get_prediction(final_array)
+        input_vector = daily_entry.to_input_vector()
+
+        if daily_entry.game_entry is None:
+            print "NoneType game entry for %s %s %s %s" % (daily_entry.rotowire_id, daily_entry.home_team,
+                                                           daily_entry.game_date, daily_entry.game_time)
+            continue
+
+        if daily_entry.game_entry.umpire is None:
+            umpire_vector = UmpireCareerEntry.get_nominal_data(database_session)
+        else:
+            ump_entry = database_session.query(UmpireCareerEntry).get(daily_entry.game_entry.umpire)
+
+            if ump_entry is None:
+                umpire_vector = UmpireCareerEntry.get_nominal_data(database_session)
+            else:
+                umpire_vector = ump_entry.to_input_vector()
+
+        game_datetime = datetime.strptime(daily_entry.game_date, "%Y-%m-%d")
+        park_factors = database_session.query(ParkEntry).get((daily_entry.home_team, game_datetime.year))
+        if park_factors is None:
+            print "Could not find %s from %i" % (daily_entry.home_team, game_datetime.year)
+            park_vector = np.array([100, 100])
+        else:
+            park_vector = park_factors.to_input_vector()
+
+        final_pitcher_array = np.concatenate([input_vector, daily_entry.get_opponent_vector(), park_vector, umpire_vector])
+        predicted_points = pitcher_regression.get_prediction(final_pitcher_array)
         if predicted_points < 0:
             predicted_points = 0
         daily_entry.predicted_draftkings_points = predicted_points
@@ -556,10 +620,12 @@ def get_avg_pitcher_points(player_id, year, database_session=None):
 
 
 def get_pregame_stats_wrapper(games):
-    thread_pool = Pool(6)
+    """thread_pool = Pool(6)
 
     thread_pool.map(get_pregame_stats, games)
-
+    """
+    for game in games:
+        get_pregame_stats(game)
 
 def get_pregame_stats(game):
     game_miner = GameMiner(game)
@@ -590,39 +656,87 @@ def prefetch_pregame_stats_atomic(game_matchup):
     away_lineup = list()
     home_lineup = list()
     if away_lineup_query is not None and home_lineup_query is not None:
-        hand = away_lineup_query.catcher_entry.batting_hand
-        away_lineup.append(PlayerStruct(game_matchup.away_team, away_lineup_query.catcher, "C", hand))
-        hand = away_lineup_query.first_baseman_entry.batting_hand
-        away_lineup.append(PlayerStruct(game_matchup.away_team, away_lineup_query.first_baseman, "1B", hand))
-        hand = away_lineup_query.second_baseman_entry.batting_hand
-        away_lineup.append(PlayerStruct(game_matchup.away_team, away_lineup_query.second_baseman, "2B", hand))
-        hand = away_lineup_query.third_baseman_entry.batting_hand
-        away_lineup.append(PlayerStruct(game_matchup.away_team, away_lineup_query.third_baseman, "3B", hand))
-        hand = away_lineup_query.shortstop_entry.batting_hand
-        away_lineup.append(PlayerStruct(game_matchup.away_team, away_lineup_query.shortstop, "SS", hand))
-        hand = away_lineup_query.left_fielder_entry.batting_hand
-        away_lineup.append(PlayerStruct(game_matchup.away_team, away_lineup_query.left_fielder, "LF", hand))
-        hand = away_lineup_query.center_fielder_entry.batting_hand
-        away_lineup.append(PlayerStruct(game_matchup.away_team, away_lineup_query.center_fielder, "CF", hand))
-        hand = away_lineup_query.right_fielder_entry.batting_hand
-        away_lineup.append(PlayerStruct(game_matchup.away_team, away_lineup_query.right_fielder, "RF", hand))
+        try:
+            hand = away_lineup_query.catcher_entry.batting_hand
+            away_lineup.append(PlayerStruct(game_matchup.away_team, away_lineup_query.catcher, "C", hand))
+        except AttributeError:
+            pass
+        try:
+            hand = away_lineup_query.first_baseman_entry.batting_hand
+            away_lineup.append(PlayerStruct(game_matchup.away_team, away_lineup_query.first_baseman, "1B", hand))
+        except AttributeError:
+            pass
+        try:
+            hand = away_lineup_query.second_baseman_entry.batting_hand
+            away_lineup.append(PlayerStruct(game_matchup.away_team, away_lineup_query.second_baseman, "2B", hand))
+        except AttributeError:
+            pass
+        try:
+            hand = away_lineup_query.third_baseman_entry.batting_hand
+            away_lineup.append(PlayerStruct(game_matchup.away_team, away_lineup_query.third_baseman, "3B", hand))
+        except AttributeError:
+            pass
+        try:
+            hand = away_lineup_query.shortstop_entry.batting_hand
+            away_lineup.append(PlayerStruct(game_matchup.away_team, away_lineup_query.shortstop, "SS", hand))
+        except AttributeError:
+            pass
+        try:
+            hand = away_lineup_query.left_fielder_entry.batting_hand
+            away_lineup.append(PlayerStruct(game_matchup.away_team, away_lineup_query.left_fielder, "LF", hand))
+        except AttributeError:
+            pass
+        try:
+            hand = away_lineup_query.center_fielder_entry.batting_hand
+            away_lineup.append(PlayerStruct(game_matchup.away_team, away_lineup_query.center_fielder, "CF", hand))
+        except AttributeError:
+            pass
+        try:
+            hand = away_lineup_query.right_fielder_entry.batting_hand
+            away_lineup.append(PlayerStruct(game_matchup.away_team, away_lineup_query.right_fielder, "RF", hand))
+        except AttributeError:
+            pass
 
-        hand = home_lineup_query.catcher_entry.batting_hand
-        home_lineup.append(PlayerStruct(game_matchup.home_team, home_lineup_query.catcher, "C", hand))
-        hand = home_lineup_query.first_baseman_entry.batting_hand
-        home_lineup.append(PlayerStruct(game_matchup.home_team, home_lineup_query.first_baseman, "1B", hand))
-        hand = home_lineup_query.second_baseman_entry.batting_hand
-        home_lineup.append(PlayerStruct(game_matchup.home_team, home_lineup_query.second_baseman, "2B", hand))
-        hand = home_lineup_query.third_baseman_entry.batting_hand
-        home_lineup.append(PlayerStruct(game_matchup.home_team, home_lineup_query.third_baseman, "3B", hand))
-        hand = home_lineup_query.shortstop_entry.batting_hand
-        home_lineup.append(PlayerStruct(game_matchup.home_team, home_lineup_query.shortstop, "SS", hand))
-        hand = home_lineup_query.left_fielder_entry.batting_hand
-        home_lineup.append(PlayerStruct(game_matchup.home_team, home_lineup_query.left_fielder, "LF", hand))
-        hand = home_lineup_query.center_fielder_entry.batting_hand
-        home_lineup.append(PlayerStruct(game_matchup.home_team, home_lineup_query.center_fielder, "CF", hand))
-        hand = home_lineup_query.right_fielder_entry.batting_hand
-        home_lineup.append(PlayerStruct(game_matchup.home_team, home_lineup_query.right_fielder, "RF", hand))
+        try:
+            hand = home_lineup_query.catcher_entry.batting_hand
+            home_lineup.append(PlayerStruct(game_matchup.home_team, home_lineup_query.catcher, "C", hand))
+        except AttributeError:
+            pass
+        try:
+            hand = home_lineup_query.first_baseman_entry.batting_hand
+            home_lineup.append(PlayerStruct(game_matchup.home_team, home_lineup_query.first_baseman, "1B", hand))
+        except AttributeError:
+            pass
+        try:
+            hand = home_lineup_query.second_baseman_entry.batting_hand
+            home_lineup.append(PlayerStruct(game_matchup.home_team, home_lineup_query.second_baseman, "2B", hand))
+        except AttributeError:
+            pass
+        try:
+            hand = home_lineup_query.third_baseman_entry.batting_hand
+            home_lineup.append(PlayerStruct(game_matchup.home_team, home_lineup_query.third_baseman, "3B", hand))
+        except AttributeError:
+            pass
+        try:
+            hand = home_lineup_query.shortstop_entry.batting_hand
+            home_lineup.append(PlayerStruct(game_matchup.home_team, home_lineup_query.shortstop, "SS", hand))
+        except AttributeError:
+            pass
+        try:
+            hand = home_lineup_query.left_fielder_entry.batting_hand
+            home_lineup.append(PlayerStruct(game_matchup.home_team, home_lineup_query.left_fielder, "LF", hand))
+        except AttributeError:
+            pass
+        try:
+            hand = home_lineup_query.center_fielder_entry.batting_hand
+            home_lineup.append(PlayerStruct(game_matchup.home_team, home_lineup_query.center_fielder, "CF", hand))
+        except AttributeError:
+            pass
+        try:
+            hand = home_lineup_query.right_fielder_entry.batting_hand
+            home_lineup.append(PlayerStruct(game_matchup.home_team, home_lineup_query.right_fielder, "RF", hand))
+        except AttributeError:
+            pass
         game = Game(away_lineup, game_matchup.away_pitcher, home_lineup, game_matchup.home_pitcher,
                     game_matchup.game_date, game_matchup.game_time)
         get_pregame_stats(game)
@@ -662,7 +776,8 @@ def prefetch_pregame_stats():
 
 def update_salaries(csv_dict=None, game_date=None):
     if game_date is None:
-        game_date = date.today()
+        game_date = datetime.now()
+        game_date = game_date.replace(hour=23, minute=0, second=0)
     if csv_dict is None:
         csv_dict = get_csv_dict()
 
@@ -685,8 +800,8 @@ def update_salaries(csv_dict=None, game_date=None):
             database_session.commit()
         except KeyError:
             print "Player %s not found in the Draftkings CSV file. Deleting entry." % (hitter_entry.first_name + " " + hitter_entry.last_name)
-            database_session.delete(pregame_entry)
-            database_session.commit()
+            #database_session.delete(pregame_entry)
+            #database_session.commit()
 
     # Pitchers
     pregame_pitchers = PregamePitcherGameEntry.get_all_daily_entries(database_session, game_date)
@@ -703,8 +818,8 @@ def update_salaries(csv_dict=None, game_date=None):
             database_session.commit()
         except KeyError:
             print "Player %s not found in the Draftkings CSV file. Deleting entry." % (pitcher_entry.first_name + " " + pitcher_entry.last_name)
-            database_session.delete(pregame_entry)
-            database_session.commit()
+            #database_session.delete(pregame_entry)
+            #database_session.commit()
 
     database_session.close()
 
@@ -872,13 +987,13 @@ class LineupMiner(object):
                     self._database_session.commit()
             # Didn't find entry, create new one
             else:
-                current_player.name = get_name_from_id(current_player.rotowire_id)
                 try:
+                    current_player.name = get_name_from_id(current_player.rotowire_id)
                     baseball_reference_id = get_hitter_id(current_player.name,
                                                           team_dict.inv[team_dict[current_player.team]],
                                                           date.today().year,
                                                           hitter_soup)
-                except NameNotFound:
+                except:
                     print "Skipping committing this hitter '%s'." % current_player.name
                     continue
 
@@ -979,9 +1094,9 @@ class LineupMiner(object):
                 if game_player.rotowire_id == player.rotowire_id:
                     break
                 #TODO: fix this deletion
-                if game_player == db_lineup_query[db_lineup_query.count()-1]:
-                    self._database_session.delete(game_player)
-                    self._database_session.commit()
+#                if game_player == db_lineup_query[db_lineup_query.count()-1]:
+#                    self._database_session.delete(game_player)
+#                    self._database_session.commit()
 
     def get_team(self):
         return self._lineup[0].team
@@ -1254,7 +1369,9 @@ class GameMiner(object):
             if home_pitcher.rotowire_id != self._game.home_pitcher.rotowire_id:
                 self._database_session.delete(home_pitcher)
                 self._database_session.commit()
-        self._home_pitcher_miner.get_pregame_stats()
+                self._home_pitcher_miner.get_pregame_stats()
+        else:
+            self._home_pitcher_miner.get_pregame_stats()
         away_pitcher = self._database_session.query(PregamePitcherGameEntry).get((self._game.away_pitcher.rotowire_id,
                                                                                   self._game.game_date,
                                                                                   self._game.game_time))
@@ -1262,7 +1379,9 @@ class GameMiner(object):
             if away_pitcher.rotowire_id != self._game.away_pitcher.rotowire_id:
                 self._database_session.delete(away_pitcher)
                 self._database_session.commit()
-        self._away_pitcher_miner.get_pregame_stats()
+                self._away_pitcher_miner.get_pregame_stats()
+        else:
+            self._away_pitcher_miner.get_pregame_stats()
 
     def add_team_park_factors(self):
         team_abbrev = self._home_pitcher_miner.get_team()
@@ -1279,9 +1398,11 @@ class GameMiner(object):
             self._database_session.rollback()
 
     def update_park_factors(self):
-        game_date = datetime.strptime(self._game.game_date, '%Y-%M-%d')
-        park_factors = self._database_session.query(ParkEntry).get((self._home_pitcher_miner.get_team(),
-                                                                    game_date.year))
+        game_date = self._game.game_date
+        # TODO: it seems like 2017 isn't up yet. we'll just use 2016 for now
+        #park_factors = self._database_session.query(ParkEntry).get((self._home_pitcher_miner.get_team(),
+        #                                                            game_date.year))
+        park_factors = self._database_session.query(ParkEntry).filter(self._home_pitcher_miner.get_team())
         if park_factors is None:
             self.add_team_park_factors()
 

@@ -22,6 +22,7 @@ from multiprocessing import Pool
 from sqlalchemy.exc import IntegrityError
 from mine.draft_kings import *
 from sql.umpire import UmpireCareerEntry
+from mine.baseball_reference import PlayerNameNotFound
 
 class NoGamesFound(Exception):
     def __init__(self):
@@ -620,12 +621,10 @@ def get_avg_pitcher_points(player_id, year, database_session=None):
 
 
 def get_pregame_stats_wrapper(games):
-    """thread_pool = Pool(6)
+    thread_pool = Pool(6)
 
     thread_pool.map(get_pregame_stats, games)
-    """
-    for game in games:
-        get_pregame_stats(game)
+
 
 def get_pregame_stats(game):
     game_miner = GameMiner(game)
@@ -789,7 +788,7 @@ def update_salaries(csv_dict=None, game_date=None):
         # Lookup the name in the dictionary
         hitter_entry = database_session.query(HitterEntry).get(pregame_entry.rotowire_id)
         if hitter_entry is None:
-            print "Player %s not found in the Draftkings CSV file. Deleting entry." % pregame_entry.rotowire_id
+            print "Player %s not found in the Draftkings CSV file." % pregame_entry.rotowire_id
         try:
             csv_entry = csv_dict[(hitter_entry.first_name + " " + hitter_entry.last_name + hitter_entry.team).lower()]
             pregame_entry.draftkings_salary = int(csv_entry["Salary"])
@@ -799,9 +798,7 @@ def update_salaries(csv_dict=None, game_date=None):
             pregame_entry.avg_points = float(csv_entry["AvgPointsPerGame"])
             database_session.commit()
         except KeyError:
-            print "Player %s not found in the Draftkings CSV file. Deleting entry." % (hitter_entry.first_name + " " + hitter_entry.last_name)
-            #database_session.delete(pregame_entry)
-            #database_session.commit()
+            print "Player %s not found in the Draftkings CSV file." % (hitter_entry.first_name + " " + hitter_entry.last_name)
 
     # Pitchers
     pregame_pitchers = PregamePitcherGameEntry.get_all_daily_entries(database_session, game_date)
@@ -810,16 +807,14 @@ def update_salaries(csv_dict=None, game_date=None):
         # Lookup the name in the dictionary
         pitcher_entry = database_session.query(PitcherEntry).get(pregame_entry.rotowire_id)
         if pitcher_entry is None:
-            print "Player %s not found in the Draftkings CSV file. Deleting entry." % pregame_entry.rotowire_id
+            print "Player %s not found in the Draftkings CSV file." % pregame_entry.rotowire_id
         try:
             csv_entry = csv_dict[(pitcher_entry.first_name + " " + pitcher_entry.last_name + pitcher_entry.team).lower()]
             pregame_entry.draftkings_salary = int(csv_entry["Salary"])
             pregame_entry.avg_points = float(csv_entry["AvgPointsPerGame"])
             database_session.commit()
         except KeyError:
-            print "Player %s not found in the Draftkings CSV file. Deleting entry." % (pitcher_entry.first_name + " " + pitcher_entry.last_name)
-            #database_session.delete(pregame_entry)
-            #database_session.commit()
+            print "Player %s not found in the Draftkings CSV file." % (pitcher_entry.first_name + " " + pitcher_entry.last_name)
 
     database_session.close()
 
@@ -906,6 +901,9 @@ class LineupMiner(object):
         return pregame_hitter_entry
 
     def mine_vs_hand_stats(self, hitter_entry, pregame_hitter_entry, hitter_career_soup, pitcher_hand):
+        if pitcher_hand is None:
+            return pregame_hitter_entry
+
         try:
             vs_hand_stats = get_vs_hand_hitting_stats(hitter_entry.baseball_reference_id, pitcher_hand, hitter_career_soup)
             pregame_hitter_entry.vs_hand_pa = int(vs_hand_stats["PA"])
@@ -993,7 +991,7 @@ class LineupMiner(object):
                                                           team_dict.inv[team_dict[current_player.team]],
                                                           date.today().year,
                                                           hitter_soup)
-                except:
+                except PlayerNameNotFound:
                     print "Skipping committing this hitter '%s'." % current_player.name
                     continue
 
@@ -1020,6 +1018,12 @@ class LineupMiner(object):
             if hitter_entry is not None:
                 stat_row_dict = get_yesterdays_hitting_game_log(hitter_entry.baseball_reference_id)
             else:
+                print "Hitter %s not found in database. Deleting entry" % pregame_hitter_entry.rotowire_id
+                self._database_session.delete(pregame_hitter_entry)
+                self._database_session.commit()
+                continue
+
+            if stat_row_dict is None:
                 print "Player %s %s did not play yesterday. Deleting pregame entry %s %s" % (hitter_entry.first_name,
                                                                                              hitter_entry.last_name,
                                                                                              pregame_hitter_entry.game_date,
@@ -1080,7 +1084,7 @@ class LineupMiner(object):
             elif player.position == "CF":
                 lineup_history.center_fielder = player.rotowire_id
             elif player.position == "RF":
-                lineup_history.shortstop = player.rotowire_id
+                lineup_history.right_fielder = player.rotowire_id
 
         try:
             self._database_session.add(lineup_history)
@@ -1187,13 +1191,16 @@ class PitcherMiner(object):
                                                                                                  self._game_date,
                                                                                                  self._game_time)))
         for hitter in sql_opposing_lineup:
-            pregame_pitcher_entry.vs_h += hitter.vs_h
-            pregame_pitcher_entry.vs_bb += hitter.vs_bb
-            pregame_pitcher_entry.vs_so += hitter.vs_so
-            pregame_pitcher_entry.vs_hr += hitter.vs_hr
-            pregame_pitcher_entry.vs_bf += hitter.vs_pa
-            # Approximate earned runs by the RBIs of opposing hitters
-            pregame_pitcher_entry.vs_er += hitter.vs_rbi
+            try:
+                pregame_pitcher_entry.vs_h += hitter.vs_h
+                pregame_pitcher_entry.vs_bb += hitter.vs_bb
+                pregame_pitcher_entry.vs_so += hitter.vs_so
+                pregame_pitcher_entry.vs_hr += hitter.vs_hr
+                pregame_pitcher_entry.vs_bf += hitter.vs_pa
+                # Approximate earned runs by the RBIs of opposing hitters
+                pregame_pitcher_entry.vs_er += hitter.vs_rbi
+            except AttributeError:
+                continue
 
         return pregame_pitcher_entry
 
@@ -1248,7 +1255,7 @@ class PitcherMiner(object):
                                                        team_dict.inv[team_dict[self._pitcher.team]],
                                                        date.today().year,
                                                        pitcher_soup)
-            except NameNotFound:
+            except PlayerNameNotFound:
                 print "Skipping committing this pitcher '%s'." % self._pitcher.name
                 return
 
@@ -1385,7 +1392,7 @@ class GameMiner(object):
 
     def add_team_park_factors(self):
         team_abbrev = self._home_pitcher_miner.get_team()
-        year = datetime.strptime(self._game.game_date,'%Y-%M-%d').year
+        year = datetime.strptime(self._game.game_date, '%Y-%M-%d').year
         # Use the Rotowire team dict so Baseball Reference can work with it
         hitter_factor, pitcher_factor = get_team_info(team_dict[team_abbrev], year)
         park_entry = ParkEntry(team_abbrev, year)

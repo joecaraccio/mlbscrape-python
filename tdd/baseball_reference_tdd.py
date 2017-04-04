@@ -27,7 +27,7 @@ class GetHitterIdTest(unittest.TestCase):
                                       "2016",
                                       self.soup)
             self.assertTrue(False)
-        except NameNotFound:
+        except PlayerNameNotFound:
             self.assertTrue(True)
 
 
@@ -53,7 +53,7 @@ class GetPitcherIdTest(unittest.TestCase):
                                        "2016",
                                        self.soup)
             self.assertTrue(False)
-        except NameNotFound:
+        except PlayerNameNotFound:
             self.assertTrue(True)
 
 

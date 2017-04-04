@@ -25,10 +25,10 @@ def get_hitter_id(full_name, team, year=None, soup=None):
         soup = get_hitter_soup(year)
 
     if soup is None:
-        raise NameNotFound(full_name)
+        raise PlayerNameNotFound(full_name)
     hitter_table = soup.find("table", {"id": "players_standard_batting"})
     if hitter_table is None:
-        raise NameNotFound(full_name)
+        raise PlayerNameNotFound(full_name)
     hitter_table = hitter_table.find("tbody")
     hitter_table_rows = hitter_table.findAll("tr")
     for hitter_table_row in hitter_table_rows:
@@ -45,7 +45,7 @@ def get_hitter_id(full_name, team, year=None, soup=None):
             except AttributeError:
                 continue
 
-    raise NameNotFound(full_name)
+    raise PlayerNameNotFound(full_name)
 
 
 def get_pitcher_id(full_name, team, year=None, soup=None):
@@ -80,12 +80,12 @@ def get_pitcher_id(full_name, team, year=None, soup=None):
             except AttributeError:
                 continue
 
-    raise NameNotFound(full_name)
+    raise PlayerNameNotFound(full_name)
 
 
-class NameNotFound(Exception):
+class PlayerNameNotFound(Exception):
     def __init__(self, name_str):
-        super(NameNotFound, self).__init__("Player '%s' not found in the Baseball Reference page" % name_str)
+        super(PlayerNameNotFound, self).__init__("Player '%s' not found in the Baseball Reference page" % name_str)
 
 
 def get_hitter_soup(year=None):
@@ -189,7 +189,7 @@ def get_table_row_dict(soup, table_name, table_row_label, table_column_label):
     for stat_row in stat_rows:
         # Create a dictionary of the stat attributes
         stat_dict = dict()
-        stat_entries = stat_row.findAll()
+        stat_entries = stat_row.findAll("th") + stat_row.findAll("td")
         # The dictionary does not have valid entries, move on to the next row
         if len(stat_entries) != len(table_header_list):
             continue
@@ -236,7 +236,7 @@ def get_vs_hand_hitting_stats(baseball_reference_id, hand_value, soup=None):
     elif hand_value == "R":
         hand = "vs RHP"
     else:
-        print "Invalid hand enum."
+        print "Invalid hand enum %s." % hand_value
         return None
 
     return get_table_row_dict(soup, "plato", hand, "Split")
@@ -364,15 +364,14 @@ def get_yesterdays_hitting_game_log(baseball_reference_id, soup=None):
     yesterdays_date = date.today() - timedelta(days=1)
     if soup is None:
         url = BASE_URL + "/players/gl.cgi?id=" + str(baseball_reference_id) + "&t=b&year=" + str(yesterdays_date.year)
-        soup = get_comment_soup_from_url(url)
+        soup = get_soup_from_url(url)
     try:
         return get_table_row_dict(soup, "batting_gamelogs", date_abbreviations[yesterdays_date.month] + " " +
                                   str(yesterdays_date.day), "Date")
     # TODO: just try again for now, explore BeautifulSoup built-in options for this
     except TableNotFound as e:
         print e
-        return get_table_row_dict(soup, "batting_gamelogs", date_abbreviations[yesterdays_date.month] + " " +
-                                  str(yesterdays_date.day), "Date")
+
 
 
 def get_pitching_game_log(baseball_reference_id, soup=None, game_date=None):

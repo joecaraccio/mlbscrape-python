@@ -5,7 +5,10 @@ import cProfile
 
 try:
     prefetch_pregame_stats()
-    send_email("Prefetch games completed.")
+    csv_dict = get_csv_dict("players-" + str(date.today()) + ".csv")
+    update_salaries(csv_dict)
+    predict_daily_points()
+    optimal_lineup = get_optimal_lineup()
 except Exception as e:
     print e
     send_email("The predictor generated an exception: {0}".format(e))

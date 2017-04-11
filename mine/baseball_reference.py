@@ -25,12 +25,13 @@ def get_hitter_id(full_name, team, year=None, soup=None):
         soup = get_hitter_soup(year)
 
     if soup is None:
-        raise NameNotFound(full_name)
-    hitter_table = soup.find("table", {"id": "players_standard_batting"})
-    if hitter_table is None:
-        raise NameNotFound(full_name)
-    hitter_table = hitter_table.find("tbody")
-    hitter_table_rows = hitter_table.findAll("tr")
+        raise PlayerNameNotFound(full_name)
+    try:
+        hitter_table = soup.find("table", {"id": "players_standard_batting"})
+        hitter_table = hitter_table.find("tbody")
+        hitter_table_rows = hitter_table.findAll("tr")
+    except AttributeError:
+        raise PlayerNameNotFound(full_name)
     for hitter_table_row in hitter_table_rows:
         if hitter_table_row.get("class")[0] != "thead":
             try:
@@ -45,7 +46,7 @@ def get_hitter_id(full_name, team, year=None, soup=None):
             except AttributeError:
                 continue
 
-    raise NameNotFound(full_name)
+    raise PlayerNameNotFound(full_name)
 
 
 def get_pitcher_id(full_name, team, year=None, soup=None):
@@ -64,8 +65,11 @@ def get_pitcher_id(full_name, team, year=None, soup=None):
     if soup is None:
         soup = get_pitcher_soup(year)
 
-    pitcher_table = soup.find("table", {"id": "players_standard_pitching"}).find("tbody")
-    pitcher_table_rows = pitcher_table.findAll("tr")
+    try:
+        pitcher_table = soup.find("table", {"id": "players_standard_pitching"}).find("tbody")
+        pitcher_table_rows = pitcher_table.findAll("tr")
+    except AttributeError:
+        raise PlayerNameNotFound(full_name)
     for pitcher_table_row in pitcher_table_rows:
         if pitcher_table_row.get("class")[0] != "thead":
             try:
@@ -80,12 +84,12 @@ def get_pitcher_id(full_name, team, year=None, soup=None):
             except AttributeError:
                 continue
 
-    raise NameNotFound(full_name)
+    raise PlayerNameNotFound(full_name)
 
 
-class NameNotFound(Exception):
+class PlayerNameNotFound(Exception):
     def __init__(self, name_str):
-        super(NameNotFound, self).__init__("Player '%s' not found in the Baseball Reference page" % name_str)
+        super(PlayerNameNotFound, self).__init__("Player '%s' not found in the Baseball Reference page" % name_str)
 
 
 def get_hitter_soup(year=None):
@@ -141,13 +145,13 @@ def get_vs_table_row_dict(soup, batter_id, pitcher_id):
     # Note: we seem to need BASE_URL as a prefix during unit tests
     batter_vs_pitcher_base = "/play-index/batter_vs_pitcher.cgi?batter="
 
-    results_table = soup.find("table", {"id": "ajax_result_table"})
-    if results_table is None:
+    try:
+        results_table = soup.find("table", {"id": "ajax_result_table"})
+        table_header_list = results_table.find("thead").findAll("th")
+        table_header_list = [x.text for x in table_header_list]
+        table_body = results_table.find("tbody")
+    except AttributeError:
         raise TableNotFound("ajax_result_table")
-
-    table_header_list = results_table.find("thead").findAll("th")
-    table_header_list = [x.text for x in table_header_list]
-    table_body = results_table.find("tbody")
 
     matching_url = batter_vs_pitcher_base + batter_id + "&pitcher=" + pitcher_id
     try:
@@ -182,14 +186,17 @@ def get_table_row_dict(soup, table_name, table_row_label, table_column_label):
     if results_table is None:
         raise TableNotFound(table_name)
 
-    table_header_list = results_table.find("thead").findAll("th")
+    try:
+        table_header_list = results_table.find("thead").findAll("th")
+    except AttributeError:
+        raise TableRowNotFound(table_row_label, table_column_label, table_name)
     table_header_list = [x.text for x in table_header_list]
     stat_rows = results_table.findAll("tr")
 
     for stat_row in stat_rows:
         # Create a dictionary of the stat attributes
         stat_dict = dict()
-        stat_entries = stat_row.findAll()
+        stat_entries = stat_row.findAll(["th", "td"])
         # The dictionary does not have valid entries, move on to the next row
         if len(stat_entries) != len(table_header_list):
             continue
@@ -236,7 +243,7 @@ def get_vs_hand_hitting_stats(baseball_reference_id, hand_value, soup=None):
     elif hand_value == "R":
         hand = "vs RHP"
     else:
-        print "Invalid hand enum."
+        print "Invalid hand enum %s." % hand_value
         return None
 
     return get_table_row_dict(soup, "plato", hand, "Split")
@@ -355,24 +362,27 @@ def get_recent_pitcher_stats(baseball_reference_id, soup=None):
     return table_row_dict
 
 
-def get_yesterdays_hitting_game_log(baseball_reference_id, soup=None):
+def get_hitting_game_log(baseball_reference_id, soup=None, game_date=None):
     """ Get a dictionary representation of yesterday's game log stats
     :param baseball_reference_id: BaseballReference unique ID for the hitter of interest
     :param soup: BeautifulSoup object of the hitter game log (default is the URL for the game log of the given ID)
     :return: dictionary representation of the game log stats
     """
-    yesterdays_date = date.today() - timedelta(days=1)
+    if game_date is None:
+        game_date = date.today()
     if soup is None:
-        url = BASE_URL + "/players/gl.cgi?id=" + str(baseball_reference_id) + "&t=b&year=" + str(yesterdays_date.year)
-        soup = get_comment_soup_from_url(url)
+        url = BASE_URL + "/players/gl.cgi?id=" + str(baseball_reference_id) + "&t=b&year=" + str(game_date.year)
+        soup = get_soup_from_url(url)
     try:
-        return get_table_row_dict(soup, "batting_gamelogs", date_abbreviations[yesterdays_date.month] + " " +
-                                  str(yesterdays_date.day), "Date")
+        return get_table_row_dict(soup, "batting_gamelogs", date_abbreviations[game_date.month] + " " +
+                                  str(game_date.day), "Date")
     # TODO: just try again for now, explore BeautifulSoup built-in options for this
     except TableNotFound as e:
         print e
-        return get_table_row_dict(soup, "batting_gamelogs", date_abbreviations[yesterdays_date.month] + " " +
-                                  str(yesterdays_date.day), "Date")
+        return None
+    except TableRowNotFound as e1:
+        print e1
+        return None
 
 
 def get_pitching_game_log(baseball_reference_id, soup=None, game_date=None):
@@ -386,10 +396,16 @@ def get_pitching_game_log(baseball_reference_id, soup=None, game_date=None):
         game_date = date.today()
     if soup is None:
         url = BASE_URL + "/players/gl.cgi?id=" + str(baseball_reference_id) + "&t=p&year=" + str(game_date.year)
-        soup = get_comment_soup_from_url(url)
-
-    return get_table_row_dict(soup, "pitching_gamelogs", date_abbreviations[game_date.month] + " " +
-                              str(game_date.day), "Date")
+        soup = get_soup_from_url(url)
+    try:
+        return get_table_row_dict(soup, "pitching_gamelogs", date_abbreviations[game_date.month] + " " +
+                                  str(game_date.day), "Date")
+    except TableNotFound as e:
+        print e
+        return None
+    except TableRowNotFound as e1:
+        print e1
+        return None
 
 
 def get_team_info(team_name, year_of_interest=None, team_soup=None):

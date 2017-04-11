@@ -14,7 +14,7 @@ CONTEST_SALARY = 50000
 
 class NameNotFound(Exception):
     def __init__(self, name):
-        super(NameNotFound, self).__init__("Name '%s' not found in the Baseball Reference page" %
+        super(NameNotFound, self).__init__("Name '%s' not found in the Draftkings page" %
                                                       name)
 
 

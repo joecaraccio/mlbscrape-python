@@ -16,6 +16,7 @@ import numpy as np
 #from mine.stat_miner import UmpireMiner
 from sql.team_park import ParkEntry
 import datetime
+from datetime import timedelta
 from sklearn.metrics import mean_squared_error, median_absolute_error
 
 
@@ -91,7 +92,7 @@ class HitterRegressionTrainer(RegressionTree):
                 umpire_vector = postgame_entry.game_entry.umpire_object.to_input_vector()
 
             game_datetime = datetime.strptime(item.game_date, "yyyy-mm-dd")
-            park_factors = self._database_session.query(ParkEntry).get((item.home_team, game_datetime.year))
+            park_factors = self._database_session.query(ParkEntry).get((item.home_team, str(game_datetime.year-1)))
             park_vector = park_factors.to_input_vector()
 
             final_hitter_array = np.concatenate([input_vector, park_vector, umpire_vector])
@@ -172,9 +173,9 @@ class HitterRegressionForestTrainer(RegressionForest):
                     umpire_vector = ump_entry.to_input_vector()
 
             game_datetime = datetime.datetime.strptime(pregame_entry.game_date, "%Y-%m-%d")
-            park_factors = self._database_session.query(ParkEntry).get((pregame_entry.home_team, game_datetime.year))
+            park_factors = self._database_session.query(ParkEntry).get((pregame_entry.home_team, "2016"))
             if park_factors is None:
-                print "Could not find %s from %i" % (pregame_entry.home_team, game_datetime.year)
+                print "Hitter regression forest: Could not find %s from %s" % (pregame_entry.home_team, "2016")
                 park_vector = np.array([100, 100])
             else:
                 park_vector = park_factors.to_input_vector()
@@ -303,9 +304,9 @@ class PitcherRegressionForestTrainer(RegressionForest):
                     umpire_vector = ump_entry.to_input_vector()
 
             game_datetime = datetime.datetime.strptime(pregame_entry.game_date, "%Y-%m-%d")
-            park_factors = self._database_session.query(ParkEntry).get((pregame_entry.home_team, game_datetime.year))
+            park_factors = self._database_session.query(ParkEntry).get((pregame_entry.home_team, "2016"))
             if park_factors is None:
-                print "Could not find %s from %i" % (pregame_entry.home_team, game_datetime.year)
+                print "Pitcher regression forest: Could not find %s from %s" % (pregame_entry.home_team, "2016")
                 park_vector = np.array([100, 100])
             else:
                 park_vector = park_factors.to_input_vector()

@@ -9,7 +9,7 @@ try:
     mine_pregame_stats()
     # TODO: this is broken with Draftkings new structure
     #save_daily_csv()
-    csv_dict = get_csv_dict()
+    csv_dict = get_csv_dict("players-" + str(date.today()) + ".csv")
     update_salaries(csv_dict)
     predict_daily_points()
     optimal_lineup = get_optimal_lineup()

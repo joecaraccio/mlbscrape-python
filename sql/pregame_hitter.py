@@ -196,6 +196,7 @@ class PregameHitterGameEntry(Base):
                self.to_vs_input_vector() + self.to_recent_input_vector()
 
     def to_input_vector_raw(self):
+        #TODO: this shouldn't include the totals that are returned by the corresponding to_..._vector
         input_vector = np.concatenate([np.array(self.to_season_input_vector())*self.season_pa,
         np.array(self.to_career_input_vector())*self.career_pa,
         np.array(self.to_vs_hand_input_vector())*self.vs_hand_pa,

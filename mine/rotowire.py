@@ -109,18 +109,18 @@ def get_game_lineups(url=None, game_date=None):
         game_node = header_node.parent
         home_team_lineup = list()
         away_team_lineup = list()
-        away_team_abbreviation = game_node.find("div", {"class": AWAY_TEAM_REGION_LABEL}).text.split()[0]
-        home_team_abbreviation = game_node.find("div", {"class": HOME_TEAM_REGION_LABEL}).text.split()[0]
-        game_main_soup = game_node.find("div", {"class": LINEUPS_CLASS_LABEL})
-        game_time = game_node.find("div", {"class": TIME_REGION_LABEL}).find("a").text.replace("ET", "").strip()
-        game_time = datetime.strptime(game_time, '%I:%M %p').strftime("%H:%M")
-
-        for away_player in game_main_soup.findAll("div", {"class": AWAY_TEAM_PLAYER_LABEL}):
-            away_team_lineup.append(get_hitter(away_player, away_team_abbreviation))
-        for home_player in game_main_soup.findAll("div", {"class": HOME_TEAM_PLAYER_LABEL}):
-            home_team_lineup.append(get_hitter(home_player, home_team_abbreviation))
-
         try:
+            away_team_abbreviation = game_node.find("div", {"class": AWAY_TEAM_REGION_LABEL}).text.split()[0]
+            home_team_abbreviation = game_node.find("div", {"class": HOME_TEAM_REGION_LABEL}).text.split()[0]
+            game_main_soup = game_node.find("div", {"class": LINEUPS_CLASS_LABEL})
+            game_time = game_node.find("div", {"class": TIME_REGION_LABEL}).find("a").text.replace("ET", "").strip()
+            game_time = datetime.strptime(game_time, '%I:%M %p').strftime("%H:%M")
+
+            for away_player in game_main_soup.findAll("div", {"class": AWAY_TEAM_PLAYER_LABEL}):
+                away_team_lineup.append(get_hitter(away_player, away_team_abbreviation))
+            for home_player in game_main_soup.findAll("div", {"class": HOME_TEAM_PLAYER_LABEL}):
+                home_team_lineup.append(get_hitter(home_player, home_team_abbreviation))
+
             pitchers = game_node.find("div", PITCHERS_REGION_LABEL).findAll("div")
             away_team_pitcher = get_pitcher(pitchers[0], away_team_abbreviation)
             home_team_pitcher = get_pitcher(pitchers[1], home_team_abbreviation)
@@ -129,7 +129,7 @@ def get_game_lineups(url=None, game_date=None):
             print "Game between %s and %s is not valid." % (away_team_abbreviation, home_team_abbreviation)
             continue
 
-        current_game = Game(away_team_lineup, away_team_pitcher, home_team_lineup, home_team_pitcher, game_date, game_time)
+        current_game = Game(away_team_lineup, away_team_pitcher, home_team_lineup, home_team_pitcher, str(game_date), str(game_time))
 
         if current_game.is_valid():
             game_factors = get_external_game_factors(game_node)
@@ -147,18 +147,21 @@ def get_external_game_factors(game_node):
     :param game_node: BeautifulSoup object containing the game from the daily lineups page
     :return: a GameEntry containing the
     """
-    home_team_abbreviation = game_node.find("div", {"class": HOME_TEAM_REGION_LABEL}).text.split()[0]
-    wind_speed = get_wind_speed(game_node)
-    """TODO: add temperature
-    For now, we will use nominal temperature and umpire readings
-    """
-    ump_name = None
     try:
-        ump_name = get_ump_name(game_node)
-    except UmpDataNotFound:
-        print "Ump data not found."
-    park_hitter_score, park_pitcher_score = get_team_info(team_dict[home_team_abbreviation])
-    game_factors = GameFactors(wind_speed, ump_name, park_pitcher_score, park_hitter_score)
+        home_team_abbreviation = game_node.find("div", {"class": HOME_TEAM_REGION_LABEL}).text.split()[0]
+        wind_speed = get_wind_speed(game_node)
+        """TODO: add temperature
+        For now, we will use nominal temperature and umpire readings
+        """
+        ump_name = None
+        try:
+            ump_name = get_ump_name(game_node)
+        except UmpDataNotFound:
+            print "Ump data not found."
+        park_hitter_score, park_pitcher_score = get_team_info(team_dict[home_team_abbreviation])
+        game_factors = GameFactors(wind_speed, ump_name, park_pitcher_score, park_hitter_score)
+    except AttributeError:
+        game_factors = None
 
     return game_factors
 
@@ -237,13 +240,16 @@ def get_table_row_dict(soup, table_name, table_row_label, table_column_label):
     :param table_column_label: HTML label for the column
     :return: dictionary representation of the given row
     """
-    results_table = soup.find("table", {"id": table_name})
-    if results_table is None:
-        raise TableNotFound(table_name)
+    try:
+        results_table = soup.find("table", {"id": table_name})
+        if results_table is None:
+            raise TableNotFound(table_name)
 
-    table_header_list = results_table.find("thead").findAll("th")
-    table_header_list = [x.text for x in table_header_list]
-    stat_rows = results_table.find("tbody").findAll("tr")
+        table_header_list = results_table.find("thead").findAll("th")
+        table_header_list = [x.text for x in table_header_list]
+        stat_rows = results_table.find("tbody").findAll("tr")
+    except AttributeError:
+        raise TableNotFound(table_name)
 
     for stat_row in stat_rows:
         #Create a dictionary of the stat attributes

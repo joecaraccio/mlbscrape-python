@@ -23,6 +23,7 @@ from sqlalchemy.exc import IntegrityError
 from mine.draft_kings import *
 from sql.umpire import UmpireCareerEntry
 from mine.baseball_reference import PlayerNameNotFound
+import math
 
 class NoGamesFound(Exception):
     def __init__(self):
@@ -87,6 +88,9 @@ class PositionHeap(object):
             if self._blacklisted_opposing_team == sql_player.get_opposing_team():
                 return is_added
 
+        if sql_player.draftkings_salary == 0:
+            return is_added
+
         if len(self._position_heap) < self._max_players:
             if sql_player.draftkings_salary <= maximum_salary:
                 player_entry = Player(self._position_string, sql_player)
@@ -145,6 +149,7 @@ class PositionHeap(object):
         idx = 0
         for player in self._position_heap:
             if player[1].get_opposing_team() == opposing_team:
+                print "Blacklisting team %s" % opposing_team
                 self._position_heap.pop(idx)
                 is_removed = True
             else:
@@ -449,16 +454,16 @@ def get_optimal_lineup(day=None):
         optimal_lineup.add(next_player)
 
     # Delete the players facing one another who are predicted to do worse, blacklist that team at that position
-    #optimal_lineup.delete_bad_opponents()
+    optimal_lineup.delete_bad_opponents()
 
     # Add players in the same manner, but with the blacklisted team enforced
-    """while (optimal_lineup.get_total_salary() > CONTEST_SALARY and len(player_heap_copy) > 0) or \
+    while (optimal_lineup.get_total_salary() > CONTEST_SALARY and len(player_heap_copy) > 0) or \
             not optimal_lineup.is_valid():
         worst_position = optimal_lineup.get_worst_position()
         print len(player_heap_copy), worst_position, player_heap_copy[worst_position]
         next_player = heapq.heappop(player_heap_copy[worst_position])[1]
         optimal_lineup.add(next_player)
-    """
+
     # Print out all the remaining players in order of their value
     runner_up_text = "Runner-up players\n"
     for fielding_position in OptimalLineupDict.FieldingPositions:
@@ -530,9 +535,9 @@ def predict_daily_points(day=None):
                 umpire_vector = ump_entry.to_input_vector()
 
         game_datetime = datetime.strptime(daily_entry.game_date, "%Y-%m-%d")
-        park_factors = database_session.query(ParkEntry).get((daily_entry.home_team, game_datetime.year))
+        park_factors = database_session.query(ParkEntry).get((daily_entry.home_team, str(game_datetime.year-1)))
         if park_factors is None:
-            print "Could not find %s from %i" % (daily_entry.home_team, game_datetime.year)
+            print "PredictDailyPoints1: Could not find %s from %i" % (daily_entry.home_team, game_datetime.year-1)
             park_vector = np.array([100, 100])
         else:
             park_vector = park_factors.to_input_vector()
@@ -565,9 +570,9 @@ def predict_daily_points(day=None):
                 umpire_vector = ump_entry.to_input_vector()
 
         game_datetime = datetime.strptime(daily_entry.game_date, "%Y-%m-%d")
-        park_factors = database_session.query(ParkEntry).get((daily_entry.home_team, game_datetime.year))
+        park_factors = database_session.query(ParkEntry).get((daily_entry.home_team, game_datetime.year-1))
         if park_factors is None:
-            print "Could not find %s from %i" % (daily_entry.home_team, game_datetime.year)
+            print "PredictDailyPoints2: Could not find %s from %i" % (daily_entry.home_team, str(game_datetime.year-1))
             park_vector = np.array([100, 100])
         else:
             park_vector = park_factors.to_input_vector()
@@ -763,7 +768,6 @@ def prefetch_pregame_stats_wrapper(game_matchups):
     thread_pool = Pool(6)
 
     thread_pool.map(prefetch_pregame_stats_atomic, game_matchups)
-
 
 def prefetch_pregame_stats():
     game_matchups = get_game_matchups()
@@ -991,6 +995,9 @@ class LineupMiner(object):
                                                           team_dict.inv[team_dict[current_player.team]],
                                                           date.today().year,
                                                           hitter_soup)
+                except AttributeError:
+                    print "Skipping committing this hitter '%s'." % current_player.rotowire_id
+                    continue
                 except PlayerNameNotFound:
                     print "Skipping committing this hitter '%s'." % current_player.name
                     continue
@@ -1012,11 +1019,12 @@ class LineupMiner(object):
         self._database_session.commit()
 
     def mine_yesterdays_results(self):
-        hitter_entries = self._database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.game_date == (date.today() - timedelta(days=1)))
+        yesterdays_date = date.today() - timedelta(days=1)
+        hitter_entries = self._database_session.query(PregameHitterGameEntry).filter(PregameHitterGameEntry.game_date == str(yesterdays_date))
         for pregame_hitter_entry in hitter_entries:
             hitter_entry = self._database_session.query(HitterEntry).get(pregame_hitter_entry.rotowire_id)
             if hitter_entry is not None:
-                stat_row_dict = get_yesterdays_hitting_game_log(hitter_entry.baseball_reference_id)
+                stat_row_dict = get_hitting_game_log(hitter_entry.baseball_reference_id, game_date=yesterdays_date)
             else:
                 print "Hitter %s not found in database. Deleting entry" % pregame_hitter_entry.rotowire_id
                 self._database_session.delete(pregame_hitter_entry)
@@ -1058,7 +1066,57 @@ class LineupMiner(object):
                 print "Attempt to duplicate hitter postgame results: %s %s %s %s" % (hitter_entry.first_name,
                                                                                      hitter_entry.last_name,
                                                                                      hitter_entry.team,
-                                                                                     pregame_hitter_entry.game_date)
+                                                                                  pregame_hitter_entry.game_date)
+        pitcher_entries = self._database_session.query(PregamePitcherGameEntry).filter(PregamePitcherGameEntry.game_date == str(yesterdays_date))
+        for pregame_pitcher_entry in pitcher_entries:
+            pitcher_entry = self._database_session.query(PitcherEntry).get(pregame_pitcher_entry.rotowire_id)
+            if pitcher_entry is not None:
+                stat_row_dict = get_pitching_game_log(pitcher_entry.baseball_reference_id, game_date=yesterdays_date)
+            else:
+                print "Pitcher %s not found in database. Deleting entry" % pregame_pitcher_entry.rotowire_id
+                self._database_session.delete(pregame_pitcher_entry)
+                self._database_session.commit()
+                continue
+
+            if stat_row_dict is None:
+                print "Player %s %s did not play yesterday. Deleting pregame entry %s %s" % (pitcher_entry.first_name,
+                                                                                             pitcher_entry.last_name,
+                                                                                             pregame_pitcher_entry.game_date,
+                                                                                             pregame_pitcher_entry.get_team())
+                self._database_session.delete(pregame_pitcher_entry)
+                self._database_session.commit()
+                continue
+
+            postgame_pitcher_entry = PostgamePitcherGameEntry()
+            postgame_pitcher_entry.rotowire_id = pitcher_entry.rotowire_id
+            postgame_pitcher_entry.game_date = pregame_pitcher_entry.game_date
+            postgame_pitcher_entry.game_time = pregame_pitcher_entry.game_time
+            postgame_pitcher_entry.home_team = pregame_pitcher_entry.home_team
+            postgame_pitcher_entry.is_home_team = pregame_pitcher_entry.is_home_team
+            postgame_pitcher_entry.game_ip = float(stat_row_dict["IP"])
+            postgame_pitcher_entry.game_so = int(stat_row_dict["SO"])
+            if "W" in stat_row_dict["Rslt"]:
+                postgame_pitcher_entry.game_wins = 1
+            postgame_pitcher_entry.game_er = int(stat_row_dict["ER"])
+            postgame_pitcher_entry.game_h = int(stat_row_dict["H"])
+            postgame_pitcher_entry.game_bb = int(stat_row_dict["BB"])
+            postgame_pitcher_entry.game_hbp = int(stat_row_dict["HBP"])
+            if postgame_pitcher_entry.game_ip == 9:
+                postgame_pitcher_entry.game_cg = 1
+                if int(stat_row_dict["R"]) == 0:
+                    postgame_pitcher_entry.game_cgso = 1
+                if int(stat_row_dict["H"]) == 0:
+                    postgame_pitcher_entry.game_no_hitter = 1
+            postgame_pitcher_entry.actual_draftkings_points = get_pitcher_points(postgame_pitcher_entry)
+            try:
+                self._database_session.add(postgame_pitcher_entry)
+                self._database_session.commit()
+            except IntegrityError:
+                self._database_session.rollback()
+                print "Attempt to duplicate pitcher postgame results: %s %s %s %s" % (pitcher_entry.first_name,
+                                                                                      pitcher_entry.last_name,
+                                                                                      pitcher_entry.team,
+                                                                                      pregame_pitcher_entry.game_date)
 
     def update_lineup_history(self):
         """ Update the lineup history object for this team and year
@@ -1249,12 +1307,15 @@ class PitcherMiner(object):
                 self._database_session.commit()
         # Found no entries, create a bare bones entry with just the name and id
         else:
-            self._pitcher.name = get_name_from_id(self._pitcher.rotowire_id)
             try:
+                self._pitcher.name = get_name_from_id(self._pitcher.rotowire_id)
                 baseball_reference_id = get_pitcher_id(self._pitcher.name,
                                                        team_dict.inv[team_dict[self._pitcher.team]],
                                                        date.today().year,
                                                        pitcher_soup)
+            except AttributeError:
+                print "Skipping committing this pitcher '%s'." % self._pitcher.rotowire_id
+                return
             except PlayerNameNotFound:
                 print "Skipping committing this pitcher '%s'." % self._pitcher.name
                 return
@@ -1376,9 +1437,15 @@ class GameMiner(object):
             if home_pitcher.rotowire_id != self._game.home_pitcher.rotowire_id:
                 self._database_session.delete(home_pitcher)
                 self._database_session.commit()
-                self._home_pitcher_miner.get_pregame_stats()
+                try:
+                    self._home_pitcher_miner.get_pregame_stats()
+                except PitcherNotFound:
+                    pass
         else:
-            self._home_pitcher_miner.get_pregame_stats()
+            try:
+                self._home_pitcher_miner.get_pregame_stats()
+            except PitcherNotFound:
+                pass
         away_pitcher = self._database_session.query(PregamePitcherGameEntry).get((self._game.away_pitcher.rotowire_id,
                                                                                   self._game.game_date,
                                                                                   self._game.game_time))
@@ -1386,9 +1453,15 @@ class GameMiner(object):
             if away_pitcher.rotowire_id != self._game.away_pitcher.rotowire_id:
                 self._database_session.delete(away_pitcher)
                 self._database_session.commit()
-                self._away_pitcher_miner.get_pregame_stats()
+                try:
+                    self._away_pitcher_miner.get_pregame_stats()
+                except PitcherNotFound:
+                    pass
         else:
-            self._away_pitcher_miner.get_pregame_stats()
+            try:
+                self._away_pitcher_miner.get_pregame_stats()
+            except PitcherNotFound:
+                pass
 
     def add_team_park_factors(self):
         team_abbrev = self._home_pitcher_miner.get_team()
@@ -1405,11 +1478,9 @@ class GameMiner(object):
             self._database_session.rollback()
 
     def update_park_factors(self):
-        game_date = self._game.game_date
-        # TODO: it seems like 2017 isn't up yet. we'll just use 2016 for now
-        #park_factors = self._database_session.query(ParkEntry).get((self._home_pitcher_miner.get_team(),
-        #                                                            game_date.year))
-        park_factors = self._database_session.query(ParkEntry).filter(self._home_pitcher_miner.get_team())
+        game_date = datetime.strptime(self._game.game_date, '%Y-%M-%d')
+        park_factors = self._database_session.query(ParkEntry).get((self._home_pitcher_miner.get_team(),
+                                                                    game_date.year-1))
         if park_factors is None:
             self.add_team_park_factors()
 

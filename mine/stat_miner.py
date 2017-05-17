@@ -332,7 +332,10 @@ class OptimalLineupDict(dict):
     def __str__(self):
         ret_str = str()
         for position in OptimalLineupDict.PositionList:
-            ret_str += str(self.position_map[position])
+            try:
+                ret_str += str(self.position_map[position])
+            except IndexError:
+                continue
 
         ret_str += "Total salary: %s" % self.get_total_salary()
 
@@ -422,10 +425,14 @@ def get_optimal_lineup(day=None):
         query_result_heap = list()
         for query_result in query_results:
             heapq.heappush(query_result_heap, (-query_result.predicted_draftkings_points, query_result))
-        while not optimal_lineup.position_map[fielding_position].is_valid() and len(query_results) > 0:
-            candidate_player = heapq.heappop(query_result_heap)[1]
-            optimal_lineup.add(candidate_player)
-
+        # TODO: revive this when we successfully split up the original heap and the heap used for the optimal lineup
+        """while not optimal_lineup.position_map[fielding_position].is_valid() and len(query_results) > 0:
+            try:
+                candidate_player = heapq.heappop(query_result_heap)[1]
+                optimal_lineup.add(candidate_player)
+            except IndexError:
+                continue
+        """
         player_heap[fielding_position] = list()
         while len(query_result_heap) > 0:
             player = heapq.heappop(query_result_heap)
@@ -435,10 +442,15 @@ def get_optimal_lineup(day=None):
     query_results = PregamePitcherGameEntry.get_all_daily_entries(database_session, day)
     for query_result in query_results:
         heapq.heappush(query_result_heap, (-query_result.predicted_draftkings_points, query_result))
-    while not optimal_lineup.position_map["SP"].is_valid() and len(query_results) > 0:
-        candidate_player = heapq.heappop(query_result_heap)[1]
-        optimal_lineup.add(candidate_player)
-
+    # TODO: revive this when we successfully split up the original heap and the heap used for the optimal lineup
+    """while not optimal_lineup.position_map["SP"].is_valid() and len(query_result_heap) > 0:
+        print len(query_results), optimal_lineup.position_map["SP"].is_valid()
+        try:
+            candidate_player = heapq.heappop(query_result_heap)[1]
+            optimal_lineup.add(candidate_player)
+        except IndexError:
+            continue
+    """
     player_heap["SP"] = list()
     while len(query_result_heap) > 0:
         player = heapq.heappop(query_result_heap)
@@ -446,12 +458,32 @@ def get_optimal_lineup(day=None):
 
     player_heap_copy = player_heap
 
+    # Print out all the remaining players in order of their value
+    player_text = "Fantasy Baseball Predictions\n"
+    for fielding_position in OptimalLineupDict.FieldingPositions:
+        player_text += fielding_position + "\n"
+        while len(player_heap_copy[fielding_position]) > 0:
+            player = heapq.heappop(player_heap_copy[fielding_position])
+            player_text += "%s\n" % str(player[1])
+        player_text += "\n"
+
+    player_text += "SP\n"
+    while len(player_heap_copy["SP"]) > 0:
+        player = heapq.heappop(player_heap_copy["SP"])
+        player_text += "%s\n" % str(player[1])
+
+    send_email(player_text)
+    print player_text
+
     # Replace players one by one who are "overpaid" based on predicted points per dollar
-    while (optimal_lineup.get_total_salary() > CONTEST_SALARY and len(player_heap) > 0) or \
+    """while (optimal_lineup.get_total_salary() > CONTEST_SALARY and len(player_heap) > 0) or \
             not optimal_lineup.is_valid():
         worst_position = optimal_lineup.get_worst_position()
-        next_player = heapq.heappop(player_heap[worst_position])[1]
-        optimal_lineup.add(next_player)
+        try:
+            next_player = heapq.heappop(player_heap[worst_position])[1]
+            optimal_lineup.add(next_player)
+        except IndexError:
+            continue
 
     # Delete the players facing one another who are predicted to do worse, blacklist that team at that position
     optimal_lineup.delete_bad_opponents()
@@ -463,26 +495,10 @@ def get_optimal_lineup(day=None):
         print len(player_heap_copy), worst_position, player_heap_copy[worst_position]
         next_player = heapq.heappop(player_heap_copy[worst_position])[1]
         optimal_lineup.add(next_player)
-
-    # Print out all the remaining players in order of their value
-    runner_up_text = "Runner-up players\n"
-    for fielding_position in OptimalLineupDict.FieldingPositions:
-        runner_up_text += fielding_position + "\n"
-        while len(player_heap[fielding_position]) > 0:
-            player = heapq.heappop(player_heap[fielding_position])
-            runner_up_text += "%s\n" % str(player[1])
-        runner_up_text += "\n"
-
-    runner_up_text += "SP\n"
-    while len(player_heap["SP"]) > 0:
-        player = heapq.heappop(player_heap["SP"])
-        runner_up_text += "%s\n" % str(player[1])
-
-    send_email(runner_up_text)
-    print runner_up_text
+    """
 
     # Commit the prediction to the database
-    lineup_db_entry = LineupEntry()
+    """lineup_db_entry = LineupEntry()
     lineup_db_entry.game_date = str(date.today())
     lineup_db_entry.game_time = datetime.now().strftime("%H:%M:%S")
     lineup_db_entry.starting_pitcher_1 = optimal_lineup.position_map["SP"].get_player(0).get_id()
@@ -497,7 +513,7 @@ def get_optimal_lineup(day=None):
     lineup_db_entry.outfielder_3 = optimal_lineup.position_map["OF"].get_player(2).get_id()
     database_session.add(lineup_db_entry)
     database_session.commit()
-
+"""
     print optimal_lineup
     send_email(optimal_lineup.__str__())
 
@@ -544,6 +560,8 @@ def predict_daily_points(day=None):
 
         final_pitcher_array = np.concatenate([daily_entry.to_input_vector(), park_vector, umpire_vector])
         predicted_points = hitter_regression.get_prediction(final_pitcher_array)
+        std_dev = hitter_regression.get_std_dev(final_pitcher_array)
+        print "Std dev for %s %s is %f" % (daily_entry.hitter_entry.first_name, daily_entry.hitter_entry.last_name, std_dev)
 
         if predicted_points < 0:
             predicted_points = 0
@@ -579,6 +597,8 @@ def predict_daily_points(day=None):
 
         final_pitcher_array = np.concatenate([input_vector, daily_entry.get_opponent_vector(), park_vector, umpire_vector])
         predicted_points = pitcher_regression.get_prediction(final_pitcher_array)
+        std_dev = pitcher_regression.get_std_dev(final_pitcher_array)
+        print "Std dev for %s %s is %f" % (daily_entry.pitcher_entry.first_name, daily_entry.pitcher_entry.last_name, std_dev)
         if predicted_points < 0:
             predicted_points = 0
         daily_entry.predicted_draftkings_points = predicted_points
@@ -627,7 +647,6 @@ def get_avg_pitcher_points(player_id, year, database_session=None):
 
 def get_pregame_stats_wrapper(games):
     thread_pool = Pool(6)
-
     thread_pool.map(get_pregame_stats, games)
 
 
@@ -766,8 +785,9 @@ def add_game_entries(game_matchups):
 
 def prefetch_pregame_stats_wrapper(game_matchups):
     thread_pool = Pool(6)
-
     thread_pool.map(prefetch_pregame_stats_atomic, game_matchups)
+    #for game_matchup in game_matchups:
+    #    prefetch_pregame_stats_atomic(game_matchup)
 
 def prefetch_pregame_stats():
     game_matchups = get_game_matchups()
@@ -870,6 +890,7 @@ class LineupMiner(object):
             pregame_hitter_entry = self.mine_vs_hand_stats(hitter_entry, pregame_hitter_entry, hitter_career_soup,
                                                            pitcher_hand)
             pregame_hitter_entry = self.mine_recent_stats(hitter_entry, pregame_hitter_entry, hitter_career_soup)
+            pregame_hitter_entry = self.mine_season_stats(hitter_entry, pregame_hitter_entry)
 
             if pitcher_entry is not None:
                 pregame_hitter_entry = self.mine_vs_pitcher_stats(hitter_entry, pregame_hitter_entry, pitcher_entry)

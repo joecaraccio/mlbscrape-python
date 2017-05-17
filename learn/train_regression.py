@@ -18,6 +18,7 @@ from sql.team_park import ParkEntry
 import datetime
 from datetime import timedelta
 from sklearn.metrics import mean_squared_error, median_absolute_error
+from sklearn.externals import joblib
 
 
 class RegressionTree(object):
@@ -46,9 +47,6 @@ class RegressionTree(object):
 
 
 class RegressionForest(object):
-    def __init__(self):
-        self._decision_tree = RandomForestRegressor(n_estimators=1000)
-        self._database_session = MlbDatabase().open_session()
 
     @staticmethod
     def get_train_eval_data(db_query, training_pct):
@@ -136,6 +134,10 @@ class HitterRegressionForestTrainer(RegressionForest):
 
     SIZE_TRAINING_BATCH = 7000
 
+    def __init__(self):
+        self._database_session = MlbDatabase().open_session()
+        self._decision_tree = None
+
     def get_stochastic_batch(self, input_query, num_samples=None):
         potential_samples = list()
         for postgame_entry in input_query:
@@ -189,20 +191,50 @@ class HitterRegressionForestTrainer(RegressionForest):
     def train_network(self):
         """ Pure virtual method for training the network
         """
-        db_query = self._database_session.query(PostgameHitterGameEntry)
-        mlb_training_data, mlb_evaluation_data = self.get_train_eval_data(db_query, 0.8)
-        x_train, y_train = self.get_stochastic_batch(mlb_training_data)
-        self._decision_tree.fit(x_train, np.ravel(y_train))
-        x_eval, y_eval = self.get_stochastic_batch(mlb_evaluation_data)
-        y_eval_predictions = self._decision_tree.predict(x_eval)
-        y_eval_predictions = np.array(y_eval_predictions)
-        y_eval = np.array(y_eval)
-        print "Hitter Training Size: %i | Hitter Evaluation Size: %i" % (len(x_train), len(x_eval))
-        print "Hitter median absolute error: %f" % median_absolute_error(y_eval, y_eval_predictions)
+        self.load_model()
+        if self._decision_tree is None:
+            self._decision_tree = RandomForestRegressor(n_estimators=1000)
+            db_query = self._database_session.query(PostgameHitterGameEntry)
+            mlb_training_data, mlb_evaluation_data = self.get_train_eval_data(db_query, 0.8)
+            x_train, y_train = self.get_stochastic_batch(mlb_training_data)
+            self._decision_tree.fit(x_train, np.ravel(y_train))
+            x_eval, y_eval = self.get_stochastic_batch(mlb_evaluation_data)
+            y_eval_predictions = self._decision_tree.predict(x_eval)
+            y_eval_predictions = np.array(y_eval_predictions)
+            y_eval = np.array(y_eval)
+            self.save_model()
+            print "Hitter Training Size: %i | Hitter Evaluation Size: %i" % (len(x_train), len(x_eval))
+            print "Hitter median absolute error: %f" % median_absolute_error(y_eval, y_eval_predictions)
         self._database_session.close()
 
     def get_prediction(self, input_data):
         return self._decision_tree.predict([input_data])
+
+    def get_prediction_interval(self, input_data, percentile=95):
+        preds = []
+        for pred in self._decision_tree.estimators_:
+            preds.append(pred.predict(input_data.reshape(1, len(input_data))))
+        err_down = np.percentile(preds, (100 - percentile) / 2.)
+        err_up = np.percentile(preds, 100 - (100 - percentile) / 2.)
+        return err_down, err_up
+
+    def get_std_dev(self, input_data):
+        preds = []
+        for pred in self._decision_tree.estimators_:
+            preds.append(pred.predict(input_data.reshape(1, len(input_data))))
+        return np.std(preds)
+
+    def save_model(self):
+        try:
+            joblib.dump(self._decision_tree, 'hitter_regression_forest.pkl')
+        except:
+            pass
+
+    def load_model(self):
+        try:
+            self._decision_tree = joblib.load('hitter_regression_forest.pkl')
+        except:
+            pass
 
 
 class PitcherRegressionTrainer(RegressionTree):
@@ -267,6 +299,10 @@ class PitcherRegressionForestTrainer(RegressionForest):
 
     SIZE_TRAINING_BATCH = 900
 
+    def __init__(self):
+        self._database_session = MlbDatabase().open_session()
+        self._decision_tree = None
+
     def get_stochastic_batch(self, input_query, num_samples=None):
         potential_samples = list()
         for postgame_entry in input_query:
@@ -320,17 +356,47 @@ class PitcherRegressionForestTrainer(RegressionForest):
     def train_network(self):
         """ Pure virtual method for training the network
         """
-        db_query = self._database_session.query(PostgamePitcherGameEntry)
-        mlb_training_data, mlb_evaluation_data = self.get_train_eval_data(db_query, 0.8)
-        x_train, y_train = self.get_stochastic_batch(mlb_training_data)
-        self._decision_tree.fit(x_train, np.ravel(y_train))
-        x_eval, y_eval = self.get_stochastic_batch(mlb_evaluation_data)
-        y_eval_predictions = self._decision_tree.predict(x_eval)
-        y_eval_predictions = np.array(y_eval_predictions)
-        y_eval = np.array(y_eval)
-        print "Pitcher Training Size: %i | Pitcher Evaluation Size: %i" % (len(x_train), len(x_eval))
-        print "Pitcher median absolute error: %f" % median_absolute_error(y_eval, y_eval_predictions)
+        self.load_model()
+        if self._decision_tree is None:
+            self._decision_tree = RandomForestRegressor(n_estimators=1000)
+            db_query = self._database_session.query(PostgamePitcherGameEntry)
+            mlb_training_data, mlb_evaluation_data = self.get_train_eval_data(db_query, 0.8)
+            x_train, y_train = self.get_stochastic_batch(mlb_training_data)
+            self._decision_tree.fit(x_train, np.ravel(y_train))
+            self.save_model()
+            x_eval, y_eval = self.get_stochastic_batch(mlb_evaluation_data)
+            y_eval_predictions = self._decision_tree.predict(x_eval)
+            y_eval_predictions = np.array(y_eval_predictions)
+            y_eval = np.array(y_eval)
+            print "Pitcher Training Size: %i | Pitcher Evaluation Size: %i" % (len(x_train), len(x_eval))
+            print "Pitcher median absolute error: %f" % median_absolute_error(y_eval, y_eval_predictions)
         self._database_session.close()
 
     def get_prediction(self, input_data):
         return self._decision_tree.predict([input_data])
+
+    def get_prediction_interval(self, input_data, percentile=95):
+        preds = []
+        for pred in self._decision_tree.estimators_:
+            preds.append(pred.predict(input_data.reshape(1, len(input_data))))
+        err_down = np.percentile(preds, (100 - percentile) / 2.)
+        err_up = np.percentile(preds, 100 - (100 - percentile) / 2.)
+        return err_down, err_up
+
+    def get_std_dev(self, input_data):
+        preds = []
+        for pred in self._decision_tree.estimators_:
+            preds.append(pred.predict(input_data.reshape(1, len(input_data))))
+        return np.std(preds)
+
+    def save_model(self):
+        try:
+            joblib.dump(self._decision_tree, 'pitcher_regression_forest.pkl')
+        except:
+            pass
+
+    def load_model(self):
+        try:
+            self._decision_tree = joblib.load('pitcher_regression_forest.pkl')
+        except:
+            pass

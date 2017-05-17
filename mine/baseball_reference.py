@@ -214,6 +214,46 @@ def get_table_row_dict(soup, table_name, table_row_label, table_column_label):
     raise TableRowNotFound(table_row_label, table_column_label, table_name)
 
 
+def get_table_body_row_dict(soup, table_name, table_row_label, table_column_label):
+    """ Get a dictionary representation of a Baseball Reference table of stats
+    :param soup: BeautifulSoup object containing the table HTML
+    :param table_name: HTML "id" tag for the table
+    :param table_row_label: bare text label for the row of interest
+    :param table_column_label: bare text label for the column of interest
+    :return: a dictionary representing the stats
+    """
+    results_table = soup.find("table", {"id": table_name})
+    if results_table is None:
+        raise TableNotFound(table_name)
+
+    try:
+        table_header_list = results_table.find("thead").findAll("th")
+    except AttributeError:
+        raise TableRowNotFound(table_row_label, table_column_label, table_name)
+    table_header_list = [x.text for x in table_header_list]
+    stat_rows = results_table.findAll("tr")
+
+    for stat_row in stat_rows:
+        # Create a dictionary of the stat attributes
+        stat_dict = dict()
+        stat_entries = stat_row.findAll(["th", "td"])
+        # The dictionary does not have valid entries, move on to the next row
+        if len(stat_entries) != len(table_header_list):
+            continue
+        for i in range(0, len(stat_entries)):
+            if stat_entries[i].text == "":
+                stat_dict[table_header_list[i]] = 0
+            else:
+                stat_dict[table_header_list[i]] = stat_entries[i].text.replace(u"\xa0", " ")
+        try:
+            if stat_dict[table_column_label] == table_row_label:
+                return stat_dict
+        except KeyError:
+            raise TableRowNotFound(table_row_label, table_column_label, table_name)
+
+    raise TableRowNotFound(table_row_label, table_column_label, table_name)
+
+
 def get_career_hitting_stats(baseball_reference_id, soup=None):
     """ Get a dictionary representation of the hitter stats for the given hitter id
     :param baseball_reference_id: unique BaseballReference ID for this hitter
@@ -276,7 +316,7 @@ def get_season_hitting_stats(baseball_reference_id, year=None, soup=None):
         print url
         soup = get_comment_soup_from_url(url)
 
-    return get_table_row_dict(soup, "total", str(year) + " Totals", "Split")
+    return get_table_body_row_dict(soup, "total", str(year) + " Totals", "Split")
 
 
 def get_vs_pitcher_stats(batter_id, pitcher_id, soup=None):
@@ -340,7 +380,7 @@ def get_season_pitcher_stats(baseball_reference_id, year=None, soup=None):
         print url
         soup = get_comment_soup_from_url(url)
 
-    return get_table_row_dict(soup, "total_extra", str(year) + " Totals", "Split")
+    return get_table_body_row_dict(soup, "total_extra", str(year) + " Totals", "Split")
 
 
 def get_recent_pitcher_stats(baseball_reference_id, soup=None):

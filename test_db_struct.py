@@ -15,8 +15,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import FlushError
 import datetime
 from sql.umpire import UmpireCareerEntry
-from mine.baseball_reference import team_dict, get_team_info
-from mine.rotowire import rotowire_team_dict
+from mine.baseball_reference import get_team_info
+from mine.team_dict import *
 import re
 from bs4 import Comment
 from sql.team_park import ParkEntry
@@ -81,8 +81,8 @@ def get_game_data(current_date):
     teams = ['SDN', 'SLN']
     for team_key in teams:
         game_entries = database_session.query(GameEntry).filter(GameEntry.game_date == str(current_date),
-                                                                or_(GameEntry.home_team == rotowire_team_dict.inv[team_dict[team_key]],
-                                                                    GameEntry.away_team == rotowire_team_dict.inv[team_dict[team_key]]))
+                                                                or_(GameEntry.home_team == rotowire_team_dict.inv[baseball_reference_team_dict[team_key]],
+                                                                    GameEntry.away_team == rotowire_team_dict.inv[baseball_reference_team_dict[team_key]]))
         if game_entries.count() != 0:
             continue
         team_abbrev = team_key

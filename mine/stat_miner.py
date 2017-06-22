@@ -24,6 +24,8 @@ from mine.draft_kings import *
 from sql.umpire import UmpireCareerEntry
 from mine.baseball_reference import PlayerNameNotFound
 import math
+from mine.team_dict import *
+from mine.baseball_reference import *
 
 class NoGamesFound(Exception):
     def __init__(self):
@@ -646,8 +648,11 @@ def get_avg_pitcher_points(player_id, year, database_session=None):
 
 
 def get_pregame_stats_wrapper(games):
+
     thread_pool = Pool(6)
     thread_pool.map(get_pregame_stats, games)
+    #for game in games:
+    #    get_pregame_stats(game)
 
 
 def get_pregame_stats(game):
@@ -1012,14 +1017,19 @@ class LineupMiner(object):
             else:
                 try:
                     current_player.name = get_name_from_id(current_player.rotowire_id)
+                    if rotowire_team_dict[current_player.team] == "Los Angeles Angels":
+                        team = baseball_reference_team_dict.inv["Los Angeles Angels of Anaheim"]
+                    else:
+                        team = baseball_reference_team_dict.inv[rotowire_team_dict[current_player.team]]
+
                     baseball_reference_id = get_hitter_id(current_player.name,
-                                                          team_dict.inv[team_dict[current_player.team]],
+                                                          team,
                                                           date.today().year,
                                                           hitter_soup)
-                except AttributeError:
+                except AttributeError as e:
                     print "Skipping committing this hitter '%s'." % current_player.rotowire_id
                     continue
-                except PlayerNameNotFound:
+                except PlayerNameNotFound as e:
                     print "Skipping committing this hitter '%s'." % current_player.name
                     continue
 
@@ -1144,7 +1154,11 @@ class LineupMiner(object):
         :param lineup: list of PlayerStruct objects
         :param database_session: SQLAlchemy session object
         """
-        lineup_history = LineupHistoryEntry()
+        lineup_history_query = self._database_session.query(LineupHistoryEntry).get((date.today().year, self._lineup[0].team))
+        if lineup_history_query is None:
+            lineup_history = LineupHistoryEntry()
+        else:
+            lineup_history = lineup_history_query
         lineup_history.team = self._lineup[0].team
         lineup_history.year = date.today().year
         for player in self._lineup:
@@ -1166,7 +1180,8 @@ class LineupMiner(object):
                 lineup_history.right_fielder = player.rotowire_id
 
         try:
-            self._database_session.add(lineup_history)
+            if lineup_history_query is None:
+                self._database_session.add(lineup_history)
             self._database_session.commit()
         except IntegrityError:
             self._database_session.rollback()
@@ -1331,7 +1346,7 @@ class PitcherMiner(object):
             try:
                 self._pitcher.name = get_name_from_id(self._pitcher.rotowire_id)
                 baseball_reference_id = get_pitcher_id(self._pitcher.name,
-                                                       team_dict.inv[team_dict[self._pitcher.team]],
+                                                       baseball_reference_team_dict.inv[rotowire_team_dict[self._pitcher.team]],
                                                        date.today().year,
                                                        pitcher_soup)
             except AttributeError:
@@ -1488,7 +1503,7 @@ class GameMiner(object):
         team_abbrev = self._home_pitcher_miner.get_team()
         year = datetime.strptime(self._game.game_date, '%Y-%M-%d').year
         # Use the Rotowire team dict so Baseball Reference can work with it
-        hitter_factor, pitcher_factor = get_team_info(team_dict[team_abbrev], year)
+        hitter_factor, pitcher_factor = get_team_info(baseball_reference_team_dict[team_abbrev], year)
         park_entry = ParkEntry(team_abbrev, year)
         park_entry.park_hitter_score = hitter_factor
         park_entry.park_pitcher_score = pitcher_factor

@@ -3,6 +3,7 @@ from types import NoneType
 from beautiful_soup_helper import *
 from datetime import date, timedelta
 import bidict
+from mine.team_dict import *
 
 
 BASE_URL = "http://www.baseball-reference.com"
@@ -36,9 +37,9 @@ def get_hitter_id(full_name, team, year=None, soup=None):
         if hitter_table_row.get("class")[0] != "thead":
             try:
                 hitter_entries = hitter_table_row.findAll("td")
-                hitter_name_entry = hitter_entries[1].find("a")
+                hitter_name_entry = hitter_entries[0].find("a")
                 if hitter_name_entry.text.replace(u'\xa0', ' ') == full_name:
-                    if team == hitter_entries[3].text:
+                    if team == hitter_entries[2].text:
                         hitter_id = hitter_name_entry.get("href").split("/")
                         return str(hitter_id[len(hitter_id)-1]).replace(".shtml", "")
             except IndexError:
@@ -74,9 +75,9 @@ def get_pitcher_id(full_name, team, year=None, soup=None):
         if pitcher_table_row.get("class")[0] != "thead":
             try:
                 pitcher_entries = pitcher_table_row.findAll("td")
-                pitcher_name_entry = pitcher_entries[1].find("a")
+                pitcher_name_entry = pitcher_entries[0].find("a")
                 if pitcher_name_entry.text.replace(u'\xa0', ' ') == full_name:
-                    if team == pitcher_entries[3].text:
+                    if team == pitcher_entries[2].text:
                         pitcher_id = pitcher_name_entry.get("href").split("/")
                         return str(pitcher_id[len(pitcher_id)-1]).replace(".shtml", "")
             except IndexError:
@@ -457,7 +458,7 @@ def get_team_info(team_name, year_of_interest=None, team_soup=None):
     """
     url = "/about/parkadjust.shtml"
 
-    team_abbreviation = team_dict.inv[team_name]
+    team_abbreviation = baseball_reference_team_dict.inv[team_name]
 
     if year_of_interest is None:
         year_of_interest = date.today().year
@@ -485,38 +486,6 @@ def get_team_info(team_name, year_of_interest=None, team_soup=None):
                     continue
 
     return None, None
-
-# Two-way dictionary
-team_dict = bidict.bidict(ARI="Arizona Diamondbacks",
-                          ATL="Atlanta Braves",
-                          BAL="Baltimore Orioles",
-                          BOS="Boston Red Sox",
-                          CHC="Chicago Cubs",
-                          CHW="Chicago White Sox",
-                          CIN="Cincinnati Reds",
-                          CLE="Cleveland Indians",
-                          COL="Colorado Rockies",
-                          DET="Detroit Tigers",
-                          HOU="Houston Astros",
-                          KCR="Kansas City Royals",
-                          LAA="Los Angeles Angels of Anaheim",
-                          LAD="Los Angeles Dodgers",
-                          MIA="Miami Marlins",
-                          MIL="Milwaukee Brewers",
-                          MIN="Minnesota Twins",
-                          NYM="New York Mets",
-                          NYY="New York Yankees",
-                          OAK="Oakland Athletics",
-                          PHI="Philadelphia Phillies",
-                          PIT="Pittsburgh Pirates",
-                          SDP="San Diego Padres",
-                          SEA="Seattle Mariners",
-                          SFG="San Francisco Giants",
-                          STL="St. Louis Cardinals",
-                          TBR="Tampa Bay Rays",
-                          TEX="Texas Rangers",
-                          TOR="Toronto Blue Jays",
-                          WSN="Washington Nationals")
 
 date_abbreviations = {1: "Jan",
                       2: "Feb",

@@ -1,5 +1,7 @@
-from datetime import datetime
-from mine.baseball_reference import *
+from datetime import datetime, date
+from mine.team_dict import *
+from mine.baseball_reference import get_team_info, TableNotFound
+from mine.beautiful_soup_helper import get_soup_from_url
 
 # Daily lineups relevant HTML labels
 DAILY_LINEUPS_URL = "http://www.rotowire.com/baseball/daily_lineups.htm"
@@ -158,7 +160,7 @@ def get_external_game_factors(game_node):
             ump_name = get_ump_name(game_node)
         except UmpDataNotFound:
             print "Ump data not found."
-        park_hitter_score, park_pitcher_score = get_team_info(team_dict[home_team_abbreviation])
+        park_hitter_score, park_pitcher_score = get_team_info(rotowire_team_dict[home_team_abbreviation])
         game_factors = GameFactors(wind_speed, ump_name, park_pitcher_score, park_hitter_score)
     except AttributeError:
         game_factors = None
@@ -381,35 +383,3 @@ def get_game_matchups(url=None, game_date=None):
         matchups.append(matchup)
 
     return matchups
-
-# Two-way dictionary
-team_dict = bidict.bidict(ARI="Arizona Diamondbacks",
-                          ATL="Atlanta Braves",
-                          BAL="Baltimore Orioles",
-                          BOS="Boston Red Sox",
-                          CHC="Chicago Cubs",
-                          CWS="Chicago White Sox",
-                          CIN="Cincinnati Reds",
-                          CLE="Cleveland Indians",
-                          COL="Colorado Rockies",
-                          DET="Detroit Tigers",
-                          HOU="Houston Astros",
-                          KC="Kansas City Royals",
-                          LAA="Los Angeles Angels",
-                          LAD="Los Angeles Dodgers",
-                          MIA="Miami Marlins",
-                          MIL="Milwaukee Brewers",
-                          MIN="Minnesota Twins",
-                          NYM="New York Mets",
-                          NYY="New York Yankees",
-                          OAK="Oakland Athletics",
-                          PHI="Philadelphia Phillies",
-                          PIT="Pittsburgh Pirates",
-                          SD="San Diego Padres",
-                          SEA="Seattle Mariners",
-                          SF="San Francisco Giants",
-                          STL="St. Louis Cardinals",
-                          TB="Tampa Bay Rays",
-                          TEX="Texas Rangers",
-                          TOR="Toronto Blue Jays",
-                          WAS="Washington Nationals")

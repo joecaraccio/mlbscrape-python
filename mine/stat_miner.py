@@ -792,7 +792,7 @@ def prefetch_pregame_stats_wrapper(game_matchups):
     thread_pool = Pool(6)
     thread_pool.map(prefetch_pregame_stats_atomic, game_matchups)
     #for game_matchup in game_matchups:
-    #    prefetch_pregame_stats_atomic(game_matchup)
+    #     prefetch_pregame_stats_atomic(game_matchup)
 
 def prefetch_pregame_stats():
     game_matchups = get_game_matchups()
@@ -1344,9 +1344,13 @@ class PitcherMiner(object):
         # Found no entries, create a bare bones entry with just the name and id
         else:
             try:
+                if rotowire_team_dict[self._pitcher.team] == "Los Angeles Angels":
+                    team = baseball_reference_team_dict.inv["Los Angeles Angels of Anaheim"]
+                else:
+                    team = baseball_reference_team_dict.inv[rotowire_team_dict[self._pitcher.team]]
                 self._pitcher.name = get_name_from_id(self._pitcher.rotowire_id)
                 baseball_reference_id = get_pitcher_id(self._pitcher.name,
-                                                       baseball_reference_team_dict.inv[rotowire_team_dict[self._pitcher.team]],
+                                                       team,
                                                        date.today().year,
                                                        pitcher_soup)
             except AttributeError:

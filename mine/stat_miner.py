@@ -14,7 +14,6 @@ import heapq
 from learn.train_regression import HitterRegressionForestTrainer, PitcherRegressionForestTrainer, HitterRegressionTrainer, PitcherRegressionTrainer
 from sql.lineup import LineupEntry
 import numpy as np
-from email_service import send_email
 from sql.mlb_database import MlbDatabase
 from draft_kings import CONTEST_SALARY, get_csv_dict
 from rotowire import *
@@ -474,7 +473,6 @@ def get_optimal_lineup(day=None):
         player = heapq.heappop(player_heap_copy["SP"])
         player_text += "%s\n" % str(player[1])
 
-    send_email(player_text)
     print player_text
 
     # Replace players one by one who are "overpaid" based on predicted points per dollar
@@ -517,7 +515,6 @@ def get_optimal_lineup(day=None):
     database_session.commit()
 """
     print optimal_lineup
-    send_email(optimal_lineup.__str__())
 
     database_session.close()
 
